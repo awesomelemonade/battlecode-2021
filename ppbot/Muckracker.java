@@ -1,17 +1,22 @@
 package ppbot;
 import battlecode.common.*;
-import static ppbot.Constants.*;
+import ppbot.util.Constants;
+import ppbot.util.Util;
 
-public strictfp class Muckracker {
-    public RobotController rc;
-    public Constants C;
+public strictfp class Muckracker implements RunnableBot {
+    private RobotController rc;
 
     public Muckracker(RobotController rc) {
         this.rc = rc;
-        this.C = new Constants(this.rc);
     }
 
-    public void run() throws GameActionException {
+    @Override
+    public void init() throws GameActionException {
+
+    }
+
+    @Override
+    public void turn() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
@@ -24,7 +29,7 @@ public strictfp class Muckracker {
                 }
             }
         }
-        if (C.tryMove(C.randomDirection()))
+        if (Util.tryMove(Util.randomMoveDirection()))
             System.out.println("I moved!");
     }
 }

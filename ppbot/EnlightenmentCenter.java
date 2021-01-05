@@ -1,20 +1,24 @@
 package ppbot;
 import battlecode.common.*;
-import static ppbot.Constants.*;
+import ppbot.util.Constants;
+import ppbot.util.Util;
 
-public strictfp class EnlightenmentCenter {
-    public RobotController rc;
-    public Constants C;
+public strictfp class EnlightenmentCenter implements RunnableBot {
+    private RobotController rc;
 
     public EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
-        this.C = new Constants(this.rc);
     }
 
-    public void run() throws GameActionException {
-        RobotType toBuild = C.randomSpawnableRobotType();
+    @Override
+    public void init() throws GameActionException {
+
+    }
+    @Override
+    public void turn() throws GameActionException {
+        RobotType toBuild = Util.randomSpawnableRobotType();
         int influence = 50;
-        for (Direction dir : directions) {
+        for (Direction dir : Constants.ORDINAL_DIRECTIONS) {
             System.out.println("can build?");
             if (rc.canBuildRobot(toBuild, dir, influence)) {
                 rc.buildRobot(toBuild, dir, influence);

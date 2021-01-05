@@ -1,18 +1,24 @@
 package ppbot;
 import battlecode.common.*;
-import static ppbot.Constants.*;
+import ppbot.util.Constants;
+import ppbot.util.Util;
 
-public strictfp class Slanderer {
+public strictfp class Slanderer implements RunnableBot {
     public RobotController rc;
-    public Constants C;
 
     public Slanderer(RobotController rc) {
         this.rc = rc;
-        this.C = new Constants(this.rc);
     }
 
-    public void run() throws GameActionException {
-        if (C.tryMove(C.randomDirection()))
+    @Override
+    public void init() throws GameActionException {
+
+    }
+
+    @Override
+    public void turn() throws GameActionException {
+        if (Util.tryRandomMove()) {
             System.out.println("I moved!");
+        }
     }
 }

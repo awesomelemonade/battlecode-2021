@@ -4,6 +4,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.Team;
+import latticebot.util.Pathfinder;
 import latticebot.util.Util;
 
 public strictfp class Politician implements RunnableBot {
@@ -20,17 +21,20 @@ public strictfp class Politician implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
-        Team enemy = rc.getTeam().opponent();
-        int actionRadius = rc.getType().actionRadiusSquared;
-        RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
-        if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
-            System.out.println("empowering...");
-            rc.empower(actionRadius);
-            System.out.println("empowered");
+        if (!rc.isReady()) {
             return;
         }
-        if (Util.tryRandomMove()) {
-            System.out.println("I moved!");
+        RobotInfo closestEnemy = Util.getClosestEnemyRobot();
+        if (closestEnemy == null) {
+            Util.randomExplore();
+        } else {
+            int enemyDistanceSquared = rc.getLocation().distanceSquaredTo(closestEnemy.getLocation());
+            int actionRadiusSquared = rc.getType().actionRadiusSquared;
+            if (enemyDistanceSquared <= actionRadiusSquared && rc.canEmpower(enemyDistanceSquared)) {
+                rc.empower(enemyDistanceSquared);
+            } else {
+                Pathfinder.execute(closestEnemy.getLocation());
+            }
         }
     }
 }

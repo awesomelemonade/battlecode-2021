@@ -5,6 +5,7 @@ import latticebot.util.*;
 
 public strictfp class Slanderer implements RunnableBot {
     private RobotController rc;
+    private Politician politician;
 
     public Slanderer(RobotController rc) {
         this.rc = rc;
@@ -39,17 +40,11 @@ public strictfp class Slanderer implements RunnableBot {
             }
         } else {
             // Camouflage
-            if (closestEnemy == null) {
-                Util.randomExplore();
-            } else {
-                int enemyDistanceSquared = rc.getLocation().distanceSquaredTo(closestEnemy.getLocation());
-                int actionRadiusSquared = rc.getType().actionRadiusSquared;
-                if (enemyDistanceSquared <= actionRadiusSquared && rc.canEmpower(actionRadiusSquared)) {
-                    rc.empower(actionRadiusSquared);
-                } else {
-                    Pathfinder.execute(closestEnemy.getLocation());
-                }
+            if (politician == null) {
+                politician = new Politician(rc);
+                politician.init();
             }
+            politician.turn();
         }
     }
 

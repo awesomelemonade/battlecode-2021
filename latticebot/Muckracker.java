@@ -4,8 +4,8 @@ import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import latticebot.util.Constants;
+import latticebot.util.Pathfinder;
 import latticebot.util.Util;
-import ppbot.util.Pathfinder;
 
 public strictfp class Muckracker implements RunnableBot {
     private RobotController rc;
@@ -21,6 +21,9 @@ public strictfp class Muckracker implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
+        if (!rc.isReady()) {
+            return;
+        }
         if (tryExpose()) {
             return;
         }

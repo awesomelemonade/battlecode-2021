@@ -11,6 +11,7 @@ public class Constants {
     public static final int MIN_ROBOT_ID = 10000; // 14 bits to represent robot id (max (practical) id = 26384)
     public static final int MAX_MAP_SIZE = 64;
     public static final int MAX_DISTANCE_SQUARED = (MAX_MAP_SIZE - 1) * (MAX_MAP_SIZE - 1);
+    public static final int POLITICIAN_EMPOWER_PENALTY = 10;
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();

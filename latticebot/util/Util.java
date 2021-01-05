@@ -2,6 +2,8 @@ package latticebot.util;
 
 import battlecode.common.*;
 
+import java.util.function.Predicate;
+
 import static ppbot.util.Constants.ORDINAL_DIRECTIONS;
 import static ppbot.util.Constants.SPAWNABLE_ROBOTS;
 
@@ -88,19 +90,24 @@ public class Util {
         return random(ORDINAL_DIRECTIONS);
     }
 
-    public static RobotInfo getClosestEnemyRobotWithin(int limit) {
+    public static RobotInfo getClosestEnemyRobot(int limit, Predicate<RobotInfo> filter) {
         int bestDistanceSquared = limit + 1;
         RobotInfo bestRobot = null;
         for (RobotInfo enemy : Cache.ENEMY_ROBOTS) { // TODO: Tie breakers, use communication
-            int distanceSquared = enemy.getLocation().distanceSquaredTo(rc.getLocation());
-            if (distanceSquared < bestDistanceSquared) {
-                bestDistanceSquared = distanceSquared;
-                bestRobot = enemy;
+            if (filter.test(enemy)) {
+                int distanceSquared = enemy.getLocation().distanceSquaredTo(rc.getLocation());
+                if (distanceSquared < bestDistanceSquared) {
+                    bestDistanceSquared = distanceSquared;
+                    bestRobot = enemy;
+                }
             }
         }
         return bestRobot;
     }
+    public static RobotInfo getClosestEnemyRobot(Predicate<RobotInfo> filter) {
+        return getClosestEnemyRobot(Constants.MAX_DISTANCE_SQUARED, filter);
+    }
     public static RobotInfo getClosestEnemyRobot() {
-        return getClosestEnemyRobotWithin(Constants.MAX_DISTANCE_SQUARED);
+        return getClosestEnemyRobot(Constants.MAX_DISTANCE_SQUARED, x -> true);
     }
 }

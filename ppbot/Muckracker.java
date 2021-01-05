@@ -1,6 +1,5 @@
 package ppbot;
 import battlecode.common.*;
-import ppbot.util.Constants;
 import ppbot.util.Util;
 
 public strictfp class Muckracker implements RunnableBot {
@@ -29,7 +28,7 @@ public strictfp class Muckracker implements RunnableBot {
                 }
             }
         }
-        if (Util.tryMove(Util.randomMoveDirection()))
+        if (Util.tryMove(Util.randomAdjacentDirection()))
             System.out.println("I moved!");
     }
 }

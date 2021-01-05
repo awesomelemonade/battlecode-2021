@@ -1,6 +1,6 @@
 package ppbot;
 import battlecode.common.*;
-import ppbot.util.Constants;
+import ppbot.util.Cache;
 import ppbot.util.Util;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
@@ -16,16 +16,12 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
     @Override
     public void turn() throws GameActionException {
-        RobotType toBuild = Util.randomSpawnableRobotType();
-        int influence = 50;
-        for (Direction dir : Constants.ORDINAL_DIRECTIONS) {
-            System.out.println("can build?");
-            if (rc.canBuildRobot(toBuild, dir, influence)) {
-                rc.buildRobot(toBuild, dir, influence);
-                System.out.println("building?");
-            } else {
-                break;
-            }
+        if (Cache.ENEMY_ROBOTS.length == 0) {
+            // if we don't see any enemy units
+            int floored = (rc.getInfluence() / 20) * 20;
+            Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), floored);
+        } else {
+            Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);
         }
     }
 }

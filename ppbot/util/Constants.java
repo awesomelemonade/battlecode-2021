@@ -2,12 +2,12 @@ package ppbot.util;
 import battlecode.common.*;
 
 public class Constants {
-    public static Team OUR_TEAM;
-    public static Team OPPONENT_TEAM;
+    public static Team ALLY_TEAM;
+    public static Team ENEMY_TEAM;
     public static final int MIN_ROBOT_ID = 10000; // 14 bits to represent robot id (max id = 26384)
     public static void init(RobotController rc) {
-        OUR_TEAM = rc.getTeam();
-        OPPONENT_TEAM = OUR_TEAM.opponent();
+        ALLY_TEAM = rc.getTeam();
+        ENEMY_TEAM = ALLY_TEAM.opponent();
     }
     public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,
@@ -25,6 +25,8 @@ public class Constants {
             Direction.WEST,
             Direction.NORTHWEST,
     };
+    public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1};
+    public static final int[] ORDINAL_OFFSET_Y = {-1, -1, 0, 1, 1, 1, 0, -1};
     public static final RobotType[] SPAWNABLE_ROBOTS = {
             RobotType.POLITICIAN,
             RobotType.SLANDERER,

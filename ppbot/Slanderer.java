@@ -17,8 +17,6 @@ public strictfp class Slanderer implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
-        if (Util.tryRandomMove()) {
-            System.out.println("I moved!");
-        }
+        Util.tryRandomMove();
     }
 }

@@ -22,9 +22,14 @@ public strictfp class Slanderer implements RunnableBot {
     public void turn() throws GameActionException {
         cur_loc = rc.getLocation();
 
-        if(Cache.ENEMY_ROBOTS.length > 0) {
-            moveAway(closestEnemy().getLocation());
+        if(rc.getType() == RobotType.SLANDERER) {
+            if(Cache.ENEMY_ROBOTS.length > 0) {
+                moveAway(closestEnemy().getLocation());
+            } else {
+                Util.tryRandomMove();
+            }
         } else {
+            tryAttack();
             Util.tryRandomMove();
         }
     }
@@ -56,5 +61,18 @@ public strictfp class Slanderer implements RunnableBot {
 
         if (next != -1)
             rc.move(ORDINAL_DIRECTIONS[next]);
+    }
+
+    private void tryAttack() throws GameActionException {
+        Team enemy = rc.getTeam().opponent();
+        int actionRadius = rc.getType().actionRadiusSquared;
+        for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
+            if (cur_loc.distanceSquaredTo(robot.location) <= actionRadius) {
+                if (rc.canEmpower(actionRadius)) {
+                    rc.empower(actionRadius);
+                    return;
+                }
+            }
+        }
     }
 }

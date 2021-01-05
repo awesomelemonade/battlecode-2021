@@ -30,25 +30,27 @@ public strictfp class Politician implements RunnableBot {
         if (Cache.TURN_COUNT == 1) {
             spawnEC = Util.findSpawnEC();
             // determine which direction to explore by reading flag
-            int flag_read = rc.getFlag(rc.senseRobotAtLocation(spawnEC).getID());
-            parseECComms(flag_read);
+            if (spawnEC != null) {
+                int flag_read = rc.getFlag(rc.senseRobotAtLocation(spawnEC).getID());
+                parseECComms(flag_read);
+            }
         }
 
         if (attack) {
             tryAttack();
             greedyWalk(enemyEC);
+        } else {
+            tryAttack();
+            Util.tryRandomMove();
         }
     }
 
     private void tryAttack() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
-        for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
-            if (robot.type == RobotType.ENLIGHTENMENT_CENTER
-                    && cur_loc.distanceSquaredTo(robot.location) <= actionRadius) {
-                // It's a slanderer... go get them!
+        for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
+            if (cur_loc.distanceSquaredTo(robot.location) <= actionRadius) {
                 if (rc.canEmpower(actionRadius)) {
-                    System.out.println("KILL!");
                     rc.empower(actionRadius);
                     return;
                 }

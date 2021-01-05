@@ -1,9 +1,6 @@
 package latticebot;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import latticebot.util.Cache;
 import latticebot.util.Constants;
 import latticebot.util.Util;

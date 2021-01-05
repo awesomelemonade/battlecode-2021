@@ -1,9 +1,8 @@
 package latticebot;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.Team;
+import battlecode.common.*;
+import latticebot.util.Cache;
+import latticebot.util.Constants;
 import latticebot.util.Pathfinder;
 import latticebot.util.Util;
 
@@ -24,18 +23,38 @@ public strictfp class Politician implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        RobotInfo closestEnemy = Util.getClosestEnemyRobot();
-        if (closestEnemy == null) {
+        if (Cache.ENEMY_ROBOTS.length == 0) {
             Util.randomExplore();
         } else {
-            int enemyDistanceSquared = rc.getLocation().distanceSquaredTo(closestEnemy.getLocation());
             int actionRadiusSquared = rc.getType().actionRadiusSquared;
-            if (enemyDistanceSquared <= actionRadiusSquared && rc.canEmpower(enemyDistanceSquared)) {
-                if (rc.senseNearbyRobots(enemyDistanceSquared, null).length == 1) {
-                    rc.empower(enemyDistanceSquared);
+            // we want to find square that can target only 1 muckraker
+            for (int i = 0; i < Constants.FLOOD_OFFSET_X_20.length; i++) {
+                MapLocation location = rc.getLocation().translate(Constants.FLOOD_OFFSET_X_20[i], Constants.FLOOD_OFFSET_Y_20[i]);
+                RobotInfo closestRobot = Util.getClosestRobot(location, actionRadiusSquared);
+                if (closestRobot == null || closestRobot.getTeam() == Constants.ALLY_TEAM) {
+                    continue;
                 }
-            } else {
-                Pathfinder.execute(closestEnemy.getLocation());
+                int distanceSquared = location.distanceSquaredTo(closestRobot.getLocation());
+                boolean isolated = true;
+                for (RobotInfo robot : Cache.ALL_ROBOTS) {
+                    if (robot == closestRobot) {
+                        continue;
+                    }
+                    if (robot.getLocation().isWithinDistanceSquared(location, distanceSquared)) {
+                        isolated = false;
+                        break;
+                    }
+                }
+                if (isolated) {
+                    if (i == 0) { // we're on the target square
+                        if (rc.canEmpower(distanceSquared)) {
+                            rc.empower(distanceSquared);
+                        }
+                    } else {
+                        Pathfinder.execute(location);
+                    }
+                    break;
+                }
             }
         }
     }

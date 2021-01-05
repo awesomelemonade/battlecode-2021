@@ -90,12 +90,12 @@ public class Util {
         return random(ORDINAL_DIRECTIONS);
     }
 
-    public static RobotInfo getClosestEnemyRobot(int limit, Predicate<RobotInfo> filter) {
+    public static RobotInfo getClosestEnemyRobot(MapLocation location, int limit, Predicate<RobotInfo> filter) {
         int bestDistanceSquared = limit + 1;
         RobotInfo bestRobot = null;
         for (RobotInfo enemy : Cache.ENEMY_ROBOTS) { // TODO: Tie breakers, use communication
             if (filter.test(enemy)) {
-                int distanceSquared = enemy.getLocation().distanceSquaredTo(rc.getLocation());
+                int distanceSquared = enemy.getLocation().distanceSquaredTo(location);
                 if (distanceSquared < bestDistanceSquared) {
                     bestDistanceSquared = distanceSquared;
                     bestRobot = enemy;
@@ -105,9 +105,21 @@ public class Util {
         return bestRobot;
     }
     public static RobotInfo getClosestEnemyRobot(Predicate<RobotInfo> filter) {
-        return getClosestEnemyRobot(Constants.MAX_DISTANCE_SQUARED, filter);
+        return getClosestEnemyRobot(rc.getLocation(), Constants.MAX_DISTANCE_SQUARED, filter);
     }
     public static RobotInfo getClosestEnemyRobot() {
-        return getClosestEnemyRobot(Constants.MAX_DISTANCE_SQUARED, x -> true);
+        return getClosestEnemyRobot(rc.getLocation(), Constants.MAX_DISTANCE_SQUARED, x -> true);
+    }
+    public static RobotInfo getClosestRobot(MapLocation location, int limit) {
+        int bestDistanceSquared = limit + 1;
+        RobotInfo bestRobot = null;
+        for (RobotInfo enemy : Cache.ALL_ROBOTS) {
+            int distanceSquared = enemy.getLocation().distanceSquaredTo(location);
+            if (distanceSquared < bestDistanceSquared) {
+                bestDistanceSquared = distanceSquared;
+                bestRobot = enemy;
+            }
+        }
+        return bestRobot;
     }
 }

@@ -11,7 +11,7 @@ public class Constants {
     public static final int MIN_ROBOT_ID = 10000; // 14 bits to represent robot id (max (practical) id = 26384)
     public static final int MAX_MAP_SIZE = 64;
     public static final int MAX_DISTANCE_SQUARED = (MAX_MAP_SIZE - 1) * (MAX_MAP_SIZE - 1);
-    public static final int POLITICIAN_EMPOWER_PENALTY = 10;
+    public static final int POLITICIAN_EMPOWER_PENALTY = 11;
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
@@ -60,4 +60,11 @@ public class Constants {
     public static Direction[] getAttemptOrder(Direction direction) {
         return ATTEMPT_ORDER[direction.ordinal()];
     }
+    // dx, dy for radius squared = 20, 69 coordinates
+    public static final int[] FLOOD_OFFSET_X_20 = {
+            0, 0, 1, 0, -1, -1, 0, 1, 2, 1, 0, -1, -2, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -3, -2, -1, 0, 1, 2, 3, 4, 3, 2, 1, 0, -1, -2, -3, -4, -4, -3, -2, -1, 1, 2, 3, 4, 4, 3, 2, 1, -1, -2, -3, -4, -4, -3, -2, 2, 3, 4, 4, 3, 2, -2, -3, -4
+    };
+    public static final int[] FLOOD_OFFSET_Y_20 = {
+            0, -1, 0, 1, 0, -1, -2, -1, 0, 1, 2, 1, 0, -1, -2, -3, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -4, -3, -2, -1, 0, 1, 2, 3, 4, 3, 2, 1, 0, -1, -2, -3, -4, -4, -3, -2, -1, 1, 2, 3, 4, 4, 3, 2, 1, -2, -3, -4, -4, -3, -2, 2, 3, 4, 4, 3, 2
+    };
 }

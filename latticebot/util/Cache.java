@@ -12,27 +12,8 @@ public class Cache { // Cache variables that are constant throughout a turn
         TURN_COUNT = 0;
     }
     public static void loop() {
-        RobotInfo[] sensed_robots = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared);
-        int num_allies = 0, num_enemies = 0;
-        for (RobotInfo robot: sensed_robots) {
-            if(robot.getTeam() == Constants.ALLY_TEAM) {
-                num_allies++;
-            } else {
-                num_enemies++;
-            }
-        }
-        ALLY_ROBOTS = new RobotInfo[num_allies];
-        ENEMY_ROBOTS = new RobotInfo[num_enemies];
-        int ally_ptr = 0, enemy_ptr = 0;
-        for (RobotInfo robot: sensed_robots) {
-            if(robot.getTeam() == Constants.ALLY_TEAM) {
-                ALLY_ROBOTS[ally_ptr++] = robot;
-            } else {
-                ENEMY_ROBOTS[enemy_ptr++] = robot;
-            }
-        }
-        
+        ALLY_ROBOTS = rc.senseNearbyRobots(-1, Constants.ALLY_TEAM);
+        ENEMY_ROBOTS = rc.senseNearbyRobots(-1, Constants.ENEMY_TEAM);
         TURN_COUNT++;
-        //ENEMY_ROBOTS = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Constants.ENEMY_TEAM);
     }
 }

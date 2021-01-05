@@ -31,7 +31,9 @@ public strictfp class Politician implements RunnableBot {
             int enemyDistanceSquared = rc.getLocation().distanceSquaredTo(closestEnemy.getLocation());
             int actionRadiusSquared = rc.getType().actionRadiusSquared;
             if (enemyDistanceSquared <= actionRadiusSquared && rc.canEmpower(enemyDistanceSquared)) {
-                rc.empower(enemyDistanceSquared);
+                if (rc.senseNearbyRobots(enemyDistanceSquared, null).length == 1) {
+                    rc.empower(enemyDistanceSquared);
+                }
             } else {
                 Pathfinder.execute(closestEnemy.getLocation());
             }

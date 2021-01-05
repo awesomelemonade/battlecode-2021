@@ -1,20 +1,23 @@
 package ppbot.util;
 
+import java.util.*;
+
 import battlecode.common.*;
 import ppbot.util.Cache;
 import static ppbot.util.Constants.*;
+import ppbot.util.Pair;
 
 public class Util {
     private static RobotController rc;
 
-    public static void init(RobotController rc) {
+    public static void init(RobotController rc) throws GameActionException {
         Util.rc = rc;
         Constants.init(rc);
         Cache.init(rc);
         MapInfo.init(rc);
     }
 
-    public static void loop() {
+    public static void loop() throws GameActionException {
         Cache.loop();
         MapInfo.loop();
     }
@@ -58,6 +61,122 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static int squaredEuclidLength(int dx, int dy) {
+        return dx * dx + dy * dy;
+    }
+
+    public static int squaredEuclidDistance(int x1, int y1, int x2, int y2) {
+        return squaredEuclidLength(x1 - x2, y1 - y2);
+    }
+
+    public static int moveLength(int dx, int dy) {
+        return Math.abs(dx) + Math.abs(dy);
+    }
+
+    public static int moveDistance(int x1, int y1, int x2, int y2) {
+        return moveLength(x1 - x2, y1 - y2);
+    }
+
+    public static Direction offsetToDirection(int dx, int dy) throws GameActionException {
+        switch (3 * (dx + 1) + (dy + 1)) {
+            case 0:
+                return Direction.SOUTHWEST;
+            case 1:
+                return Direction.WEST;
+            case 2:
+                return Direction.NORTHWEST;
+            case 3:
+                return Direction.SOUTH;
+            case 4:
+                return Direction.CENTER;
+            case 5:
+                return Direction.NORTH;
+            case 6:
+                return Direction.SOUTHEAST;
+            case 7:
+                return Direction.EAST;
+            case 8:
+                return Direction.NORTHEAST;
+        }
+        return null;
+    }
+
+    // does dijkstra within small range. probably too slow for practical use
+    public static boolean tryMoveDijkstra(MapLocation loc) throws GameActionException {
+        int range = 1;
+        int boxlen = 2 * range + 1;
+        boolean[][] vis = new boolean[boxlen][boxlen];
+        double[][] dis = new double[boxlen][boxlen];
+        Direction[][] dirTo = new Direction[boxlen][boxlen];
+        for (int i = 0; i < boxlen; i++) {
+            for (int j = 0; j < boxlen; j++) {
+                MapLocation xyloc = MY_LOCATION.translate(i - range, j - range);
+                if (!rc.canSenseLocation(xyloc))
+                    continue;
+                if (rc.isLocationOccupied(xyloc))
+                    continue;
+                dis[i][j] = 1e9;
+                if (moveLength(i - range, j - range) <= 1) {
+                    dirTo[i][j] = offsetToDirection(i - range, j - range);
+                }
+            }
+        }
+
+        PriorityQueue<Pair<Double, Integer>> pq = new PriorityQueue<>(8, new Comparator<Pair<Double, Integer>>() {
+            public int compare(Pair<Double, Integer> n1, Pair<Double, Integer> n2) {
+                return Double.compare(n1.first, n2.first);
+            }
+        });
+        pq.add(new Pair<Double, Integer>(0.0, range * 64 + range));
+        while (!pq.isEmpty()) {
+            Pair<Double, Integer> t = pq.poll();
+            double dist = t.first;
+            int pos = t.second;
+            int curx = pos / 64;
+            int cury = pos % 64;
+
+            if (vis[curx][cury])
+                continue;
+            vis[curx][cury] = true;
+            for (int x = curx - 1; x <= curx + 1; x++) {
+                for (int y = cury - 1; y <= cury + 1; y++) {
+                    if (x < 0 || x >= boxlen)
+                        continue;
+                    if (y < 0 || y >= boxlen)
+                        continue;
+                    MapLocation xyloc = MY_LOCATION.translate(x - range, y - range);
+                    if (!rc.canSenseLocation(xyloc))
+                        continue;
+                    if (rc.isLocationOccupied(xyloc))
+                        continue;
+                    if (dis[x][y] > dis[curx][cury] + 1 / MapInfo.getKnownPassability(xyloc)) {
+                        dis[x][y] = dis[curx][cury] + 1 / MapInfo.getKnownPassability(xyloc);
+                        if (moveLength(x - range, y - range) > 1) {
+                            dirTo[x][y] = dirTo[curx][cury];
+                        }
+                        pq.add(new Pair(dis[x][y], 64 * x + y));
+                    }
+                }
+            }
+        }
+
+        int bestdist = 99999;
+        Direction bestDir = Direction.CENTER;
+        for (int i = 0; i < boxlen; i++) {
+            for (int j = 0; j < boxlen; j++)
+                if (dirTo[i][j] != null) {
+                    if (i == 0 && j == 0)
+                        continue;
+                    MapLocation xyloc = MY_LOCATION.translate(i - range, j - range);
+                    if (bestdist > loc.distanceSquaredTo(xyloc)) {
+                        bestdist = loc.distanceSquaredTo(xyloc);
+                        bestDir = dirTo[i][j];
+                    }
+                }
+        }
+        return tryMove(bestDir);
     }
 
     public static boolean tryRandomMove() throws GameActionException {

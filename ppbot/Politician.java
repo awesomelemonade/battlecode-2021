@@ -36,25 +36,32 @@ public strictfp class Politician implements RunnableBot {
             }
         }
 
+        attackIfWorthIt();
         if (attack) {
-            tryAttack();
             greedyWalk(enemyEC);
         } else {
-            tryAttack();
             Util.tryRandomMove();
         }
     }
 
-    private void tryAttack() throws GameActionException {
-        Team enemy = rc.getTeam().opponent();
+    private void attackIfWorthIt() throws GameActionException {
         int actionRadius = rc.getType().actionRadiusSquared;
+        if(!rc.canEmpower(actionRadius)) {
+            return;
+        }
+        int myConviction = rc.getInfluence();
+        int enemyConviction = 0;
+        boolean EC_in_range = false;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
             if (cur_loc.distanceSquaredTo(robot.location) <= actionRadius) {
-                if (rc.canEmpower(actionRadius)) {
-                    rc.empower(actionRadius);
-                    return;
+                enemyConviction += robot.conviction;
+                if(robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    EC_in_range = true;
                 }
             }
+        }
+        if(EC_in_range || enemyConviction * 2 >= myConviction) {
+            rc.empower(actionRadius);
         }
     }
 

@@ -5,8 +5,12 @@ public class Constants {
     public static Team ALLY_TEAM;
     public static Team ENEMY_TEAM;
     public static final int MIN_ROBOT_ID = 10000; // 14 bits to represent robot id (max id = 26384)
+    public static RobotType MY_TYPE;
+    public static MapLocation MY_LOCATION;
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
+        MY_TYPE = rc.getType();
+        MY_LOCATION = rc.getLocation();
         ENEMY_TEAM = ALLY_TEAM.opponent();
     }
     public static final Direction[] CARDINAL_DIRECTIONS = {

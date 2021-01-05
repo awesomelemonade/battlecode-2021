@@ -29,7 +29,7 @@ public strictfp class Slanderer implements RunnableBot {
                 Util.tryRandomMove();
             }
         } else {
-            tryAttack();
+            attackIfWorthIt();
             Util.tryRandomMove();
         }
     }
@@ -63,16 +63,25 @@ public strictfp class Slanderer implements RunnableBot {
             rc.move(ORDINAL_DIRECTIONS[next]);
     }
 
-    private void tryAttack() throws GameActionException {
-        Team enemy = rc.getTeam().opponent();
+    private void attackIfWorthIt() throws GameActionException {
         int actionRadius = rc.getType().actionRadiusSquared;
+        if(!rc.canEmpower(actionRadius)) {
+            return;
+        }
+        int myConviction = rc.getInfluence();
+        int enemyConviction = 0;
+        boolean EC_in_range = false;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
             if (cur_loc.distanceSquaredTo(robot.location) <= actionRadius) {
-                if (rc.canEmpower(actionRadius)) {
-                    rc.empower(actionRadius);
-                    return;
+                enemyConviction += robot.conviction;
+                if(robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    EC_in_range = true;
                 }
             }
+        }
+        System.out.println(Integer.toString(myConviction) + " , " + Integer.toString(enemyConviction));
+        if(EC_in_range || enemyConviction * 2 >= myConviction) {
+            rc.empower(actionRadius);
         }
     }
 }

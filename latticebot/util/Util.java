@@ -4,9 +4,6 @@ import battlecode.common.*;
 
 import java.util.function.Predicate;
 
-import static ppbot.util.Constants.ORDINAL_DIRECTIONS;
-import static ppbot.util.Constants.SPAWNABLE_ROBOTS;
-
 public class Util {
     private static RobotController rc;
 
@@ -25,7 +22,7 @@ public class Util {
     }
 
     public static RobotType randomSpawnableRobotType() {
-        return SPAWNABLE_ROBOTS[(int) (Math.random() * SPAWNABLE_ROBOTS.length)];
+        return Constants.SPAWNABLE_ROBOTS[(int) (Math.random() * Constants.SPAWNABLE_ROBOTS.length)];
     }
 
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) throws GameActionException {
@@ -87,7 +84,7 @@ public class Util {
     }
 
     public static Direction randomAdjacentDirection() {
-        return random(ORDINAL_DIRECTIONS);
+        return random(Constants.ORDINAL_DIRECTIONS);
     }
 
     public static RobotInfo getClosestEnemyRobot(MapLocation location, int limit, Predicate<RobotInfo> filter) {

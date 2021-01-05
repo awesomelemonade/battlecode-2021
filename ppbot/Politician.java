@@ -8,11 +8,11 @@ import static ppbot.util.Constants.*;
 public strictfp class Politician implements RunnableBot {
     private RobotController rc;
 
-    static MapLocation cur_loc;
-    static MapLocation spawnEC;
+    private MapLocation cur_loc;
+    private MapLocation spawnEC;
 
-    static MapLocation enemyEC = null;
-    static boolean attack = false;
+    private MapLocation enemyEC = null;
+    private boolean attack = false;
 
     public Politician(RobotController rc) {
         this.rc = rc;

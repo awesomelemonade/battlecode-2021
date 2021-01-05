@@ -7,14 +7,14 @@ import static ppbot.util.Constants.*;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
     private RobotController rc;
-    static MapLocation cur_loc;
-    static int prev_flag = 0;
-    static int flag = 0;
+    private MapLocation cur_loc;
+    private int prev_flag = 0;
+    private int flag = 0;
 
-    static int muckrakerCount = 0;
-    static int[] muckrakerIDs = new int[4];
+    private int muckrakerCount = 0;
+    private int[] muckrakerIDs = new int[4];
 
-    static MapLocation enemyEC = null;
+    private MapLocation enemyEC = null;
 
     public EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
@@ -33,9 +33,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
         receiveMuckrakerComms();
 
-        if (Cache.TURN_COUNT == 1) {
+        if (rc.getInfluence() >= 100) {
             System.out.println("Try produce Slanderer");
-            produceUnitAnywhere(RobotType.SLANDERER, 140);
+            produceUnitAnywhere(RobotType.SLANDERER, rc.getInfluence()/2);
         }
 
         if (muckrakerCount < 4) {

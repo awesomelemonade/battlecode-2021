@@ -8,15 +8,15 @@ import static ppbot.util.Constants.*;
 public strictfp class Muckracker implements RunnableBot {
     private RobotController rc;
 
-    static MapLocation cur_loc;
-    static MapLocation spawnEC;
+    private MapLocation cur_loc;
+    private MapLocation spawnEC;
 
-    static int initialExploreDirection;
+    private int initialExploreDirection;
 
-    static int minX = -1, minY = -1, maxX = -1, maxY = -1;
-    static int flag = 0;
+    private int minX = -1, minY = -1, maxX = -1, maxY = -1;
+    private int flag = 0;
 
-    static MapLocation enemyEC;
+    private MapLocation enemyEC;
 
     public Muckracker(RobotController rc) {
         this.rc = rc;

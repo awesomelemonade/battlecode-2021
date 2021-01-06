@@ -8,7 +8,6 @@ import latticebot.util.Cache;
 import latticebot.util.Util;
 
 public strictfp class RobotPlayer {
-    @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
         RobotType robot_type = rc.getType();
         RunnableBot bot = null;

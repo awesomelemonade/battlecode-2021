@@ -37,13 +37,13 @@ public strictfp class Politician implements RunnableBot {
         // we want to find square that can target only 1 muckraker
         for (int i = 0; i < Constants.FLOOD_OFFSET_X_20.length && Clock.getBytecodesLeft() > 1200; i++) {
             MapLocation location = rc.getLocation().translate(Constants.FLOOD_OFFSET_X_20[i], Constants.FLOOD_OFFSET_Y_20[i]);
-            if ((!rc.onTheMap(location)) || rc.isLocationOccupied(location)) {
+            if (i != 0 && ((!rc.onTheMap(location)) || (rc.isLocationOccupied(location)))) {
                 continue;
             }
             // get closest isolated robot
             int bestDistanceSquared = actionRadiusSquared;
             RobotInfo bestRobot = null;
-            boolean initial = true;
+            boolean initial = false;
             RobotInfo[] robots = Cache.ALL_ROBOTS; // up to 80 because sight r^2 = 25
             // using some pigeonhole principle
             if (robots.length > 28) {
@@ -55,7 +55,7 @@ public strictfp class Politician implements RunnableBot {
                     int distanceSquared = location.distanceSquaredTo(robot.getLocation());
                     bestRobot = ((distanceSquared == bestDistanceSquared) && initial ? null : robot);
                     bestDistanceSquared = distanceSquared;
-                    initial = false;
+                    initial = true;
                 }
             }
             if (bestRobot == null || bestRobot.getTeam() == Constants.ALLY_TEAM) {

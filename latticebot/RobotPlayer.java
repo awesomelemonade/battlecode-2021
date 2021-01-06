@@ -4,6 +4,7 @@ import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
+import latticebot.util.Cache;
 import latticebot.util.Util;
 
 public strictfp class RobotPlayer {
@@ -42,11 +43,13 @@ public strictfp class RobotPlayer {
                     int currentTurn = rc.getRoundNum();
                     Util.loop();
                     bot.turn();
-                    Clock.yield();
                     if (rc.getRoundNum() != currentTurn) {
                         // We ran out of bytecodes! - MAGENTA
                         rc.setIndicatorDot(rc.getLocation(), 255, 0, 255);
+                        int over = Clock.getBytecodeNum() + (rc.getRoundNum() - currentTurn - 1) * rc.getType().bytecodeLimit;
+                        System.out.println(rc.getID() + " out of bytecodes: " + Cache.TURN_COUNT + " (over by " + over + ")");
                     }
+                    Clock.yield();
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();

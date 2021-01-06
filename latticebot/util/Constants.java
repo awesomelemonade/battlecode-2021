@@ -16,12 +16,12 @@ public class Constants {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
     }
-    public static final Direction[] CARDINAL_DIRECTIONS = {
+    /*public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.EAST,
             Direction.SOUTH,
             Direction.WEST,
-    };
+    };*/
     public static final Direction[] ORDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.NORTHEAST,
@@ -32,13 +32,13 @@ public class Constants {
             Direction.WEST,
             Direction.NORTHWEST,
     };
-    public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1};
+    /*public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1};
     public static final int[] ORDINAL_OFFSET_Y = {-1, -1, 0, 1, 1, 1, 0, -1};
     public static final RobotType[] SPAWNABLE_ROBOTS = {
             RobotType.POLITICIAN,
             RobotType.SLANDERER,
             RobotType.MUCKRAKER,
-    };
+    };*/
     private static final Direction[][] ATTEMPT_ORDER = new Direction[][] {
             // NORTH
             {Direction.NORTH, Direction.NORTHWEST, Direction.NORTHEAST, Direction.WEST, Direction.EAST, Direction.SOUTHWEST, Direction.SOUTHEAST, Direction.SOUTH},

@@ -21,8 +21,8 @@ public strictfp class Slanderer implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        RobotInfo closestEnemy = Util.getClosestEnemyRobot();
         if (rc.getType() == RobotType.SLANDERER) {
+            RobotInfo closestEnemy = Util.getClosestEnemyRobot();
             if (closestEnemy == null) {
                 // lattice
                 if (LatticeUtil.isLatticeLocation(rc.getLocation())) {

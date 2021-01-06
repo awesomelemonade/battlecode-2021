@@ -21,10 +21,6 @@ public class Util {
         MapInfo.loop();
     }
 
-    public static RobotType randomSpawnableRobotType() {
-        return Constants.SPAWNABLE_ROBOTS[(int) (Math.random() * Constants.SPAWNABLE_ROBOTS.length)];
-    }
-
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) throws GameActionException {
         if (rc.canBuildRobot(type, direction, influence)) {
             rc.buildRobot(type, direction, influence);
@@ -105,13 +101,11 @@ public class Util {
         return getClosestEnemyRobot(rc.getLocation(), Constants.MAX_DISTANCE_SQUARED, filter);
     }
     public static RobotInfo getClosestEnemyRobot() {
-        return getClosestEnemyRobot(rc.getLocation(), Constants.MAX_DISTANCE_SQUARED, x -> true);
-    }
-    public static RobotInfo getClosestRobot(MapLocation location, int limit) {
-        int bestDistanceSquared = limit + 1;
+        int bestDistanceSquared = Integer.MAX_VALUE;
         RobotInfo bestRobot = null;
-        for (RobotInfo enemy : Cache.ALL_ROBOTS) {
-            int distanceSquared = enemy.getLocation().distanceSquaredTo(location);
+        for (int i = Cache.ENEMY_ROBOTS.length; --i >= 0;) {
+            RobotInfo enemy = Cache.ENEMY_ROBOTS[i];
+            int distanceSquared = enemy.getLocation().distanceSquaredTo(rc.getLocation());
             if (distanceSquared < bestDistanceSquared) {
                 bestDistanceSquared = distanceSquared;
                 bestRobot = enemy;

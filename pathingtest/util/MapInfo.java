@@ -1,7 +1,7 @@
-package ppbot.util;
+package pathingtest.util;
 
 import battlecode.common.*;
-import static ppbot.util.Constants.*;
+import static pathingtest.util.Constants.*;
 
 public class MapInfo {
     private static RobotController rc;
@@ -16,13 +16,13 @@ public class MapInfo {
     public static void init(RobotController rc) throws GameActionException {
         MapInfo.rc = rc;
         // ensures that our starting location is in the middle of the middle chunk
-        MapInfo.origin = MY_LOCATION.translate(-67, -67);
+        MapInfo.origin = rc.getLocation().translate(-67, -67);
         // sense initial passability
         int offset = (int) Math.sqrt(MY_TYPE.sensorRadiusSquared);
         for(int dx = -offset; dx <= offset; dx++) {
             for(int dy = -offset; dy <= offset; dy++) {
                 if(dx*dx + dy*dy <= MY_TYPE.sensorRadiusSquared) {
-                    MapLocation senseloc = MY_LOCATION.translate(dx, dy);
+                    MapLocation senseloc = rc.getLocation().translate(dx, dy);
                     if(rc.canSenseLocation(senseloc)) {
                         setKnownPassability(senseloc);
                     }

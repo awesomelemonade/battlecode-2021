@@ -18,7 +18,7 @@ public strictfp class RobotPlayer {
                 bot = new Slanderer(rc);
                 break;
             case MUCKRAKER:
-                bot = new Muckracker(rc);
+                bot = new Muckraker(rc);
                 break;
         }
         try {

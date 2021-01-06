@@ -5,7 +5,7 @@ import ppbot.util.Cache;
 import ppbot.util.Util;
 import static ppbot.util.Constants.*;
 
-public strictfp class Muckracker implements RunnableBot {
+public strictfp class Muckraker implements RunnableBot {
     private RobotController rc;
 
     private MapLocation cur_loc;
@@ -18,7 +18,7 @@ public strictfp class Muckracker implements RunnableBot {
 
     private MapLocation enemyEC;
 
-    public Muckracker(RobotController rc) {
+    public Muckraker(RobotController rc) {
         this.rc = rc;
     }
 

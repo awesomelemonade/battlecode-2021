@@ -79,6 +79,10 @@ public class Util {
         return moveLength(x1 - x2, y1 - y2);
     }
 
+    public static int moveDistance(MapLocation loc1, MapLocation loc2) {
+        return moveDistance(loc1.x, loc1.y, loc2.x, loc2.y);
+    }
+
     public static Direction offsetToDirection(int dx, int dy) throws GameActionException {
         switch (3 * (dx + 1) + (dy + 1)) {
             case 0:
@@ -103,80 +107,39 @@ public class Util {
         return null;
     }
 
-    // does dijkstra within small range. probably too slow for practical use
-    public static boolean tryMoveDijkstra(MapLocation loc) throws GameActionException {
-        int range = 1;
-        int boxlen = 2 * range + 1;
-        boolean[][] vis = new boolean[boxlen][boxlen];
-        double[][] dis = new double[boxlen][boxlen];
-        Direction[][] dirTo = new Direction[boxlen][boxlen];
-        for (int i = 0; i < boxlen; i++) {
-            for (int j = 0; j < boxlen; j++) {
-                MapLocation xyloc = MY_LOCATION.translate(i - range, j - range);
-                if (!rc.canSenseLocation(xyloc))
-                    continue;
-                if (rc.isLocationOccupied(xyloc))
-                    continue;
-                dis[i][j] = 1e9;
-                if (moveLength(i - range, j - range) <= 1) {
-                    dirTo[i][j] = offsetToDirection(i - range, j - range);
-                }
-            }
+    public static boolean tryMoveSmart(MapLocation dest)
+            throws GameActionException {
+        if (Cache.MY_LOCATION.equals(dest)) {
+            return false;
         }
 
-        PriorityQueue<Pair<Double, Integer>> pq = new PriorityQueue<>(8, new Comparator<Pair<Double, Integer>>() {
-            public int compare(Pair<Double, Integer> n1, Pair<Double, Integer> n2) {
-                return Double.compare(n1.first, n2.first);
-            }
-        });
-        pq.add(new Pair<Double, Integer>(0.0, range * 64 + range));
-        while (!pq.isEmpty()) {
-            Pair<Double, Integer> t = pq.poll();
-            double dist = t.first;
-            int pos = t.second;
-            int curx = pos / 64;
-            int cury = pos % 64;
-
-            if (vis[curx][cury])
+        double lowest_wait = 1e9;
+        int cur_dis_euclid = Cache.MY_LOCATION.distanceSquaredTo(dest);
+        int cur_dis_move = moveDistance(Cache.MY_LOCATION, dest);
+        Direction best_dir = null;
+        for (Direction dir : ORDINAL_DIRECTIONS) if (rc.canMove(dir)) {
+            MapLocation nextpos = Cache.MY_LOCATION.add(dir);
+            if (nextpos.distanceSquaredTo(dest) >= cur_dis_euclid && moveDistance(nextpos, dest) >= cur_dis_move) {
                 continue;
-            vis[curx][cury] = true;
-            for (int x = curx - 1; x <= curx + 1; x++) {
-                for (int y = cury - 1; y <= cury + 1; y++) {
-                    if (x < 0 || x >= boxlen)
-                        continue;
-                    if (y < 0 || y >= boxlen)
-                        continue;
-                    MapLocation xyloc = MY_LOCATION.translate(x - range, y - range);
-                    if (!rc.canSenseLocation(xyloc))
-                        continue;
-                    if (rc.isLocationOccupied(xyloc))
-                        continue;
-                    if (dis[x][y] > dis[curx][cury] + 1 / MapInfo.getKnownPassability(xyloc)) {
-                        dis[x][y] = dis[curx][cury] + 1 / MapInfo.getKnownPassability(xyloc);
-                        if (moveLength(x - range, y - range) > 1) {
-                            dirTo[x][y] = dirTo[curx][cury];
-                        }
-                        pq.add(new Pair(dis[x][y], 64 * x + y));
-                    }
-                }
+            }
+
+            double wait_time = 1.0 / rc.sensePassability(nextpos);
+            if (wait_time < lowest_wait) {
+                lowest_wait = wait_time;
+                best_dir = dir;
             }
         }
-
-        int bestdist = 99999;
-        Direction bestDir = Direction.CENTER;
-        for (int i = 0; i < boxlen; i++) {
-            for (int j = 0; j < boxlen; j++)
-                if (dirTo[i][j] != null) {
-                    if (i == 0 && j == 0)
-                        continue;
-                    MapLocation xyloc = MY_LOCATION.translate(i - range, j - range);
-                    if (bestdist > loc.distanceSquaredTo(xyloc)) {
-                        bestdist = loc.distanceSquaredTo(xyloc);
-                        bestDir = dirTo[i][j];
-                    }
-                }
+        if(best_dir == null) {
+            return false;
         }
-        return tryMove(bestDir);
+        return tryMove(best_dir);
+    }
+
+    public static boolean tryMoveAwaySmart(MapLocation loc) throws GameActionException {
+        int cur_x = Cache.MY_LOCATION.x;
+        int cur_y = Cache.MY_LOCATION.y;
+        MapLocation dest = new MapLocation(2*cur_x - loc.x, 2*cur_y - loc.y);
+        return tryMoveSmart(dest);
     }
 
     public static boolean tryRandomMove() throws GameActionException {

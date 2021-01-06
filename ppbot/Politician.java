@@ -8,7 +8,6 @@ import static ppbot.util.Constants.*;
 public strictfp class Politician implements RunnableBot {
     private RobotController rc;
 
-    private MapLocation cur_loc;
     private MapLocation spawnEC;
 
     private MapLocation enemyEC = null;
@@ -25,8 +24,6 @@ public strictfp class Politician implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
-        cur_loc = rc.getLocation();
-
         if (Cache.TURN_COUNT == 1) {
             spawnEC = Util.findSpawnEC();
             // determine which direction to explore by reading flag
@@ -36,33 +33,58 @@ public strictfp class Politician implements RunnableBot {
             }
         }
 
-        attackIfWorthIt();
-        if (attack) {
-            greedyWalk(enemyEC);
+        if (rc.isReady()) {
+            if(attackIfWorthIt()) return;
+            if(runFromMuckrakers()) return;
+            if (attack) {
+                Util.tryMoveSmart(enemyEC);
+            } else {
+                Util.tryRandomMove();
+            }
         } else {
-            Util.tryRandomMove();
+            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 200, 255);
         }
     }
 
-    private void attackIfWorthIt() throws GameActionException {
+    private boolean attackIfWorthIt() throws GameActionException {
         int actionRadius = rc.getType().actionRadiusSquared;
-        if(!rc.canEmpower(actionRadius)) {
-            return;
+        if (!rc.canEmpower(actionRadius)) {
+            return false;
         }
         int myConviction = rc.getInfluence();
         int enemyConviction = 0;
-        boolean EC_in_range = false;
+        boolean EC_or_M_in_range = false;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
-            if (cur_loc.distanceSquaredTo(robot.location) <= actionRadius) {
+            if (Cache.MY_LOCATION.distanceSquaredTo(robot.location) <= actionRadius) {
                 enemyConviction += robot.conviction;
-                if(robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                    EC_in_range = true;
+                if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER || robot.getType() == RobotType.MUCKRAKER) {
+                    EC_or_M_in_range = true;
                 }
             }
         }
-        if(EC_in_range || enemyConviction * 2 >= myConviction) {
+        if (EC_or_M_in_range || enemyConviction * 2 >= myConviction) {
             rc.empower(actionRadius);
+            return true;
         }
+        return false;
+    }
+
+    private boolean runFromMuckrakers() throws GameActionException {
+        int closest_dist = 99999;
+        MapLocation closest_loc = null;
+        for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
+            if (robot.getType() == RobotType.MUCKRAKER) {
+                int dist = Cache.MY_LOCATION.distanceSquaredTo(robot.location);
+                if(dist < closest_dist) {
+                    closest_dist = dist;
+                    closest_loc = robot.location;
+                }
+            }
+        }
+        if(closest_loc == null) {
+            return false;
+        }
+        return Util.tryMoveAwaySmart(closest_loc);
     }
 
     private void parseECComms(int f) {
@@ -75,10 +97,10 @@ public strictfp class Politician implements RunnableBot {
     }
 
     private void greedyWalk(MapLocation loc) throws GameActionException {
-        int least_dist = loc.distanceSquaredTo(cur_loc);
+        int least_dist = loc.distanceSquaredTo(Cache.MY_LOCATION);
         int next = -1;
         for (int i = 0; i < ORDINAL_DIRECTIONS.length; i++) {
-            MapLocation next_loc = cur_loc.add(ORDINAL_DIRECTIONS[i]);
+            MapLocation next_loc = Cache.MY_LOCATION.add(ORDINAL_DIRECTIONS[i]);
             int temp_dist = next_loc.distanceSquaredTo(loc);
             if (temp_dist < least_dist && rc.canMove(ORDINAL_DIRECTIONS[i])) {
                 least_dist = temp_dist;

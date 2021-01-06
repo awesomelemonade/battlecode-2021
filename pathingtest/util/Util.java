@@ -115,11 +115,10 @@ public class Util {
 
         double lowest_wait = 1e9;
         int cur_dis_euclid = cur.distanceSquaredTo(dest);
-        int cur_dis_move = moveDistance(cur, dest);
         Direction best_dir = null;
         for (Direction dir : ORDINAL_DIRECTIONS) {
             MapLocation nextpos = cur.add(dir);
-            if (nextpos.distanceSquaredTo(dest) >= cur_dis_euclid && moveDistance(nextpos, dest) >= cur_dis_move) {
+            if (nextpos.distanceSquaredTo(dest) >= cur_dis_euclid) {
                 continue;
             }
             if (!rc.canSenseLocation(nextpos) || rc.isLocationOccupied(nextpos)) {

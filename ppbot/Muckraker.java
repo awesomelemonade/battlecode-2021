@@ -43,9 +43,7 @@ public strictfp class Muckraker implements RunnableBot {
 
         if (rc.isReady()) {
             tryKillSlanderers();
-        }
 
-        if (rc.isReady()) {
             // Explore!
             MapLocation targetLocation = getExploreTarget();
             if (reachedExploreBorder()) {
@@ -53,7 +51,7 @@ public strictfp class Muckraker implements RunnableBot {
                 initialExploreDirection = (initialExploreDirection + 1) & 7;
                 targetLocation = getExploreTarget();
             }
-            greedyWalk(targetLocation);
+            Util.tryMoveSmart(targetLocation);
         }
 
         rc.setFlag(flag);

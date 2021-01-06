@@ -25,7 +25,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (Cache.ENEMY_ROBOTS.length == 0) {
             // if we don't see any enemy units
             int floored = (rc.getInfluence() / 20) * 20;
-            if (floored > 0) {
+            if (floored > 0 && Math.random() >= 0.3) {
                 Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), floored);
             } else {
                 Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);

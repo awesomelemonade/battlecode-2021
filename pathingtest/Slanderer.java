@@ -17,8 +17,8 @@ public strictfp class Slanderer implements RunnableBot {
     public void init() throws GameActionException {
         //int x = ((int)Math.random()*40) - 10;
         //int y = ((int)Math.random()*40) - 10;
-        int x = 15;
-        int y = 11;
+        int x = 40;
+        int y = 40;
         dest_loc = rc.getLocation().translate(x, y);
         System.out.println("My destination is (" + Integer.toString(dest_loc.x) + ", " + Integer.toString(dest_loc.y) + ")");
     }

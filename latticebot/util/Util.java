@@ -221,7 +221,7 @@ public class Util {
 
     public static void addToEnemyECs(MapLocation loc) {
         if (!inEnemyECs(loc)) {
-            System.out.println("Found enemy EC at " + loc);
+            //System.out.println("Found enemy EC at " + loc);
             for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
                 if (Cache.enemyECs[i] == null) {
                     Cache.enemyECs[i] = loc;
@@ -239,5 +239,61 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static int indexToEdge(int i) {
+        switch (i) {
+            case 0:
+                return Cache.mapMaxX;
+            case 1:
+                return Cache.mapMaxY;
+            case 2:
+                return Cache.mapMinX;
+            case 3:
+                return Cache.mapMinY;
+        }
+        return -1;
+    }
+
+    public static boolean indexToEdgeBool(int i) {
+        switch (i) {
+            case 0:
+                return Cache.sentMapMaxX;
+            case 1:
+                return Cache.sentMapMaxY;
+            case 2:
+                return Cache.sentMapMinX;
+            case 3:
+                return Cache.sentMapMinY;
+        }
+        return false;
+    }
+
+    public static void setIndexEdge(int i, int val) {
+        if (indexToEdge(i) != -1) {
+            // already set
+            //System.out.println("already have edge "+ i + " with value " + indexToEdge(i));
+            return;
+        }
+        //System.out.println("got edge " + i + " with value " + val);
+        switch (i) {
+            case 0:
+                Cache.mapMaxX = val;
+                Cache.sentMapMaxX = true;
+                break;
+            case 1:
+                Cache.mapMaxY = val;
+                Cache.sentMapMaxY = true;
+                break;
+            case 2:
+                Cache.mapMinX = val;
+                Cache.sentMapMinX = true;
+                break;
+            case 3:
+                Cache.mapMinY = val;
+                Cache.sentMapMinY = true;
+                break;
+        }
+
     }
 }

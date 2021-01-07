@@ -294,6 +294,18 @@ public class Util {
                 Cache.sentMapMinY = true;
                 break;
         }
+    }
 
+    public static MapLocation closestEnemyEC() {
+        int min_dist = -1;
+        MapLocation closest = null;
+        for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
+            if (Cache.enemyECs[i] != null &&
+                    (min_dist == -1 || Cache.MY_LOCATION.distanceSquaredTo(Cache.enemyECs[i]) < min_dist)) {
+                min_dist = Cache.MY_LOCATION.distanceSquaredTo(Cache.enemyECs[i]);
+                closest = Cache.enemyECs[i];
+            }
+        }
+        return closest;
     }
 }

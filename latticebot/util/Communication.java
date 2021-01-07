@@ -32,10 +32,10 @@ public class Communication {
                 // inc until next nonempty entry
                 int orig_i = enemyEC_ctr;
                 do {
-                    enemyEC_ctr = (enemyEC_ctr + 1) % MapInfo.enemyECs.length;
-                } while (MapInfo.enemyECs[enemyEC_ctr] == null && enemyEC_ctr != orig_i);
-                if (MapInfo.enemyECs[enemyEC_ctr] != null) {
-                    commEnemyEC(MapInfo.enemyECs[enemyEC_ctr]);
+                    enemyEC_ctr = (enemyEC_ctr + 1) % Cache.enemyECs.length;
+                } while (Cache.enemyECs[enemyEC_ctr] == null && enemyEC_ctr != orig_i);
+                if (Cache.enemyECs[enemyEC_ctr] != null) {
+                    commEnemyEC(Cache.enemyECs[enemyEC_ctr]);
                 }
                 break;
             default:
@@ -105,7 +105,7 @@ public class Communication {
                     int enc_Y = (flag >> 12) & 127;
                     MapLocation enemyEC = new MapLocation(Constants.SPAWNEC.x + unpackSigned64(enc_X),
                             Constants.SPAWNEC.y + unpackSigned64(enc_Y));
-                    MapInfo.addToEnemyECs(enemyEC);
+                    Util.addToEnemyECs(enemyEC);
                     break;
                 default:
                     System.out.println("Error, unrecognized command " + cmd);
@@ -121,7 +121,7 @@ public class Communication {
         // todo: check for dups so we dont keep broadcasting the same one
         for (RobotInfo enemy : Cache.ENEMY_ROBOTS) {
             if (enemy.type == RobotType.ENLIGHTENMENT_CENTER) {
-                if (!MapInfo.inEnemyECs(enemy.location)) {
+                if (!Util.inEnemyECs(enemy.location)) {
                     // broadcast enemy EC
                     //System.out.println("Found enemy EC at " + enemy.location);
                     commEnemyEC(enemy.location);

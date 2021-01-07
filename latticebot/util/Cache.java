@@ -12,6 +12,7 @@ public class Cache { // Cache variables that are constant throughout a turn
     public static int mapMaxX = -1; // -1 if not known
     public static int mapMinY = -1; // -1 if not known
     public static int mapMaxY = -1; // -1 if not known
+    public static MapLocation[] enemyECs = new MapLocation[12]; // max 12 ECs in the game
 
     public static void init(RobotController rc) {
         Cache.rc = rc;

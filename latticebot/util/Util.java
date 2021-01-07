@@ -218,4 +218,26 @@ public class Util {
         }
         return bestRobot;
     }
+
+    public static void addToEnemyECs(MapLocation loc) {
+        if (!inEnemyECs(loc)) {
+            System.out.println("Found enemy EC at " + loc);
+            for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
+                if (Cache.enemyECs[i] == null) {
+                    Cache.enemyECs[i] = loc;
+                    return;
+                }
+            }
+        }
+    }
+
+    public static boolean inEnemyECs(MapLocation loc) {
+        for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
+            if (Cache.enemyECs[i] != null && loc.equals(Cache.enemyECs[i])) {
+                // dup, dont broadcast this one
+                return true;
+            }
+        }
+        return false;
+    }
 }

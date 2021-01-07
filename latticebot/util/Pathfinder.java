@@ -13,10 +13,10 @@ public class Pathfinder {
     public static int moveDistance(MapLocation a, MapLocation b) {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
-    public static void execute(MapLocation target) throws GameActionException {
+    public static boolean execute(MapLocation target) throws GameActionException {
         if (rc.getLocation().equals(target)) {
             // already there
-            return;
+            return true;
         }
         // Out of all possible moves that lead to a lower euclidean distance OR lower move distance,
         // find the direction that goes to the highest passability
@@ -41,6 +41,8 @@ public class Pathfinder {
         }
         if (bestDirection != null) {
             rc.move(bestDirection);
+            return true;
         }
+        return false;
     }
 }

@@ -1,9 +1,6 @@
 package latticebot.util;
 
-import battlecode.common.Direction;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
-import battlecode.common.Team;
+import battlecode.common.*;
 
 public class Constants {
     public static Team ALLY_TEAM;
@@ -12,9 +9,25 @@ public class Constants {
     public static final int MAX_MAP_SIZE = 64;
     public static final int MAX_DISTANCE_SQUARED = (MAX_MAP_SIZE - 1) * (MAX_MAP_SIZE - 1);
     public static final int POLITICIAN_EMPOWER_PENALTY = 11;
+    public static int SENSE_BOX_RADIUS;
+    public static MapLocation SPAWN;
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
+        SPAWN = rc.getLocation();
+        switch(rc.getType()) {
+            case ENLIGHTENMENT_CENTER:
+                SENSE_BOX_RADIUS = 6;
+                break;
+            case MUCKRAKER:
+                SENSE_BOX_RADIUS = 5;
+                break;
+            case POLITICIAN:
+                SENSE_BOX_RADIUS = 5;
+                break;
+            case SLANDERER:
+                SENSE_BOX_RADIUS = 4;
+        }
     }
     /*public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,

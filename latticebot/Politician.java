@@ -24,7 +24,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (Cache.ENEMY_ROBOTS.length == 0) {
-            Util.randomExplore();
+            Util.smartExplore();
         } else {
             if (!tryEmpower()) {
                 Pathfinder.execute(Util.getClosestEnemyRobot().getLocation());

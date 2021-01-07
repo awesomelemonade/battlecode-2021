@@ -29,7 +29,7 @@ public strictfp class Muckracker implements RunnableBot {
             Predicate<RobotInfo> exposable = robot -> robot.type.canBeExposed();
             RobotInfo enemy = Util.getClosestEnemyRobot(exposable);
             if (enemy == null) {
-                Util.randomExplore();
+                Util.smartExplore();
             } else {
                 Pathfinder.execute(enemy.getLocation());
             }

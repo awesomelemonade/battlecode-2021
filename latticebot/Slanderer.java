@@ -30,7 +30,7 @@ public strictfp class Slanderer implements RunnableBot {
                 } else {
                     MapLocation target = LatticeUtil.getClosestLatticeLocation(rc.getLocation());
                     if (target == null) {
-                        Util.randomExplore();
+                        Util.smartExplore();
                     } else {
                         Pathfinder.execute(target);
                     }

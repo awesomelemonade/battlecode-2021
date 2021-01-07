@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 public class Util {
     private static RobotController rc;
 
-    public static void init(RobotController rc) {
+    public static void init(RobotController rc) throws GameActionException {
         Util.rc = rc;
         // in order for units to have different rngs
         for(int i = 0; i < rc.getID()%20; i++) {
@@ -22,9 +22,10 @@ public class Util {
         Communication.init(rc);
     }
 
-    public static void loop() {
+    public static void loop() throws GameActionException {
         Cache.loop();
         MapInfo.loop();
+        Communication.loop();
     }
 
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) throws GameActionException {
@@ -36,7 +37,7 @@ public class Util {
             if (new_robot == null) {
                 System.out.println("failed to produce robot???");
             }
-            Communication.update_known_units(new_robot.ID);
+            Communication.updateKnownUnits(new_robot.ID);
             return true;
         } else {
             return false;

@@ -11,7 +11,9 @@ public class Constants {
     public static final int POLITICIAN_EMPOWER_PENALTY = 11;
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
-    public static void init(RobotController rc) {
+    public static MapLocation SPAWNEC;
+
+    public static void init(RobotController rc) throws GameActionException {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
         SPAWN = rc.getLocation();
@@ -28,6 +30,27 @@ public class Constants {
             case SLANDERER:
                 SENSE_BOX_RADIUS = 4;
         }
+
+        // if am not EC, find the EC that spawned us
+        // note that cache values are not actually initialized yet, so this is slightly inefficient bytecode-wise
+        if (rc.getType() != RobotType.ENLIGHTENMENT_CENTER) {
+            MapLocation my_loc = Constants.SPAWN;
+            for (Direction dir : Constants.ORDINAL_DIRECTIONS) {
+                MapLocation new_loc = my_loc.add(dir);
+                if (rc.canSenseLocation(my_loc.add(dir))) {
+                    RobotInfo neighbor = rc.senseRobotAtLocation(new_loc);
+                    if (neighbor != null && neighbor.team == rc.getTeam() && neighbor.type == RobotType.ENLIGHTENMENT_CENTER) {
+                        // friendly enlightenment center
+                        SPAWNEC = neighbor.location;
+                        Communication.updateKnownUnits(neighbor.ID);
+                    }
+                }
+            }
+        } else {
+            // if i am ec, just set to myself
+            SPAWNEC = SPAWN;
+        }
+
     }
     /*public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,

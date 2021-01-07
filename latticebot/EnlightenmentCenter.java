@@ -20,7 +20,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
-        Communication.process_comms(); // do we want this here, or do we want like a generic call in robotplayer?
         if (!rc.isReady()) {
             return;
         }

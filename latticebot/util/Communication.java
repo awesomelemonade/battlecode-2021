@@ -15,6 +15,9 @@ public class Communication {
     }
 
     public static void loop() throws GameActionException {
+        if (Constants.SPAWNEC == null) { // todo: add new units to network somehow
+            return;
+        }
         processComms();
         if (!flag_set) {
             if (rc.getType() != RobotType.ENLIGHTENMENT_CENTER) {

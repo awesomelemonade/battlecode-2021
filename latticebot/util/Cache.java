@@ -1,5 +1,6 @@
 package latticebot.util;
 
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
@@ -8,6 +9,7 @@ public class Cache { // Cache variables that are constant throughout a turn
     private static RobotController rc;
     public static RobotInfo[] ALL_ROBOTS, ENEMY_ROBOTS;
     public static int TURN_COUNT;
+    public static MapLocation MY_LOCATION;
     public static void init(RobotController rc) {
         Cache.rc = rc;
         TURN_COUNT = 0;
@@ -19,5 +21,6 @@ public class Cache { // Cache variables that are constant throughout a turn
         }
         ENEMY_ROBOTS = rc.senseNearbyRobots(-1, Constants.ENEMY_TEAM);
         TURN_COUNT++;
+        MY_LOCATION = rc.getLocation();
     }
 }

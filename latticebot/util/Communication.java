@@ -5,6 +5,9 @@ import battlecode.common.*;
 public class Communication {
     private static RobotController rc;
     private static boolean flag_set = false; // to avoid setting flag multiple times each turn
+    private static int cycle_ctr = 0;
+    private static int enemyEC_ctr = 0; // which enemyEC to comm
+    private static final int MAX_CYCLE = 1; // update whenever we add a new class
 
     public static void init(RobotController rc) throws GameActionException {
         Communication.rc = rc;
@@ -13,9 +16,33 @@ public class Communication {
     public static void loop() throws GameActionException {
         processComms();
         if (!flag_set) {
-            // process_comms didnt set flag, see if we can comm anything else useful
-            commAnyData();
+            if (rc.getType() != RobotType.ENLIGHTENMENT_CENTER) {
+                // see if we can comm anything else useful
+                commAnyData();
+            } else {
+                // cycle through important info
+                commCycle();
+            }
         }
+    }
+
+    public static void commCycle() throws GameActionException {
+        switch (cycle_ctr) {
+            case 0: // broadcast enemy ec
+                // inc until next nonempty entry
+                int orig_i = enemyEC_ctr;
+                do {
+                    enemyEC_ctr = (enemyEC_ctr + 1) % MapInfo.enemyECs.length;
+                } while (MapInfo.enemyECs[enemyEC_ctr] == null && enemyEC_ctr != orig_i);
+                if (MapInfo.enemyECs[enemyEC_ctr] != null) {
+                    commEnemyEC(MapInfo.enemyECs[enemyEC_ctr]);
+                }
+                break;
+            default:
+                System.out.println("Error, invalid cycle counter");
+                break;
+        }
+        cycle_ctr = (cycle_ctr + 1) % MAX_CYCLE;
     }
 
     // for ECs only, track all produced unit IDs
@@ -78,8 +105,7 @@ public class Communication {
                     int enc_Y = (flag >> 12) & 127;
                     MapLocation enemyEC = new MapLocation(Constants.SPAWNEC.x + unpackSigned64(enc_X),
                             Constants.SPAWNEC.y + unpackSigned64(enc_Y));
-                    //System.out.println("Found enemy EC at " + enemyEC);
-                    // todo: rebroadcast to everyone else
+                    MapInfo.addToEnemyECs(enemyEC);
                     break;
                 default:
                     System.out.println("Error, unrecognized command " + cmd);
@@ -95,9 +121,11 @@ public class Communication {
         // todo: check for dups so we dont keep broadcasting the same one
         for (RobotInfo enemy : Cache.ENEMY_ROBOTS) {
             if (enemy.type == RobotType.ENLIGHTENMENT_CENTER) {
-                // broadcast enemy EC
-                //System.out.println("Found enemy EC at " + enemy.location);
-                commEnemyEC(enemy.location);
+                if (!MapInfo.inEnemyECs(enemy.location)) {
+                    // broadcast enemy EC
+                    //System.out.println("Found enemy EC at " + enemy.location);
+                    commEnemyEC(enemy.location);
+                }
                 return;
             }
         }
@@ -105,7 +133,9 @@ public class Communication {
         // todo: add more stuff
 
         // nothing, set flag to 0
-        setFlag(0);
+        if (rc.getFlag(rc.getID()) != 0) {
+            setFlag(0);
+        }
     }
 
     public static void setFlag(int val) throws GameActionException {

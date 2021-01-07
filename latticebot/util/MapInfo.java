@@ -1,6 +1,7 @@
 package latticebot.util;
 
 import battlecode.common.*;
+
 import static latticebot.util.Constants.*;
 
 public class MapInfo {
@@ -8,6 +9,7 @@ public class MapInfo {
     private static MapLocation origin;
     private static double[][][][] knownPassability = new double[9][9][][]; // 81 initial bytecodes (array creation)
     private static final int CHUNK_SIZE = 15; // 225 bytecodes per chunk (array creation)
+    public static MapLocation[] enemyECs = new MapLocation[12]; // max 12 ECs in the game
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;
@@ -87,5 +89,27 @@ public class MapInfo {
                 Cache.mapMaxY = Cache.MY_LOCATION.y;
             }
         }
+    }
+
+    public static void addToEnemyECs(MapLocation loc) {
+        if (!inEnemyECs(loc)) {
+            System.out.println("Found enemy EC at " + loc);
+            for (int i = MapInfo.enemyECs.length - 1; i >= 0; i--) {
+                if (MapInfo.enemyECs[i] == null) {
+                    MapInfo.enemyECs[i] = loc;
+                    return;
+                }
+            }
+        }
+    }
+
+    public static boolean inEnemyECs(MapLocation loc) {
+        for (int i = MapInfo.enemyECs.length - 1; i >= 0; i--) {
+            if (MapInfo.enemyECs[i] != null && loc.equals(MapInfo.enemyECs[i])) {
+                // dup, dont broadcast this one
+                return true;
+            }
+        }
+        return false;
     }
 }

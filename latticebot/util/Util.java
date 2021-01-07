@@ -19,6 +19,7 @@ public class Util {
         MapInfo.init(rc);
         LatticeUtil.init(rc);
         Pathfinder.init(rc);
+        Communication.init(rc);
     }
 
     public static void loop() {
@@ -29,6 +30,13 @@ public class Util {
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) throws GameActionException {
         if (rc.canBuildRobot(type, direction, influence)) {
             rc.buildRobot(type, direction, influence);
+
+            // add to list of produced units
+            RobotInfo new_robot = rc.senseRobotAtLocation(Cache.MY_LOCATION.add(direction));
+            if (new_robot == null) {
+                System.out.println("failed to produce robot???");
+            }
+            Communication.update_known_units(new_robot.ID);
             return true;
         } else {
             return false;

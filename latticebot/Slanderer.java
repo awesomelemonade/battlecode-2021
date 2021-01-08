@@ -28,7 +28,7 @@ public strictfp class Slanderer implements RunnableBot {
                 // if enemy EC is known, move away from it
                 MapLocation closest = Util.closestEnemyEC();
                 if (closest != null) {
-                    tryKiteFrom(closest);
+                    Util.tryMoveAway(closest);
                     return;
                 }
 
@@ -42,7 +42,7 @@ public strictfp class Slanderer implements RunnableBot {
                     if (target == null) {
                         Util.smartExplore();
                     } else {
-                        Pathfinder.execute(target);
+                        Util.tryMove(target);
                     }
                 }
             } else {

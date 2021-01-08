@@ -180,7 +180,7 @@ public class Util {
     }
 
     public static int randBetween(int l, int r) {
-        return l + (int)(Math.random()*(r-l));
+        return l + (int)(Math.random()*(r-l+1));
     }
 
     /**

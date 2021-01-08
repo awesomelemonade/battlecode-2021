@@ -45,17 +45,16 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public void bid() throws GameActionException {
-        if(rc.getInfluence() <= 500) return;
+        if(rc.getInfluence() <= 100) return;
         double r = Math.random();
         int amount;
         if(r < 0.2) {
-            return;
+            amount = Util.randBetween(1, 3);
         } else if(r < 0.4) {
             amount = (int)(0.01 * rc.getInfluence());
         } else {
             amount = (int)(0.02 * rc.getInfluence());
         }
-        System.out.println(amount);
         rc.bid(amount);
     }
 }

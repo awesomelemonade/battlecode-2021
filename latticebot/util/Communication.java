@@ -9,6 +9,7 @@ public class Communication {
     private static int enemyEC_ctr = 0; // which enemyEC to comm
     private static int edge_ctr = 0; // which edge to comm
     private static final int MAX_CYCLE = 2; // update whenever we add a new class
+    private static final int XOR_KEY = 0xbec402; // flag xor key
 
     public static void init(RobotController rc) throws GameActionException {
         Communication.rc = rc;
@@ -107,8 +108,9 @@ public class Communication {
         }
     }
 
-    public static void processSingleCmd(int flag) throws GameActionException {
+    public static void processSingleCmd(int enc_flag) throws GameActionException {
         // TODO: implement this
+        int flag = enc_flag ^ XOR_KEY;
         if (flag != 0) {
             //System.out.println("found flag " + flag);
             int cmd = flag & 31;
@@ -171,7 +173,7 @@ public class Communication {
     }
 
     public static void setFlag(int val) throws GameActionException {
-        rc.setFlag(val);
+        rc.setFlag(val ^ XOR_KEY);
         flag_set = true;
     }
 

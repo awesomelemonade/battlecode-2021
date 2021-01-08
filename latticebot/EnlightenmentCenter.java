@@ -51,9 +51,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if(r < 0.2) {
             return;
         } else if(r < 0.4) {
-            amount = Math.max(1, (int)0.01 * rc.getInfluence());
+            amount = Math.max(1, (int)(0.01 * rc.getInfluence()));
         } else {
-            amount = Math.max(1, (int)0.05 * rc.getInfluence());
+            amount = Math.max(1, (int)(0.05 * rc.getInfluence()));
         }
         rc.bid(amount);
     }

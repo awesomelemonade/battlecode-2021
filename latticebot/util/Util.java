@@ -63,6 +63,17 @@ public class Util {
         }
     }
 
+    public static boolean tryMove(MapLocation loc) throws GameActionException {
+        return Pathfinder.execute(loc);
+    }
+
+    public static boolean tryMoveAway(MapLocation loc) throws GameActionException {
+        int cur_x = Cache.MY_LOCATION.x;
+        int cur_y = Cache.MY_LOCATION.y;
+        MapLocation dest = new MapLocation(2*cur_x - loc.x, 2*cur_y - loc.y);
+        return Pathfinder.execute(dest);
+    }
+
     public static boolean tryMoveTowards(Direction direction) throws GameActionException {
         for (Direction moveDirection : Constants.getAttemptOrder(direction)) {
             if (tryMove(moveDirection)) {

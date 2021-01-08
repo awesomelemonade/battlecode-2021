@@ -20,14 +20,14 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
+        bid();
         if (!rc.isReady()) {
             return;
         }
         if (Cache.ENEMY_ROBOTS.length == 0) {
             // if we don't see any enemy units
-            int floored = (rc.getInfluence() / 20) * 20;
-            if (floored > 0 && Math.random() >= 0.3) {
-                Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), floored);
+            if (rc.getInfluence() >= 110 && Math.random() >= 0.3) {
+                Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), 100);
             } else {
                 Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);
             }
@@ -42,5 +42,19 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         muckraker.influence + Constants.POLITICIAN_EMPOWER_PENALTY);
             }
         }
+    }
+
+    public void bid() throws GameActionException {
+        if(rc.getInfluence() <= 500) return;
+        double r = Math.random();
+        int amount;
+        if(r < 0.2) {
+            return;
+        } else if(r < 0.4) {
+            amount = Math.max(1, (int)0.01 * rc.getInfluence());
+        } else {
+            amount = Math.max(1, (int)0.05 * rc.getInfluence());
+        }
+        rc.bid(amount);
     }
 }

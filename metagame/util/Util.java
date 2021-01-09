@@ -322,7 +322,7 @@ public class Util {
 
     public static void removeFromNeutralECs(MapLocation loc) {
         for (int i = Cache.neutralECs.length - 1; i >= 0; i--) {
-            if (Cache.neutralECs[i] == loc) {
+            if (Cache.neutralECs[i].equals(loc)) {
                 Cache.neutralECs[i] = null;
                 Cache.neutralECCount--;
                 return;

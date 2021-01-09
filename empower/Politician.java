@@ -8,6 +8,7 @@ import empower.util.Util;
 
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
+    private static int power;
 
     public Politician(RobotController rc) {
         this.rc = rc;
@@ -23,7 +24,8 @@ public strictfp class Politician implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        if (rc.getConviction() >= 30 && tryClaimEC()) {
+        power = (int)((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
+        if (power >= 30 && tryClaimEC()) {
             return;
         }
         if (tryEmpower()) {
@@ -32,7 +34,7 @@ public strictfp class Politician implements RunnableBot {
         if (chaseWorthwhileEnemy()) {
             return;
         }
-        if (rc.getConviction() >= 30 && Util.attackEC()) {
+        if (power >= 30 && Util.attackEC()) {
             return;
         }
         if (Util.smartExplore()) {
@@ -44,7 +46,7 @@ public strictfp class Politician implements RunnableBot {
         RobotInfo[] robots = rc.senseNearbyRobots(radiusSquared);
         int numUnits = robots.length;
         if(numUnits == 0) return 0;
-        int damage = Math.max(0, (rc.getConviction()-10)/numUnits);
+        int damage = Math.max(0, power/numUnits);
         int numKills = 0;
         int totalConviction = 0;
         for(RobotInfo robot: robots) {
@@ -115,7 +117,7 @@ public strictfp class Politician implements RunnableBot {
 
         int numKills = bestScore / 1000000;
         int convictionGotten = bestScore % 1000000;
-        if(convictionGotten * 10 + 5 >= rc.getConviction() - 10) {
+        if(convictionGotten * 10 + 5 >= power) {
             rc.empower(bestRadius);
             return true;
         }
@@ -126,7 +128,7 @@ public strictfp class Politician implements RunnableBot {
         int bestDist = 9999;
         MapLocation bestLoc = null;
         for(RobotInfo robot: Cache.ENEMY_ROBOTS) {
-            if(rc.getConviction()*5 >= robot.getConviction() && robot.getConviction()*5 >= rc.getConviction()) {
+            if(power*5 >= robot.getConviction() && robot.getConviction()*5 >= power) {
                 MapLocation loc = robot.location;
                 int dist = Cache.MY_LOCATION.distanceSquaredTo(loc);
                 if(dist < bestDist) {

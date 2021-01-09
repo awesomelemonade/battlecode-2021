@@ -82,6 +82,9 @@ public strictfp class Slanderer implements RunnableBot {
         if(Cache.mapMinY != -1) y_dist = Math.min(y_dist, loc.y-Cache.mapMinY);
         if(Cache.mapMaxY != -1) y_dist = Math.min(y_dist, Cache.mapMaxY-loc.y);
 
+        if(x_dist > 9998 && y_dist > 9998) {
+            return 0;
+        }
         if(x_dist == 9999) {
             return y_dist;
         } else if(y_dist == 9999) {
@@ -95,7 +98,7 @@ public strictfp class Slanderer implements RunnableBot {
         int dx = loc.x - nearestEC.x;
         int dy = loc.y - nearestEC.y;
         double dist = Math.sqrt(dx*dx + dy*dy);
-        return Math.max(dist, 20*(5-dist));
+        return dist;
     }
 
     private double hidingScore(MapLocation loc) throws GameActionException {
@@ -112,10 +115,6 @@ public strictfp class Slanderer implements RunnableBot {
     }
 
     public boolean hideAtEdge() throws GameActionException {
-        // if all edges are undiscovered, fail
-        if(Cache.mapMinX == -1 && Cache.mapMaxX == -1 && Cache.mapMinY == -1 && Cache.mapMaxY == -1) {
-            return false;
-        }
         double bestScore = hidingScore(Cache.MY_LOCATION);
         Direction bestdir = null;
         for(Direction d: ORDINAL_DIRECTIONS) if(rc.canMove(d)) {

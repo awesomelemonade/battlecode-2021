@@ -51,7 +51,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     muckrakerCount++;
                 }
             } else {
-                if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, rc.getLocation().directionTo(muckraker.getLocation()), muckraker.influence + Constants.POLITICIAN_EMPOWER_PENALTY)) {
+                if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, rc.getLocation().directionTo(muckraker.getLocation()), 5*muckraker.influence + Constants.POLITICIAN_EMPOWER_PENALTY)) {
                     politicianCount++;
                 }
             }

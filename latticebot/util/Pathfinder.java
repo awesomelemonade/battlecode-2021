@@ -24,7 +24,7 @@ public class Pathfinder {
         // move distance defined by max(dx, dy)
         // ties broken by "preferred direction" dictated by Constants.getAttemptOrder
         double highestPassability = 0;
-        int targetDistanceSquared = rc.getLocation().distanceSquaredTo(target) - 1; // suubtract 1 to be strictly less
+        int targetDistanceSquared = rc.getLocation().distanceSquaredTo(target) - 1; // subtract 1 to be strictly less
         int targetMoveDistance = moveDistance(rc.getLocation(), target);
         Direction bestDirection = null;
         for (Direction direction : Constants.getAttemptOrder(rc.getLocation().directionTo(target))) {
@@ -40,8 +40,7 @@ public class Pathfinder {
             }
         }
         if (bestDirection != null) {
-            rc.move(bestDirection);
-            return true;
+            Util.move(bestDirection);
         }
         return false;
     }

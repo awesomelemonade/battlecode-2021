@@ -42,6 +42,7 @@ public strictfp class RobotPlayer {
                     int currentTurn = rc.getRoundNum();
                     Util.loop();
                     bot.turn();
+                    Util.postLoop();
                     if (rc.getRoundNum() != currentTurn) {
                         // We ran out of bytecodes! - MAGENTA
                         rc.setIndicatorDot(rc.getLocation(), 255, 0, 255);

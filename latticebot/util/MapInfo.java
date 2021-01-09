@@ -9,6 +9,10 @@ public class MapInfo {
     private static MapLocation origin;
     private static double[][][][] knownPassability = new double[9][9][][]; // 81 initial bytecodes (array creation)
     private static final int CHUNK_SIZE = 15; // 225 bytecodes per chunk (array creation)
+    public static int mapMinX = -1; // -1 if not known
+    public static int mapMaxX = -1; // -1 if not known
+    public static int mapMinY = -1; // -1 if not known
+    public static int mapMaxY = -1; // -1 if not known
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;
@@ -44,50 +48,49 @@ public class MapInfo {
         updateBoundaries();
     }
     private static void updateBoundaries() {
-        if(Cache.mapMinX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-SENSE_BOX_RADIUS, 0))) {
+        if(MapInfo.mapMinX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-SENSE_BOX_RADIUS, 0))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(-d, 0))) {
-                    Cache.mapMinX = Cache.MY_LOCATION.x - d;
+                    MapInfo.mapMinX = Cache.MY_LOCATION.x - d;
                     break;
                 }
             }
-            if(Cache.mapMinX == -1) {
-                Cache.mapMinX = Cache.MY_LOCATION.x;
+            if(MapInfo.mapMinX == -1) {
+                MapInfo.mapMinX = Cache.MY_LOCATION.x;
             }
         }
-        if(Cache.mapMaxX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(SENSE_BOX_RADIUS, 0))) {
+        if(MapInfo.mapMaxX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(SENSE_BOX_RADIUS, 0))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(d, 0))) {
-                    Cache.mapMaxX = Cache.MY_LOCATION.x + d;
+                    MapInfo.mapMaxX = Cache.MY_LOCATION.x + d;
                     break;
                 }
             }
-            if(Cache.mapMaxX == -1) {
-                Cache.mapMaxX = Cache.MY_LOCATION.x;
+            if(MapInfo.mapMaxX == -1) {
+                MapInfo.mapMaxX = Cache.MY_LOCATION.x;
             }
         }
-        if(Cache.mapMinY == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -SENSE_BOX_RADIUS))) {
+        if(MapInfo.mapMinY == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -SENSE_BOX_RADIUS))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -d))) {
-                    Cache.mapMinY = Cache.MY_LOCATION.y - d;
+                    MapInfo.mapMinY = Cache.MY_LOCATION.y - d;
                     break;
                 }
             }
-            if(Cache.mapMinY == -1) {
-                Cache.mapMinY = Cache.MY_LOCATION.y;
+            if(MapInfo.mapMinY == -1) {
+                MapInfo.mapMinY = Cache.MY_LOCATION.y;
             }
         }
-        if(Cache.mapMaxY == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, SENSE_BOX_RADIUS))) {
+        if(MapInfo.mapMaxY == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, SENSE_BOX_RADIUS))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(0, d))) {
-                    Cache.mapMaxY = Cache.MY_LOCATION.y + d;
+                    MapInfo.mapMaxY = Cache.MY_LOCATION.y + d;
                     break;
                 }
             }
-            if(Cache.mapMaxY == -1) {
-                Cache.mapMaxY = Cache.MY_LOCATION.y;
+            if(MapInfo.mapMaxY == -1) {
+                MapInfo.mapMaxY = Cache.MY_LOCATION.y;
             }
         }
     }
-
 }

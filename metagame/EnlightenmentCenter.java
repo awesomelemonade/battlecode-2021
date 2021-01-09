@@ -31,8 +31,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (Cache.ENEMY_ROBOTS.length == 0) {
             // if we don't see any enemy units
             if (rc.getInfluence() >= 110 && Math.random() >= 0.3) {
-                Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), Math.min(400, rc.getInfluence() / 2));
-            } else if (muckrakerCount < 20 || muckrakerCount < politicianCount) { // shitty heuristics for now
+                Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), Math.min(1000, rc.getInfluence() / 2));
+            } else if (muckrakerCount < 30 || muckrakerCount < politicianCount) { // shitty heuristics for now
                 if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1)) {
                     muckrakerCount++;
                 }

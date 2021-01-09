@@ -115,7 +115,7 @@ public strictfp class Politician implements RunnableBot {
 
         int numKills = bestScore / 1000000;
         int convictionGotten = bestScore % 1000000;
-        if(convictionGotten * 10 >= rc.getConviction() - 10) {
+        if(convictionGotten * 10 + 5 >= rc.getConviction() - 10) {
             rc.empower(bestRadius);
             return true;
         }

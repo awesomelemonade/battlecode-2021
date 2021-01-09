@@ -2,7 +2,6 @@ package latticebot;
 
 import battlecode.common.*;
 import latticebot.util.Cache;
-import latticebot.util.Communication;
 import latticebot.util.Constants;
 import latticebot.util.Util;
 

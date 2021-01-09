@@ -1,13 +1,12 @@
-package latticebot.util;
+package metagame.util;
 
 import battlecode.common.*;
-import static latticebot.util.Constants.*;
+import static metagame.util.Constants.*;
 
 import java.util.function.Predicate;
 
 public class Util {
     private static RobotController rc;
-    private static boolean isCentral;
 
     public static void init(RobotController rc) throws GameActionException {
         Util.rc = rc;
@@ -20,40 +19,25 @@ public class Util {
         MapInfo.init(rc);
         LatticeUtil.init(rc);
         Pathfinder.init(rc);
-        isCentral = rc.getType() == RobotType.ENLIGHTENMENT_CENTER;
-        if (isCentral) {
-            CentralCommunication.init(rc);
-        } else {
-            UnitCommunication.init(rc);
-        }
+        Communication.init(rc);
     }
 
     public static void loop() throws GameActionException {
         Cache.loop();
         MapInfo.loop();
-        if (isCentral) {
-            CentralCommunication.loop();
-        } else {
-            UnitCommunication.loop();
-        }
-    }
-
-    public static void postLoop() throws GameActionException {
-        if (isCentral) {
-            CentralCommunication.postLoop();
-        } else {
-            UnitCommunication.postLoop();
-        }
-    }
-
-    public static void move(Direction direction) throws GameActionException {
-        Cache.lastDirection = direction;
-        rc.move(direction);
+        Communication.loop();
     }
 
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) throws GameActionException {
         if (rc.canBuildRobot(type, direction, influence)) {
             rc.buildRobot(type, direction, influence);
+
+            // add to list of produced units
+            RobotInfo new_robot = rc.senseRobotAtLocation(Cache.MY_LOCATION.add(direction));
+            if (new_robot == null) {
+                System.out.println("failed to produce robot???");
+            }
+            Communication.updateKnownUnits(new_robot.ID);
             return true;
         } else {
             return false;
@@ -72,7 +56,7 @@ public class Util {
 
     public static boolean tryMove(Direction direction) throws GameActionException {
         if (rc.canMove(direction)) {
-            move(direction);
+            rc.move(direction);
             return true;
         } else {
             return false;
@@ -128,13 +112,13 @@ public class Util {
     public static boolean getExplored(MapLocation loc) {
         if(Math.abs(loc.x-SPAWN.x) > 63) return true;
         if(Math.abs(loc.y-SPAWN.y) > 63) return true;
-        if (MapInfo.mapMinX != -1 && loc.x < MapInfo.mapMinX)
+        if (Cache.mapMinX != -1 && loc.x < Cache.mapMinX)
             return true;
-        if (MapInfo.mapMinY != -1 && loc.y < MapInfo.mapMinY)
+        if (Cache.mapMinY != -1 && loc.y < Cache.mapMinY)
             return true;
-        if (MapInfo.mapMaxX != -1 && loc.x > MapInfo.mapMaxX)
+        if (Cache.mapMaxX != -1 && loc.x > Cache.mapMaxX)
             return true;
-        if (MapInfo.mapMaxY != -1 && loc.y > MapInfo.mapMaxY)
+        if (Cache.mapMaxY != -1 && loc.y > Cache.mapMaxY)
             return true;
         int x = locationToExploreIndexX(loc.x);
         int y = locationToExploreIndexY(loc.y);
@@ -213,20 +197,6 @@ public class Util {
         return random(Constants.ORDINAL_DIRECTIONS);
     }
 
-    public static RobotInfo getClosestRobot(RobotInfo[] robots, Predicate<RobotInfo> filter) {
-        int bestDistanceSquared = Integer.MAX_VALUE;
-        RobotInfo bestRobot = null;
-        for (RobotInfo robot : robots) {
-            if (filter.test(robot)) {
-                int distanceSquared = robot.getLocation().distanceSquaredTo(rc.getLocation());
-                if (distanceSquared < bestDistanceSquared) {
-                    bestDistanceSquared = distanceSquared;
-                    bestRobot = robot;
-                }
-            }
-        }
-        return bestRobot;
-    }
     public static RobotInfo getClosestEnemyRobot(MapLocation location, int limit, Predicate<RobotInfo> filter) {
         int bestDistanceSquared = limit + 1;
         RobotInfo bestRobot = null;
@@ -260,16 +230,71 @@ public class Util {
         return bestRobot;
     }
 
+    // attack neutral and enemy ECs while prioritizing neutral
+    public static boolean attackEC() throws GameActionException {
+        if (Cache.neutralECCount == 0) {
+            return attackEnemyEC();
+        }
+        MapLocation target = getTargetNeutralEC(); // should never be null
+        if (rc.canSenseLocation(target)) {
+            RobotInfo temp = rc.senseRobotAtLocation(target);
+            if (temp.getTeam() == rc.getTeam()) {
+                Communication.commCapturedEC(target);
+                removeFromNeutralECs(target);
+                return attackEC();
+            }
+        }
+        Pathfinder.execute(target);
+        return true;
+    }
+
+    // attack only enemy ECs
+    public static boolean attackEnemyEC() throws GameActionException {
+        if (Cache.enemyECCount == 0) {
+            return false;
+        }
+        MapLocation target = getTargetEnemyEC(); // should never be null
+        if (rc.canSenseLocation(target)) {
+            RobotInfo temp = rc.senseRobotAtLocation(target);
+            if (temp.getTeam() == rc.getTeam()) {
+                Communication.commCapturedEC(target);
+                removeFromEnemyECs(target);
+                return attackEnemyEC();
+            }
+        }
+        Pathfinder.execute(target);
+        return true;
+    }
+
     public static void addToEnemyECs(MapLocation loc) {
         if (!inEnemyECs(loc)) {
             //System.out.println("Found enemy EC at " + loc);
             for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
                 if (Cache.enemyECs[i] == null) {
                     Cache.enemyECs[i] = loc;
+                    Cache.enemyECCount++;
                     return;
                 }
             }
         }
+    }
+
+    public static void removeFromEnemyECs(MapLocation loc) {
+        for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
+            if (Cache.enemyECs[i] != null && Cache.enemyECs[i].equals(loc)) {
+                Cache.enemyECs[i] = null;
+                Cache.enemyECCount--;
+            }
+        }
+    }
+
+    public static MapLocation getTargetEnemyEC() {
+        for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
+            if (Cache.enemyECs[i] != null) {
+                return Cache.enemyECs[i];
+            }
+        }
+        return null;
     }
 
     public static boolean inEnemyECs(MapLocation loc) {
@@ -280,6 +305,103 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static void addToNeutralECs(MapLocation loc) {
+        if (!inNeutralECs(loc)) {
+            //System.out.println("Found enemy EC at " + loc);
+            for (int i = Cache.neutralECs.length - 1; i >= 0; i--) {
+                if (Cache.neutralECs[i] == null) {
+                    Cache.neutralECs[i] = loc;
+                    Cache.neutralECCount++;
+                    return;
+                }
+            }
+        }
+    }
+
+    public static void removeFromNeutralECs(MapLocation loc) {
+        for (int i = Cache.neutralECs.length - 1; i >= 0; i--) {
+            if (Cache.neutralECs[i] == loc) {
+                Cache.neutralECs[i] = null;
+                Cache.neutralECCount--;
+                return;
+            }
+        }
+    }
+
+    public static MapLocation getTargetNeutralEC() {
+        for (int i = Cache.neutralECs.length - 1; i >= 0; i--) {
+            if (Cache.neutralECs[i] != null) {
+                return Cache.neutralECs[i];
+            }
+        }
+        return null;
+    }
+
+    public static boolean inNeutralECs(MapLocation loc) {
+        for (int i = Cache.neutralECs.length - 1; i >= 0; i--) {
+            if (Cache.neutralECs[i] != null && loc.equals(Cache.neutralECs[i])) {
+                // dup, dont broadcast this one
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static int indexToEdge(int i) {
+        switch (i) {
+            case 0:
+                return Cache.mapMaxX;
+            case 1:
+                return Cache.mapMaxY;
+            case 2:
+                return Cache.mapMinX;
+            case 3:
+                return Cache.mapMinY;
+        }
+        return -1;
+    }
+
+    public static boolean indexToEdgeBool(int i) {
+        switch (i) {
+            case 0:
+                return Cache.sentMapMaxX;
+            case 1:
+                return Cache.sentMapMaxY;
+            case 2:
+                return Cache.sentMapMinX;
+            case 3:
+                return Cache.sentMapMinY;
+        }
+        return false;
+    }
+
+    public static void setIndexEdge(int i, int val) {
+        if (indexToEdge(i) != -1) {
+            // already set
+            //System.out.println("already have edge "+ i + " with value " + indexToEdge(i));
+            return;
+        }
+        //System.out.println("got edge " + i + " with value " + val);
+        switch (i) {
+            case 0:
+                Cache.mapMaxX = val;
+                Cache.sentMapMaxX = true;
+                break;
+            case 1:
+                Cache.mapMaxY = val;
+                Cache.sentMapMaxY = true;
+                break;
+            case 2:
+                Cache.mapMinX = val;
+                Cache.sentMapMinX = true;
+                break;
+            case 3:
+                Cache.mapMinY = val;
+                Cache.sentMapMinY = true;
+                break;
+        }
     }
 
     public static MapLocation closestEnemyEC() {

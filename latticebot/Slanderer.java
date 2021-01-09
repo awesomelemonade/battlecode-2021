@@ -24,16 +24,11 @@ public strictfp class Slanderer implements RunnableBot {
         }
         if (rc.getType() == RobotType.SLANDERER) {
             RobotInfo closestEnemy = Util.getClosestEnemyRobot();
-            if (closestEnemy == null) {
-                // if enemy EC is known, move away from it
-                MapLocation closest = Util.closestEnemyEC();
-                if (closest != null) {
-                    Util.tryMoveAway(closest);
-                    return;
-                }
-
-                // try go to edge/corner
-                if(hideAtEdge()) return;
+            MapLocation closestEnemyLocation = closestEnemy == null ? null : closestEnemy.getLocation();
+            if (closestEnemyLocation == null) {
+                closestEnemyLocation = UnitCommunication.getClosestECEnemyLocation(Cache.MY_LOCATION);
+            }
+            if (closestEnemyLocation == null || Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 10) {
                 // lattice
                 if (LatticeUtil.isLatticeLocation(rc.getLocation())) {
                     // do nothing
@@ -46,7 +41,8 @@ public strictfp class Slanderer implements RunnableBot {
                     }
                 }
             } else {
-                tryKiteFrom(closestEnemy.getLocation());
+                rc.setIndicatorLine(Cache.MY_LOCATION, closestEnemyLocation, 0, 255, 0);
+                tryKiteFrom(closestEnemyLocation);
             }
         } else {
             // Camouflage

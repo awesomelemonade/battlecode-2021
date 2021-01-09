@@ -19,6 +19,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
+        System.out.println("EC Turn: buff=" + rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
         bid();
         if (!rc.isReady()) {
             return;

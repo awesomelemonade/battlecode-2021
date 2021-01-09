@@ -41,34 +41,13 @@ public class CentralCommunication {
     public static void loop() throws GameActionException {
         nearestEnemy = null;
         nearestEnemyDistanceSquared = Integer.MAX_VALUE;
-        // register any new ally robots (either though vision or building)
-        int start = Clock.getBytecodeNum();
-        if (unitListSize < UNIT_LIST_MAX_SIZE) {
-            for (RobotInfo ally : Cache.ALLY_ROBOTS) {
-                // some sort of set - allocate in chunks of 4096?
-                if (ally.getType() != RobotType.ENLIGHTENMENT_CENTER) {
-                    int id = ally.getID();
-                    if (!registered.getAndSetTrue(id - Constants.MIN_ROBOT_ID)) {
-                        // register in singly linked list
-                        unitListHead = new Node(ally.getLocation(), id, unitListHead);
-                        unitListSize++;
-                        if (unitListSize >= UNIT_LIST_MAX_SIZE) {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        int end = Clock.getBytecodeNum();
-        System.out.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
         // find nearest enemy
         RobotInfo enemy = Util.getClosestEnemyRobot();
         if (enemy != null) {
             nearestEnemy = enemy.location;
             nearestEnemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(nearestEnemy);
         }
-
-        start = Clock.getBytecodeNum();
+        int start = Clock.getBytecodeNum();
         // read flags of each known robot (delete from list if not alive)
         Node prev = null;
         Node current = unitListHead;
@@ -122,8 +101,28 @@ public class CentralCommunication {
             current = current.next;
             count++;
         }
-        end = Clock.getBytecodeNum();
+        int end = Clock.getBytecodeNum();
         System.out.println("Handled " + count + " robots (" + (end - start) + " bytecodes)");
+        // register any new ally robots (either though vision or building)
+        start = Clock.getBytecodeNum();
+        if (unitListSize < UNIT_LIST_MAX_SIZE) {
+            for (RobotInfo ally : Cache.ALLY_ROBOTS) {
+                // some sort of set - allocate in chunks of 4096?
+                if (ally.getType() != RobotType.ENLIGHTENMENT_CENTER) {
+                    int id = ally.getID();
+                    if (!registered.getAndSetTrue(id - Constants.MIN_ROBOT_ID)) {
+                        // register in singly linked list
+                        unitListHead = new Node(ally.getLocation(), id, unitListHead);
+                        unitListSize++;
+                        if (unitListSize >= UNIT_LIST_MAX_SIZE) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        end = Clock.getBytecodeNum();
+        System.out.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
     }
     public static final int NEAREST_ENEMY_OFFSET = 16;
     public static final int NEAREST_ENEMY_X_SHIFT = 5;
@@ -131,12 +130,17 @@ public class CentralCommunication {
     public static void postLoop() throws GameActionException {
         // set flag
         int flag = 0;
-        if (nearestEnemy != null) {
-            // 5 bits on relative x location and relative y location
-            int dx = Math.max(0, Math.min(NEAREST_ENEMY_MASK, nearestEnemy.x - Cache.MY_LOCATION.x + NEAREST_ENEMY_OFFSET));
-            int dy = Math.max(0, Math.min(NEAREST_ENEMY_MASK, nearestEnemy.y - Cache.MY_LOCATION.y + NEAREST_ENEMY_OFFSET));
-            flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
+        if (nearestEnemy == null) {
+            // set dx, dy to be (0, 0) to signal that there are no nearestEnemies
+            nearestEnemy = Cache.MY_LOCATION;
+            rc.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
+        } else {
+            rc.setIndicatorDot(nearestEnemy, 0, 255, 0); // green
         }
+        // 5 bits on relative x location and relative y location
+        int dx = Math.max(0, Math.min(NEAREST_ENEMY_MASK, nearestEnemy.x - Cache.MY_LOCATION.x + NEAREST_ENEMY_OFFSET));
+        int dy = Math.max(0, Math.min(NEAREST_ENEMY_MASK, nearestEnemy.y - Cache.MY_LOCATION.y + NEAREST_ENEMY_OFFSET));
+        flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
         // 7 bits on relative x location and relative y location
         MapLocation rotationLocation = null;
         switch (rc.getRoundNum() % 5) {

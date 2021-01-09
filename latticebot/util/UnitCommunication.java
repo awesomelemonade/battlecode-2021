@@ -33,8 +33,11 @@ public class UnitCommunication {
         for (RobotInfo ally : Cache.ALLY_ROBOTS) {
             if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 registerOurTeamEC(ally);
+            } else {
+                processFlagFromNearbyUnit(ally); // TODO
             }
         }
+        processFlagsFromECs();
     }
     public static void postLoop() throws GameActionException {
         rc.setFlag((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag);
@@ -70,7 +73,7 @@ public class UnitCommunication {
      * @return a location of a muckraker retrieved from flag, otherwise null
      * @throws GameActionException
      */
-    public static MapLocation processFlagFromNearbyUnits(RobotInfo robot) throws GameActionException {
+    public static MapLocation processFlagFromNearbyUnit(RobotInfo robot) throws GameActionException {
         // ally robots that are nearby may have useful information
         int flag = rc.getFlag(robot.getID());
         // check if the unit has seen anything
@@ -96,13 +99,17 @@ public class UnitCommunication {
             int id = current.id;
             if (rc.canGetFlag(id)) {
                 int flag = rc.getFlag(id);
-                int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
-                int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK) - CentralCommunication.ROTATION_OFFSET;
+                MapLocation ecLocation = current.location;
                 int dx = ((flag >> CentralCommunication.NEAREST_ENEMY_X_SHIFT) & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
                 int dy = (flag & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
-                MapLocation ecLocation = current.location;
+                if (dx == 0 && dy == 0) {
+                    current.nearestEnemy = null;
+                } else {
+                    current.nearestEnemy = ecLocation.translate(dx, dy);
+                }
+                int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
+                int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK) - CentralCommunication.ROTATION_OFFSET;
                 MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
-                current.nearestEnemy = ecLocation.translate(dx, dy);
                 switch (rc.getRoundNum() % 5) {
                     case 0:
                         break;
@@ -140,6 +147,24 @@ public class UnitCommunication {
             current = current.next;
         }
         ecListHead = new ECNode(id, ec.getLocation(), ecListHead);
+    }
+
+    public static MapLocation getClosestECEnemyLocation(MapLocation location) {
+        MapLocation closestEnemy = null;
+        int closestDistanceSquared = Integer.MAX_VALUE;
+        ECNode current = ecListHead;
+        while (current != null) {
+            MapLocation enemy = current.nearestEnemy;
+            if (enemy != null) {
+                int enemyDistanceSquared = location.distanceSquaredTo(enemy);
+                if (enemyDistanceSquared < closestDistanceSquared) {
+                    closestDistanceSquared = enemyDistanceSquared;
+                    closestEnemy = enemy;
+                }
+            }
+            current = current.next;
+        }
+        return closestEnemy;
     }
 
     static class ECNode {

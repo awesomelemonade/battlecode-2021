@@ -1,9 +1,10 @@
-package latticebot;
+package latticebot2;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.Util;
+import latticebot2.util.Cache;
+import latticebot2.util.Communication;
+import latticebot2.util.Constants;
+import latticebot2.util.Util;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
     private RobotController rc;

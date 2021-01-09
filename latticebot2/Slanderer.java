@@ -1,13 +1,12 @@
-package metagame;
+package latticebot2;
 
 import battlecode.common.*;
-import metagame.util.*;
-import static metagame.util.Constants.*;
+import latticebot2.util.*;
+import static latticebot2.util.Constants.*;
 
 public strictfp class Slanderer implements RunnableBot {
     private RobotController rc;
     private Politician politician;
-    private MapLocation nearestEC;
 
     public Slanderer(RobotController rc) {
         this.rc = rc;
@@ -27,8 +26,13 @@ public strictfp class Slanderer implements RunnableBot {
             RobotInfo closestEnemy = Util.getClosestEnemyRobot();
             if (closestEnemy == null) {
                 // if enemy EC is known, move away from it
+                MapLocation closest = Util.closestEnemyEC();
+                /*if (closest != null) {
+                    Util.tryMoveAway(closest);
+                    return;
+                }*/
+
                 // try go to edge/corner
-                updateNearestEC();
                 if(hideAtEdge()) return;
                 // lattice
                 if (LatticeUtil.isLatticeLocation(rc.getLocation())) {
@@ -51,21 +55,6 @@ public strictfp class Slanderer implements RunnableBot {
                 politician.init();
             }
             politician.turn();
-        }
-    }
-
-    private void updateNearestEC() {
-        nearestEC = SPAWNEC;
-        int bestDist = nearestEC.distanceSquaredTo(Cache.MY_LOCATION);
-        for(RobotInfo robot: Cache.ALL_ROBOTS) {
-            if(robot.getTeam() != ENEMY_TEAM && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapLocation loc = robot.location;
-                int dist = loc.distanceSquaredTo(Cache.MY_LOCATION);
-                if(dist < bestDist) {
-                    bestDist = dist;
-                    nearestEC = loc;
-                }
-            }
         }
     }
 
@@ -92,15 +81,14 @@ public strictfp class Slanderer implements RunnableBot {
     }
 
     private double spawnScore(MapLocation loc) throws GameActionException {
-        int dx = loc.x - nearestEC.x;
-        int dy = loc.y - nearestEC.y;
-        double dist = Math.sqrt(dx*dx + dy*dy);
-        return Math.max(dist, 20*(5-dist));
+        int dx = loc.x - SPAWNEC.x;
+            int dy = loc.y - SPAWNEC.y;
+            double dist = Math.sqrt(dx*dx + dy*dy);
+            return Math.max(dist, 20*(5-dist));
     }
 
     private double hidingScore(MapLocation loc) throws GameActionException {
-        if (loc.distanceSquaredTo(nearestEC) <= 9) return 9999;
-        if (!LatticeUtil.isLatticeLocation(loc)) return 9999;
+        if (!LatticeUtil.isLatticeLocation(loc)) return 99999;
         MapLocation closest = Util.closestEnemyEC();
         if(closest != null) {
             int dx = loc.x - closest.x;
@@ -116,7 +104,7 @@ public strictfp class Slanderer implements RunnableBot {
         if(Cache.mapMinX == -1 && Cache.mapMaxX == -1 && Cache.mapMinY == -1 && Cache.mapMaxY == -1) {
             return false;
         }
-        double bestScore = hidingScore(Cache.MY_LOCATION);
+        double bestScore = 9999;
         Direction bestdir = null;
         for(Direction d: ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
             MapLocation loc = Cache.MY_LOCATION.add(d);
@@ -126,9 +114,8 @@ public strictfp class Slanderer implements RunnableBot {
                 bestdir = d;
             }
         }
-        if(bestScore >= 9998) {
-            // all nearby options are bad, just explore for something better
-            return Util.smartExplore();
+        if(bestScore >= hidingScore(Cache.MY_LOCATION)) {
+            return true;
         }
         if(bestdir != null) {
             return Util.tryMove(bestdir);

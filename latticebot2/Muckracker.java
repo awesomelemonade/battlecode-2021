@@ -1,10 +1,10 @@
-package latticebot;
+package latticebot2;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.Pathfinder;
-import latticebot.util.Util;
+import latticebot2.util.Cache;
+import latticebot2.util.Constants;
+import latticebot2.util.Pathfinder;
+import latticebot2.util.Util;
 import java.util.function.Predicate;
 
 public strictfp class Muckracker implements RunnableBot {
@@ -53,12 +53,6 @@ public strictfp class Muckracker implements RunnableBot {
             return true;
         }
         return false;
-    }
-
-    public boolean goToEnemyEC() throws GameActionException {
-        MapLocation closest = Util.closestEnemyEC();
-        if(closest == null) return false;
-        return Util.tryMove(closest);
     }
 
     public boolean campEnemyEC() throws GameActionException {

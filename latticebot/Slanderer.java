@@ -65,11 +65,11 @@ public strictfp class Slanderer implements RunnableBot {
 
     private double edgeScore(MapLocation loc) throws GameActionException {
         double x_dist = 9999;
-        if(Cache.mapMinX != -1) x_dist = Math.min(x_dist, loc.x-Cache.mapMinX);
-        if(Cache.mapMaxX != -1) x_dist = Math.min(x_dist, Cache.mapMaxX-loc.x);
+        if(MapInfo.mapMinX != -1) x_dist = Math.min(x_dist, loc.x-MapInfo.mapMinX);
+        if(MapInfo.mapMaxX != -1) x_dist = Math.min(x_dist, MapInfo.mapMaxX-loc.x);
         double y_dist = 9999;
-        if(Cache.mapMinY != -1) y_dist = Math.min(y_dist, loc.y-Cache.mapMinY);
-        if(Cache.mapMaxY != -1) y_dist = Math.min(y_dist, Cache.mapMaxY-loc.y);
+        if(MapInfo.mapMinY != -1) y_dist = Math.min(y_dist, loc.y-MapInfo.mapMinY);
+        if(MapInfo.mapMaxY != -1) y_dist = Math.min(y_dist, MapInfo.mapMaxY-loc.y);
 
         if(x_dist == 9999) {
             return y_dist;
@@ -81,10 +81,12 @@ public strictfp class Slanderer implements RunnableBot {
     }
 
     private double spawnScore(MapLocation loc) throws GameActionException {
-        int dx = loc.x - SPAWNEC.x;
+        /*int dx = loc.x - SPAWNEC.x;
         int dy = loc.y - SPAWNEC.y;
         double dist = Math.sqrt(dx*dx + dy*dy);
-        return Math.max(dist, 20*(5-dist));
+        return Math.max(dist, 20*(5-dist));*/
+        // TODO
+        return 0;
     }
 
     private double hidingScore(MapLocation loc) throws GameActionException {
@@ -93,7 +95,7 @@ public strictfp class Slanderer implements RunnableBot {
 
     public boolean hideAtEdge() throws GameActionException {
         // if all edges are undiscovered, fail
-        if(Cache.mapMinX == -1 && Cache.mapMaxX == -1 && Cache.mapMinY == -1 && Cache.mapMaxY == -1) {
+        if(MapInfo.mapMinX == -1 && MapInfo.mapMaxX == -1 && MapInfo.mapMinY == -1 && MapInfo.mapMaxY == -1) {
             return false;
         }
         double bestScore = 9999;

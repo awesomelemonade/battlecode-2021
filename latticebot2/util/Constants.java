@@ -1,4 +1,4 @@
-package metagame.util;
+package latticebot2.util;
 
 import battlecode.common.*;
 
@@ -52,12 +52,12 @@ public class Constants {
         }
 
     }
-    public static final Direction[] CARDINAL_DIRECTIONS = {
+    /*public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.EAST,
             Direction.SOUTH,
             Direction.WEST,
-    };
+    };*/
     public static final Direction[] ORDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.NORTHEAST,

@@ -73,4 +73,43 @@ public strictfp class Politician implements RunnableBot {
         }
         return false;
     }
+
+    // currently unused because it makes it worse. goes to enemy/neutral ec in sensor range and tries to empower
+    public boolean tryClaimEC() throws GameActionException {
+        // if we see enemy/neutral ec, try to move closer to it
+        // if can't move any closer, explode
+        MapLocation bestLoc = null;
+        int bestDist = 9999;
+        for (RobotInfo robot : Cache.ALL_ROBOTS) {
+            if (robot.getTeam() != Constants.ALLY_TEAM && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                MapLocation loc = robot.location;
+                int dist = loc.distanceSquaredTo(Cache.MY_LOCATION);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestLoc = loc;
+                }
+            }
+        }
+        if (bestLoc == null)
+            return false;
+
+        int bestNewDist = bestDist;
+        Direction bestDir = null;
+        for (Direction d : Constants.ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
+            int dist = Cache.MY_LOCATION.add(d).distanceSquaredTo(bestLoc);
+            if (dist < bestNewDist) {
+                bestNewDist = dist;
+                bestDir = d;
+            }
+        }
+        if (bestDir == null) { // can't get any closer
+            if(bestDist > 9) return false;
+            if(bestDist >= 5 && rc.senseNearbyRobots(bestDist).length >= 6) return false;
+            rc.empower(bestDist);
+            return true;
+        } else {
+            Util.tryMove(bestDir);
+            return true;
+        }
+    }
 }

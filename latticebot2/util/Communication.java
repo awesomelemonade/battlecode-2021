@@ -1,4 +1,4 @@
-package latticebot.util;
+package latticebot2.util;
 
 import battlecode.common.*;
 

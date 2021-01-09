@@ -1,11 +1,11 @@
-package latticebot;
+package latticebot2;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import latticebot.util.Cache;
-import latticebot.util.Util;
+import latticebot2.util.Cache;
+import latticebot2.util.Util;
 
 public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
@@ -42,7 +42,6 @@ public strictfp class RobotPlayer {
                     int currentTurn = rc.getRoundNum();
                     Util.loop();
                     bot.turn();
-                    Util.postLoop();
                     if (rc.getRoundNum() != currentTurn) {
                         // We ran out of bytecodes! - MAGENTA
                         rc.setIndicatorDot(rc.getLocation(), 255, 0, 255);

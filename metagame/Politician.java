@@ -36,7 +36,6 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean tryEmpower() throws GameActionException {
-
         // jank logic to attack neutral ECs
         RobotInfo[] robots = Cache.ALL_ROBOTS;
         for (int i = robots.length - 1; i >= 0; i--) {

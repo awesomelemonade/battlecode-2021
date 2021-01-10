@@ -4,6 +4,7 @@ import battlecode.common.*;
 import latticebot.util.Cache;
 import latticebot.util.Constants;
 import latticebot.util.Pathfinder;
+import latticebot.util.UnitCommunication;
 import latticebot.util.Util;
 
 public strictfp class Politician implements RunnableBot {
@@ -24,10 +25,20 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (Cache.ENEMY_ROBOTS.length == 0) {
-            Util.smartExplore();
+            MapLocation enemyLocation = UnitCommunication.closestCommunicatedEnemy;
+            if (enemyLocation == null || !Cache.MY_LOCATION.isWithinDistanceSquared(enemyLocation, 100)) {
+                Util.smartExplore();
+            } else {
+                Pathfinder.execute(enemyLocation);
+            }
         } else {
             if (!tryEmpower()) {
-                Pathfinder.execute(Util.getClosestEnemyRobot().getLocation());
+                MapLocation enemyLocation = Util.getClosestEnemyRobot().getLocation();
+                if (Cache.MY_LOCATION.isWithinDistanceSquared(enemyLocation, 36)) {
+                    Util.smartExplore();
+                } else {
+                    Pathfinder.execute(Util.getClosestEnemyRobot().getLocation());
+                }
             }
         }
     }

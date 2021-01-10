@@ -9,10 +9,11 @@ public class MapInfo {
     private static MapLocation origin;
     private static double[][][][] knownPassability = new double[9][9][][]; // 81 initial bytecodes (array creation)
     private static final int CHUNK_SIZE = 15; // 225 bytecodes per chunk (array creation)
-    public static int mapMinX = -1; // -1 if not known
-    public static int mapMaxX = -1; // -1 if not known
-    public static int mapMinY = -1; // -1 if not known
-    public static int mapMaxY = -1; // -1 if not known
+    public static final int MAP_UNKNOWN_EDGE = Integer.MIN_VALUE;
+    public static int mapMinX = MAP_UNKNOWN_EDGE; // not known
+    public static int mapMaxX = MAP_UNKNOWN_EDGE; // not known
+    public static int mapMinY = MAP_UNKNOWN_EDGE; // not known
+    public static int mapMaxY = MAP_UNKNOWN_EDGE; // not known
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;

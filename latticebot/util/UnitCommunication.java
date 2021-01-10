@@ -6,6 +6,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Team;
 
 public class UnitCommunication {
     private static RobotController rc;
@@ -23,21 +24,40 @@ public class UnitCommunication {
     public static final int DEFAULT_FLAG = 0b1000_0111_0111_0000_0000_0000;
     public static final int CLEAR_FLAG = 0b0000_0111_0111_0000_0000_0000;
     private static int currentFlag = DEFAULT_FLAG;
+    public static MapLocation closestCommunicatedEnemy;
+    public static int closestCommunicatedEnemyDistanceSquared;
+    private static void checkCloseEnemy(MapLocation enemy) {
+        if (enemy != null) {
+            int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
+            if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
+                closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
+                closestCommunicatedEnemy = enemy;
+            }
+        }
+    }
     public static void loop() throws GameActionException {
         rc.setFlag(DEFAULT_FLAG); // in case we run out of bytecodes
         currentFlag = CLEAR_FLAG;
-        RobotInfo enemy = Util.getClosestEnemyRobot();
-        if (enemy != null) {
-            setFlag(enemy);
+        RobotInfo closestEnemy = Util.getClosestEnemyRobot();
+        if (closestEnemy != null) {
+            setFlag(closestEnemy);
         }
+        closestCommunicatedEnemy = null;
+        closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
         for (RobotInfo ally : Cache.ALLY_ROBOTS) {
             if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 registerOurTeamEC(ally);
             } else {
-                processFlagFromNearbyUnit(ally); // TODO
+                checkCloseEnemy(processFlagFromNearbyUnit(ally));
             }
         }
         processFlagsFromECs();
+        ECNode current = ecListHead;
+        while (current != null) {
+            MapLocation enemy = current.nearestEnemy;
+            checkCloseEnemy(enemy);
+            current = current.next;
+        }
     }
     public static void postLoop() throws GameActionException {
         rc.setFlag((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag);
@@ -82,11 +102,16 @@ public class UnitCommunication {
             MapLocation prevLocation = robot.getLocation().add(unitPrevDirection.opposite());
             int dx = ((flag >> CURRENT_UNIT_OFFSET_X_SHIFT) & CURRENT_UNIT_OFFSET_MASK) - OFFSET_SHIFT;
             int dy = ((flag >> CURRENT_UNIT_OFFSET_Y_SHIFT) & CURRENT_UNIT_OFFSET_MASK) - OFFSET_SHIFT;
+            if (dx == 0 && dy == 0) {
+                // communicating about map edge, ignore
+                return null;
+            }
             MapLocation specifiedLocation = prevLocation.translate(dx, dy);
             RobotType type = RobotType.values()[(flag >> CURRENT_UNIT_TYPE_SHIFT) & CURRENT_UNIT_TYPE_MASK];
+            int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
             // we see type at specifiedLocation
-            if (type == RobotType.MUCKRAKER) {
-                // we see muckraker!!
+            if (type != RobotType.ENLIGHTENMENT_CENTER || Team.values()[info] == Constants.ENEMY_TEAM) {
+                // we see enemy!!
                 return specifiedLocation;
             }
         }
@@ -112,14 +137,26 @@ public class UnitCommunication {
                 MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
                 switch (rc.getRoundNum() % 5) {
                     case 0:
+                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.mapMinX = rotationLocation.x;
+                        }
+                        if (rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.mapMinY = rotationLocation.y;
+                        }
                         break;
                     case 1:
+                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.mapMaxX = rotationLocation.x;
+                        }
+                        if (rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.mapMaxY = rotationLocation.y;
+                        }
                         break;
-                    case 2:
+                    case 2: // [ally ec]
                         break;
-                    case 3:
+                    case 3: // [enemy ec]
                         break;
-                    case 4:
+                    case 4: // [neutral ec]
                         break;
                 }
                 prev = current;
@@ -147,24 +184,6 @@ public class UnitCommunication {
             current = current.next;
         }
         ecListHead = new ECNode(id, ec.getLocation(), ecListHead);
-    }
-
-    public static MapLocation getClosestECEnemyLocation(MapLocation location) {
-        MapLocation closestEnemy = null;
-        int closestDistanceSquared = Integer.MAX_VALUE;
-        ECNode current = ecListHead;
-        while (current != null) {
-            MapLocation enemy = current.nearestEnemy;
-            if (enemy != null) {
-                int enemyDistanceSquared = location.distanceSquaredTo(enemy);
-                if (enemyDistanceSquared < closestDistanceSquared) {
-                    closestDistanceSquared = enemyDistanceSquared;
-                    closestEnemy = enemy;
-                }
-            }
-            current = current.next;
-        }
-        return closestEnemy;
     }
 
     static class ECNode {

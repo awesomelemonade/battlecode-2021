@@ -26,7 +26,7 @@ public strictfp class Slanderer implements RunnableBot {
             RobotInfo closestEnemy = Util.getClosestEnemyRobot();
             MapLocation closestEnemyLocation = closestEnemy == null ? null : closestEnemy.getLocation();
             if (closestEnemyLocation == null) {
-                closestEnemyLocation = UnitCommunication.getClosestECEnemyLocation(Cache.MY_LOCATION);
+                closestEnemyLocation = UnitCommunication.closestCommunicatedEnemy;
             }
             if (closestEnemyLocation == null || Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 10) {
                 // lattice

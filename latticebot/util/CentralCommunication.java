@@ -11,25 +11,29 @@ import battlecode.common.Team;
 
 public class CentralCommunication {
     private static RobotController rc;
-    private static MapLocation nearestEnemy;
-    private static int nearestEnemyDistanceSquared = Integer.MAX_VALUE;
+    public static MapLocation nearestEnemy;
+    public static int nearestEnemyDistanceSquared = Integer.MAX_VALUE;
+    public static RobotType nearestEnemyType;
+    public static int nearestEnemyInfluence = 0;
+    public static MapLocationList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
+        enlightenmentCenterLocations = new MapLocationList[Team.values().length];
     }
     private static BooleanArray registered;
     // Stored as singly linked list
-    static class Node {
+    static class UnitListNode {
         MapLocation location;
         int id;
-        Node next;
-        public Node(MapLocation location, int id, Node next) {
+        UnitListNode next;
+        public UnitListNode(MapLocation location, int id, UnitListNode next) {
             this.location = location;
             this.id = id;
             this.next = next;
         }
     }
-    private static Node unitListHead = null;
+    private static UnitListNode unitListHead = null;
     private static int unitListSize = 0;
     private static final int UNIT_LIST_MAX_SIZE = 150;
     // 14 bits: rotate between [minX, maxX], [minY, maxY], [friendly ec], [enemy ec], [neutral ec]
@@ -46,11 +50,13 @@ public class CentralCommunication {
         if (enemy != null) {
             nearestEnemy = enemy.location;
             nearestEnemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(nearestEnemy);
+            nearestEnemyType = enemy.getType();
+            nearestEnemyInfluence = enemy.getInfluence();
         }
         int start = Clock.getBytecodeNum();
         // read flags of each known robot (delete from list if not alive)
-        Node prev = null;
-        Node current = unitListHead;
+        UnitListNode prev = null;
+        UnitListNode current = unitListHead;
         int count = 0;
         while (current != null) {
             int id = current.id;
@@ -65,23 +71,20 @@ public class CentralCommunication {
                     MapLocation specifiedLocation = current.location.translate(dx, dy);
                     RobotType type = RobotType.values()[(flag >> UnitCommunication.CURRENT_UNIT_TYPE_SHIFT) & UnitCommunication.CURRENT_UNIT_TYPE_MASK];
                     int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
-                    if (type == RobotType.ENLIGHTENMENT_CENTER) {
-                        Team team = Team.values()[info];
-                        // TODO
-                        if (team == Constants.ENEMY_TEAM) {
-                            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
-                            if (distanceSquared < nearestEnemyDistanceSquared) {
-                                nearestEnemyDistanceSquared = distanceSquared;
-                                nearestEnemy = specifiedLocation;
-                            }
-                        }
-                    } else {
-                        // info = influence of that particular unit
+                    if (type != RobotType.ENLIGHTENMENT_CENTER || Team.values()[info] == Constants.ENEMY_TEAM) {
                         int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
                         if (distanceSquared < nearestEnemyDistanceSquared) {
                             nearestEnemyDistanceSquared = distanceSquared;
                             nearestEnemy = specifiedLocation;
+                            nearestEnemyType = type;
+                            if (type != RobotType.ENLIGHTENMENT_CENTER) {
+                                nearestEnemyInfluence = info;
+                            }
                         }
+                    }
+                    if (type == RobotType.ENLIGHTENMENT_CENTER) {
+                        Team team = Team.values()[info];
+                        enlightenmentCenterLocations[team.ordinal()].add(specifiedLocation);
                     }
                 }
                 // update location
@@ -112,7 +115,7 @@ public class CentralCommunication {
                     int id = ally.getID();
                     if (!registered.getAndSetTrue(id - Constants.MIN_ROBOT_ID)) {
                         // register in singly linked list
-                        unitListHead = new Node(ally.getLocation(), id, unitListHead);
+                        unitListHead = new UnitListNode(ally.getLocation(), id, unitListHead);
                         unitListSize++;
                         if (unitListSize >= UNIT_LIST_MAX_SIZE) {
                             break;
@@ -138,30 +141,48 @@ public class CentralCommunication {
             rc.setIndicatorDot(nearestEnemy, 0, 255, 0); // green
         }
         // 5 bits on relative x location and relative y location
-        int dx = Math.max(0, Math.min(NEAREST_ENEMY_MASK, nearestEnemy.x - Cache.MY_LOCATION.x + NEAREST_ENEMY_OFFSET));
-        int dy = Math.max(0, Math.min(NEAREST_ENEMY_MASK, nearestEnemy.y - Cache.MY_LOCATION.y + NEAREST_ENEMY_OFFSET));
+        int dx = nearestEnemy.x - Cache.MY_LOCATION.x + NEAREST_ENEMY_OFFSET;
+        int dy = nearestEnemy.y - Cache.MY_LOCATION.y + NEAREST_ENEMY_OFFSET;
+        if (dx < 0 || dx > NEAREST_ENEMY_MASK || dy < 0 || dy > NEAREST_ENEMY_MASK) {
+            // underflow/overflow: set to current location to mark no enemy nearby
+            dx = NEAREST_ENEMY_OFFSET;
+            dy = NEAREST_ENEMY_OFFSET;
+            rc.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
+        }
         flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
         // 7 bits on relative x location and relative y location
-        MapLocation rotationLocation = null;
+        int rotationDx = 0;
+        int rotationDy = 0;
         switch (rc.getRoundNum() % 5) {
             case 0: // [minX, minY]
                 //flag |= minX << ROTATION_SHIFT_X;
                 //flag |= minY << ROTATION_SHIFT_Y;
+                if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE) {
+                    rotationDx = MapInfo.mapMinX - Cache.MY_LOCATION.x + ROTATION_OFFSET;
+                }
+                if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE) {
+                    rotationDy = MapInfo.mapMinY - Cache.MY_LOCATION.y + ROTATION_OFFSET;
+                }
                 break;
             case 1: // [maxX, maxY]
-                //flag |= maxX << ROTATION_SHIFT_X;
-                //flag |= maxY << ROTATION_SHIFT_Y;
+                if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE) {
+                    rotationDx = MapInfo.mapMaxX - Cache.MY_LOCATION.x + ROTATION_OFFSET;
+                }
+                if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE) {
+                    rotationDy = MapInfo.mapMaxY - Cache.MY_LOCATION.y + ROTATION_OFFSET;
+                }
                 break;
-            case 2: // [friendly ec]
+            case 2: // [ally ec]
+                MapLocation ally = enlightenmentCenterLocations[Constants.ALLY_TEAM.ordinal()].getRandomLocation();
                 break;
             case 3: // [enemy ec]
+                MapLocation enemy = enlightenmentCenterLocations[Constants.ENEMY_TEAM.ordinal()].getRandomLocation();
                 break;
             case 4: // [neutral ec]
+                MapLocation neutral = enlightenmentCenterLocations[Team.NEUTRAL.ordinal()].getRandomLocation();
                 break;
         }
-        if (rotationLocation != null) {
-            // TODO
-        }
+        flag = flag | (rotationDx << ROTATION_SHIFT_X) | (rotationDy << ROTATION_SHIFT_Y);
         rc.setFlag(flag);
     }
 }

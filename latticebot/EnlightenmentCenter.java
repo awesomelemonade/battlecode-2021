@@ -2,7 +2,9 @@ package latticebot;
 
 import battlecode.common.*;
 import latticebot.util.Cache;
+import latticebot.util.CentralCommunication;
 import latticebot.util.Constants;
+import latticebot.util.SlandererBuild;
 import latticebot.util.Util;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
@@ -24,22 +26,20 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        if (Cache.ENEMY_ROBOTS.length == 0) {
+        if (CentralCommunication.nearestEnemy == null || CentralCommunication.nearestEnemyDistanceSquared > 225) {
             // if we don't see any enemy units
-            if (rc.getInfluence() >= 110 && Math.random() >= 0.3) {
-                Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), 100);
+            if (rc.getInfluence() > 20 && Math.random() >= 0.3) {
+                Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), SlandererBuild.getBuildInfluence(rc.getInfluence()));
             } else {
                 Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);
             }
         } else {
             // if we see muckrakers, build politicians for defense
-            RobotInfo muckraker = Util.getClosestEnemyRobot(x -> x.getType() == RobotType.MUCKRAKER);
-            // defense
-            if (muckraker == null) {
-                Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);
+            if (CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER) {
+                Util.tryBuildRobotTowards(RobotType.POLITICIAN, Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy),
+                        CentralCommunication.nearestEnemyInfluence + Constants.POLITICIAN_EMPOWER_PENALTY);
             } else {
-                Util.tryBuildRobotTowards(RobotType.POLITICIAN, rc.getLocation().directionTo(muckraker.getLocation()),
-                        muckraker.influence + Constants.POLITICIAN_EMPOWER_PENALTY);
+                Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);
             }
         }
     }

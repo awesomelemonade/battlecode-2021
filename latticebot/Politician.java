@@ -3,15 +3,17 @@ package latticebot;
 import battlecode.common.*;
 import latticebot.util.Cache;
 import latticebot.util.Constants;
+import latticebot.util.MapInfo;
 import latticebot.util.Pathfinder;
 import latticebot.util.UnitCommunication;
 import latticebot.util.Util;
 
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
+    private static int power;
 
     public Politician(RobotController rc) {
-        this.rc = rc;
+        Politician.rc = rc;
     }
 
     @Override
@@ -24,73 +26,72 @@ public strictfp class Politician implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        if (Cache.ENEMY_ROBOTS.length == 0) {
-            MapLocation enemyLocation = UnitCommunication.closestCommunicatedEnemy;
-            if (enemyLocation == null || !Cache.MY_LOCATION.isWithinDistanceSquared(enemyLocation, 100)) {
-                Util.smartExplore();
-            } else {
-                Pathfinder.execute(enemyLocation);
-            }
-        } else {
-            if (!tryEmpower()) {
-                MapLocation enemyLocation = Util.getClosestEnemyRobot().getLocation();
-                if (Cache.MY_LOCATION.isWithinDistanceSquared(enemyLocation, 36)) {
-                    Util.smartExplore();
-                } else {
-                    Pathfinder.execute(Util.getClosestEnemyRobot().getLocation());
-                }
-            }
+        power = (int)((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
+        if (power >= 30 && tryClaimEC()) {
+            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
+            return;
+        }
+        if (tryEmpower()) {
+            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
+            return;
+        }
+        if (chaseWorthwhileEnemy()) {
+            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
+            return;
+        }
+        if (power >= 30 && goToNearestEC()) {
+            rc.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
+            return;
+        }
+        rc.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
+        if (Util.smartExplore()) {
+            return;
         }
     }
 
-    public boolean tryEmpower() throws GameActionException {
-        int actionRadiusSquared = rc.getType().actionRadiusSquared;
-        // we want to find square that can target only 1 muckraker
-        for (int i = 0; i < Constants.FLOOD_OFFSET_X_20.length && Clock.getBytecodesLeft() > 1200; i++) {
-            MapLocation location = rc.getLocation().translate(Constants.FLOOD_OFFSET_X_20[i], Constants.FLOOD_OFFSET_Y_20[i]);
-            if (i != 0 && ((!rc.onTheMap(location)) || (rc.isLocationOccupied(location)))) {
-                continue;
-            }
-            // get closest isolated robot
-            int bestDistanceSquared = actionRadiusSquared;
-            RobotInfo bestRobot = null;
-            boolean initial = false;
-            RobotInfo[] robots = Cache.ALL_ROBOTS; // up to 80 because sight r^2 = 25
-            // using some pigeonhole principle
-            if (robots.length > 28) {
-                robots = rc.senseNearbyRobots(location, actionRadiusSquared, null);
-            }
-            for (int j = robots.length; --j >= 0;) {
-                RobotInfo robot = robots[j];
-                if (location.isWithinDistanceSquared(robot.getLocation(), bestDistanceSquared)) {
-                    int distanceSquared = location.distanceSquaredTo(robot.getLocation());
-                    bestRobot = ((distanceSquared == bestDistanceSquared) && initial ? null : robot);
-                    bestDistanceSquared = distanceSquared;
-                    initial = true;
-                }
-            }
-            if (bestRobot == null || bestRobot.getTeam() == Constants.ALLY_TEAM) {
-                continue;
-            }
-            // empower at location
-            if (i == 0) { // we're on the target square
-                if (rc.canEmpower(bestDistanceSquared)) {
-                    rc.empower(bestDistanceSquared);
-                }
-            } else {
-                Pathfinder.execute(location);
-            }
+    public boolean goToNearestEC() throws GameActionException {
+        RobotInfo[] neutralECs = rc.senseNearbyRobots(-1, Team.NEUTRAL);
+        MapLocation ec = Util.getFirst(
+                () -> Util.mapToLocation(Util.getClosestRobot(neutralECs, x -> true)),
+                () -> MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getClosestLocation(Cache.MY_LOCATION),
+                () -> Util.mapToLocation(Util.getClosestEnemyRobot(x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER)),
+                () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION)
+        );
+        if (ec != null) {
+            rc.setIndicatorDot(ec, 255, 255, 0); // yellow
+            Pathfinder.execute(ec);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
-    // currently unused because it makes it worse. goes to enemy/neutral ec in sensor range and tries to empower
+    private int getScore(int radiusSquared) {
+        RobotInfo[] robots = rc.senseNearbyRobots(radiusSquared);
+        int numUnits = robots.length;
+        if(numUnits == 0) return 0;
+        int damage = Math.max(0, power/numUnits);
+        int numKills = 0;
+        int totalConviction = 0;
+        for(RobotInfo robot: robots) {
+            if(robot.getTeam() != Constants.ALLY_TEAM && robot.getConviction() < damage) {
+                numKills++;
+                int transferredConviction = robot.getConviction();
+                if(robot.getType() == RobotType.POLITICIAN || robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    transferredConviction += robot.getInfluence();
+                }
+                transferredConviction = Math.min(damage, transferredConviction);
+                totalConviction += transferredConviction;
+            }
+        }
+        return numKills*1000000 + totalConviction;
+    }
+
     public boolean tryClaimEC() throws GameActionException {
         // if we see enemy/neutral ec, try to move closer to it
         // if can't move any closer, explode
         MapLocation bestLoc = null;
-        int bestDist = 9999;
+        int bestDist = Integer.MAX_VALUE;
         for (RobotInfo robot : Cache.ALL_ROBOTS) {
             if (robot.getTeam() != Constants.ALLY_TEAM && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 MapLocation loc = robot.location;
@@ -122,5 +123,47 @@ public strictfp class Politician implements RunnableBot {
             Util.tryMove(bestDir);
             return true;
         }
+    }
+
+    public boolean tryEmpower() throws GameActionException {
+        int actionRadiusSquared = rc.getType().actionRadiusSquared;
+        // if can kill something, maximize the number
+        int bestRadius = -1;
+        int bestScore = 0;
+        for(int r = 1; r <= actionRadiusSquared; r++) {
+            int score = getScore(r);
+            if(score > bestScore) {
+                bestScore = score;
+                bestRadius = r;
+            }
+        }
+        if(bestRadius == -1) return false;
+
+        int numKills = bestScore / 1000000;
+        int convictionGotten = bestScore % 1000000;
+        if(convictionGotten * 10 + 5 >= power) {
+            rc.empower(bestRadius);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean chaseWorthwhileEnemy() throws GameActionException {
+        int bestDist = 9999;
+        MapLocation bestLoc = null;
+        for(RobotInfo robot: Cache.ENEMY_ROBOTS) {
+            if(power*5 >= robot.getConviction() && robot.getConviction()*5 >= power) {
+                MapLocation loc = robot.location;
+                int dist = Cache.MY_LOCATION.distanceSquaredTo(loc);
+                if(dist < bestDist) {
+                    bestDist = dist;
+                    bestLoc = loc;
+                }
+            }
+        }
+        if(bestLoc == null) {
+            return false;
+        }
+        return Util.tryMove(bestLoc);
     }
 }

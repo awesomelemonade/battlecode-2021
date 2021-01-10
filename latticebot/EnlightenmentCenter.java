@@ -28,7 +28,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         if (CentralCommunication.nearestEnemy == null || CentralCommunication.nearestEnemyDistanceSquared > 225) {
             // if we don't see any enemy units
-            if (rc.getInfluence() > 20 && Math.random() >= 0.3) {
+            if (rc.getInfluence() > 20 && Math.random() >= 0.7) {
                 Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(), SlandererBuild.getBuildInfluence(rc.getInfluence()));
             } else {
                 Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1);

@@ -4,6 +4,7 @@ import battlecode.common.*;
 import static latticebot.util.Constants.*;
 
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class Util {
     private static RobotController rc;
@@ -44,6 +45,15 @@ public class Util {
         } else {
             UnitCommunication.postLoop();
         }
+        MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
+            rc.setIndicatorDot(x, 255, 255, 255);
+        });
+        MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
+            rc.setIndicatorDot(x, 128, 128, 128);
+        });
+        MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
+            rc.setIndicatorDot(x, 0, 0, 0);
+        });
     }
 
     public static void move(Direction direction) throws GameActionException {
@@ -293,5 +303,21 @@ public class Util {
             }
         }
         return closest;
+    }
+
+    // Replacement for Optional.map(RobotInfo::getLocation) to save bytecodes
+    public static MapLocation mapToLocation(RobotInfo robot) {
+        return robot == null ? null : robot.getLocation();
+    }
+
+    // Replacement for Optional.orElseGet()
+    public static MapLocation getFirst(Supplier<MapLocation>... suppliers) {
+        for (Supplier<MapLocation> supplier : suppliers) {
+            MapLocation location = supplier.get();
+            if (location != null) {
+                return location;
+            }
+        }
+        return null;
     }
 }

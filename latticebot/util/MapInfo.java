@@ -14,6 +14,7 @@ public class MapInfo {
     public static int mapMaxX = MAP_UNKNOWN_EDGE; // not known
     public static int mapMinY = MAP_UNKNOWN_EDGE; // not known
     public static int mapMaxY = MAP_UNKNOWN_EDGE; // not known
+    public static MapLocationList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;
@@ -21,6 +22,10 @@ public class MapInfo {
         MapInfo.origin = rc.getLocation().translate(-67, -67);
         // sense initial passability
         // TODO
+        enlightenmentCenterLocations = new MapLocationList[Team.values().length];
+        for (int i = 0; i < enlightenmentCenterLocations.length; i++) {
+            enlightenmentCenterLocations[i] = new MapLocationList();
+        }
     }
     public static void setKnownPassability(MapLocation location) throws GameActionException {
         int offsetX = location.x - origin.x;
@@ -48,6 +53,7 @@ public class MapInfo {
         */
         updateBoundaries();
     }
+    // TODO: Communication
     private static void updateBoundaries() {
         if(MapInfo.mapMinX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-SENSE_BOX_RADIUS, 0))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
@@ -93,5 +99,20 @@ public class MapInfo {
                 MapInfo.mapMaxY = Cache.MY_LOCATION.y;
             }
         }
+    }
+    public static  void addKnownEnlightementCenter(MapLocation ecLocation, Team ecTeam) {
+        for (Team team : Team.values()) {
+            MapLocationList list = enlightenmentCenterLocations[team.ordinal()];
+            if (team == ecTeam) {
+                if (!list.contains(ecLocation)) {
+                    list.add(ecLocation);
+                }
+            } else {
+                list.removeIf(x -> x.equals(ecLocation));
+            }
+        }
+    }
+    public static MapLocationList getKnownEnlightenmentCenterList(Team team) {
+        return enlightenmentCenterLocations[team.ordinal()];
     }
 }

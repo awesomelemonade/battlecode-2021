@@ -3,12 +3,14 @@ package latticebot;
 import battlecode.common.*;
 import latticebot.util.Cache;
 import latticebot.util.Constants;
+import latticebot.util.MapInfo;
 import latticebot.util.Pathfinder;
 import latticebot.util.Util;
 import java.util.function.Predicate;
 
 public strictfp class Muckracker implements RunnableBot {
     private RobotController rc;
+    private boolean explore;
 
     public Muckracker(RobotController rc) {
         this.rc = rc;
@@ -16,7 +18,11 @@ public strictfp class Muckracker implements RunnableBot {
 
     @Override
     public void init() throws GameActionException {
-
+        if (Math.random() > 0.5) {
+            explore = true;
+        } else {
+            explore = false;
+        }
     }
 
     @Override
@@ -29,10 +35,26 @@ public strictfp class Muckracker implements RunnableBot {
             Predicate<RobotInfo> exposable = robot -> robot.type.canBeExposed();
             RobotInfo enemy = Util.getClosestEnemyRobot(exposable);
             if (enemy == null) {
-                Util.smartExplore();
+                if (explore || !goToNearestEC()) {
+                    Util.smartExplore();
+                }
             } else {
                 Pathfinder.execute(enemy.getLocation());
             }
+        }
+    }
+
+    public boolean goToNearestEC() throws GameActionException {
+        MapLocation ec = Util.getFirst(
+                () -> Util.mapToLocation(Util.getClosestEnemyRobot(x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER)),
+                () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION)
+        );
+        if (ec != null) {
+            rc.setIndicatorDot(ec, 255, 255, 0); // yellow
+            Pathfinder.execute(ec);
+            return true;
+        } else {
+            return false;
         }
     }
 

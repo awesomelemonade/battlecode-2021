@@ -15,14 +15,9 @@ public class CentralCommunication {
     public static int nearestEnemyDistanceSquared = Integer.MAX_VALUE;
     public static RobotType nearestEnemyType;
     public static int nearestEnemyInfluence = 0;
-    public static MapLocationList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
-        enlightenmentCenterLocations = new MapLocationList[Team.values().length];
-        for (int i = 0; i < enlightenmentCenterLocations.length; i++) {
-            enlightenmentCenterLocations[i] = new MapLocationList();
-        }
     }
     private static BooleanArray registered;
     // Stored as singly linked list
@@ -86,8 +81,8 @@ public class CentralCommunication {
                         }
                     }
                     if (type == RobotType.ENLIGHTENMENT_CENTER) {
-                        Team team = Team.values()[info];
-                        enlightenmentCenterLocations[team.ordinal()].add(specifiedLocation);
+                        System.out.println(current.id + " registrating enlightenment center: " + specifiedLocation);
+                        MapInfo.addKnownEnlightementCenter(specifiedLocation, Team.values()[info]);
                     }
                 }
                 // update location
@@ -154,38 +149,39 @@ public class CentralCommunication {
         }
         flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
         // 7 bits on relative x location and relative y location
-        int rotationDx = 0;
-        int rotationDy = 0;
+        MapLocation rotationLocation = null;
         switch (rc.getRoundNum() % 5) {
             case 0: // [minX, minY]
-                //flag |= minX << ROTATION_SHIFT_X;
-                //flag |= minY << ROTATION_SHIFT_Y;
                 if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE) {
-                    rotationDx = MapInfo.mapMinX - Cache.MY_LOCATION.x + ROTATION_OFFSET;
+                    flag |= (MapInfo.mapMinX - Cache.MY_LOCATION.x + ROTATION_OFFSET) << ROTATION_SHIFT_X;
                 }
                 if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE) {
-                    rotationDy = MapInfo.mapMinY - Cache.MY_LOCATION.y + ROTATION_OFFSET;
+                    flag |= (MapInfo.mapMinY - Cache.MY_LOCATION.y + ROTATION_OFFSET) << ROTATION_SHIFT_Y;
                 }
                 break;
             case 1: // [maxX, maxY]
                 if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE) {
-                    rotationDx = MapInfo.mapMaxX - Cache.MY_LOCATION.x + ROTATION_OFFSET;
+                    flag |= (MapInfo.mapMaxX - Cache.MY_LOCATION.x + ROTATION_OFFSET) << ROTATION_SHIFT_X;
                 }
                 if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE) {
-                    rotationDy = MapInfo.mapMaxY - Cache.MY_LOCATION.y + ROTATION_OFFSET;
+                    flag |= (MapInfo.mapMaxY - Cache.MY_LOCATION.y + ROTATION_OFFSET) << ROTATION_SHIFT_Y;
                 }
                 break;
             case 2: // [ally ec]
-                MapLocation ally = enlightenmentCenterLocations[Constants.ALLY_TEAM.ordinal()].getRandomLocation();
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandomLocation();
                 break;
             case 3: // [enemy ec]
-                MapLocation enemy = enlightenmentCenterLocations[Constants.ENEMY_TEAM.ordinal()].getRandomLocation();
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation();
                 break;
             case 4: // [neutral ec]
-                MapLocation neutral = enlightenmentCenterLocations[Team.NEUTRAL.ordinal()].getRandomLocation();
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation();
                 break;
         }
-        flag = flag | (rotationDx << ROTATION_SHIFT_X) | (rotationDy << ROTATION_SHIFT_Y);
+        if (rotationLocation != null) {
+            int rotationDx = rotationLocation.x - Cache.MY_LOCATION.x + ROTATION_OFFSET;
+            int rotationDy = rotationLocation.y - Cache.MY_LOCATION.y + ROTATION_OFFSET;
+            flag = flag | (rotationDx << ROTATION_SHIFT_X) | (rotationDy << ROTATION_SHIFT_Y);
+        }
         rc.setFlag(flag);
     }
 }

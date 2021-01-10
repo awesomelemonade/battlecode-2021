@@ -2,6 +2,7 @@ package latticebot.util;
 
 import battlecode.common.MapLocation;
 
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class MapLocationList {
@@ -10,6 +11,21 @@ public class MapLocationList {
     public void add(MapLocation location) {
         head = new MapLocationListNode(location, head);
         size++;
+    }
+    public MapLocation getClosestLocation(MapLocation location) {
+        MapLocation closestLocation = null;
+        int closestDistanceSquared = Integer.MAX_VALUE;
+        MapLocationListNode current = head;
+        while (current != null) {
+            MapLocation currentLocation = current.location;
+            int distanceSquared = location.distanceSquaredTo(currentLocation);
+            if (distanceSquared < closestDistanceSquared) {
+                closestLocation = currentLocation;
+                closestDistanceSquared = distanceSquared;
+            }
+            current = current.next;
+        }
+        return closestLocation;
     }
     public MapLocation getRandomLocation() {
         if (size == 0) {
@@ -41,9 +57,17 @@ public class MapLocationList {
                 } else {
                     prev.next = current.next;
                 }
+                size--;
             } else {
                 prev = current;
             }
+            current = current.next;
+        }
+    }
+    public void forEach(Consumer<MapLocation> consumer) {
+        MapLocationListNode current = head;
+        while (current != null) {
+            consumer.accept(current.location);
             current = current.next;
         }
     }

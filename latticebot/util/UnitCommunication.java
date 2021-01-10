@@ -38,9 +38,28 @@ public class UnitCommunication {
     public static void loop() throws GameActionException {
         rc.setFlag(DEFAULT_FLAG); // in case we run out of bytecodes
         currentFlag = CLEAR_FLAG;
-        RobotInfo closestEnemy = Util.getClosestEnemyRobot();
-        if (closestEnemy != null) {
-            setFlag(closestEnemy);
+        // Prioritize
+        // 1. neutral/enemy enlightenment centers
+        // 2. neutral/enemy units
+        // 3. ally enlightenment centers
+        RobotInfo interestingRobot = Util.getClosestRobot(Cache.ALL_ROBOTS,
+                x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER && x.getTeam() != Constants.ALLY_TEAM);
+        if (interestingRobot == null) {
+            interestingRobot = Util.getClosestRobot(Cache.ALL_ROBOTS,
+                    x -> x.getTeam() != Constants.ALLY_TEAM);
+        }
+        if (interestingRobot == null) {
+            interestingRobot = Util.getClosestRobot(Cache.ALLY_ROBOTS,
+                    x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER);
+        }
+        // communicate the interesting robot
+        if (interestingRobot != null) {
+            rc.setIndicatorLine(Cache.MY_LOCATION, interestingRobot.getLocation(), 255, 255, 0);
+            // TODO: change EC of ALL sensed enlightenment centers
+            if (interestingRobot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                MapInfo.addKnownEnlightementCenter(interestingRobot.getLocation(), interestingRobot.getTeam());
+            }
+            setFlag(interestingRobot);
         }
         closestCommunicatedEnemy = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
@@ -63,12 +82,6 @@ public class UnitCommunication {
         rc.setFlag((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag);
     }
     public static void setFlag(RobotInfo unit) throws GameActionException {
-        /*
-        // see if there is any interesting unit
-        RobotInfo unit = Util.getClosestEnemyRobot(); // TODO: but it already moved..
-        if (unit == null) {
-            unit = Util.getClosestRobot(Cache.ALLY_ROBOTS, x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER);
-        }*/
         currentFlag = 0;
         MapLocation unitLocation = unit.getLocation();
         int dx = unitLocation.x - Cache.MY_LOCATION.x + OFFSET_SHIFT; // 4 bits on relative x location
@@ -153,15 +166,18 @@ public class UnitCommunication {
                         }
                         break;
                     case 2: // [ally ec]
+                        MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
                         break;
                     case 3: // [enemy ec]
+                        MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
                         break;
                     case 4: // [neutral ec]
+                        MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
                         break;
                 }
                 prev = current;
             } else {
-                // remove from SLL
+                // remove from SLL - TODO: Should we unregister some EC locations?
                 if (prev == null) {
                     ecListHead = current.next;
                 } else {

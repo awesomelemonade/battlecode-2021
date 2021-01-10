@@ -19,7 +19,7 @@ public strictfp class Slanderer implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
-        if (!rc.isReady()) {
+        if (!rc.isReady() || Cache.TURN_COUNT <= 3) {
             return;
         }
         if (rc.getType() == RobotType.SLANDERER) {

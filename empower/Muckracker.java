@@ -62,14 +62,20 @@ public strictfp class Muckracker implements RunnableBot {
         return false;
     }
 
+    // if sees empty square next to ec, go to it
     public boolean campEnemyEC() throws GameActionException {
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
             if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 if (rc.getLocation().distanceSquaredTo(robot.location) <= 2) {
                     return true;
                 }
-                Pathfinder.execute(robot.getLocation());
-                return true;
+                for (Direction d : Constants.ORDINAL_DIRECTIONS) {
+                    MapLocation loc = robot.location.add(d);
+                    if(rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc)) {
+                        Util.tryMove(loc);
+                        return true;
+                    }
+                }
             }
         }
         return false;

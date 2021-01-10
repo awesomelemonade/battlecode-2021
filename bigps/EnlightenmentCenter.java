@@ -38,7 +38,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
         } else if (rc.getRoundNum() <= 200) {
             if (rc.getInfluence() >= 200) {
-                int influence = Math.min(500, rc.getInfluence() - 50);
+                int influence = Math.min(300, rc.getInfluence() - 50);
                 if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
                     politicianCount++;
                     return;
@@ -51,7 +51,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return;
                 }
             }
-            if (Math.random() <= 0.8) {
+            if (Math.random() <= 0.8 || rc.getInfluence() <= 100) {
                 if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1)) {
                     muckrakerCount++;
                     return;
@@ -77,8 +77,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return;
                 }
             } else {
-                if (politicianCount % 5 == 0 && rc.getInfluence() >= 200) {
-                    int influence = Math.min(1000, rc.getInfluence() - 50);
+                if (politicianCount % 5 == 0 && rc.getInfluence() >= 1000) {
+                    int influence = Math.min(500, rc.getInfluence() - 50);
                     if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
                         politicianCount++;
                         return;

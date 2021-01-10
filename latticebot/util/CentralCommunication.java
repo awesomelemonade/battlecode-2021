@@ -20,6 +20,9 @@ public class CentralCommunication {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
         enlightenmentCenterLocations = new MapLocationList[Team.values().length];
+        for (int i = 0; i < enlightenmentCenterLocations.length; i++) {
+            enlightenmentCenterLocations[i] = new MapLocationList();
+        }
     }
     private static BooleanArray registered;
     // Stored as singly linked list

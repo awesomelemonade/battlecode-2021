@@ -97,6 +97,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public void bid() throws GameActionException {
         if (rc.getInfluence() <= 100)
             return;
+        if (rc.getTeamVotes() == 1500) {
+            return;
+        }
         double r = Math.random();
         int amount;
         if (r < 0.2) {

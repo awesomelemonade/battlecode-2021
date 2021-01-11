@@ -1,4 +1,4 @@
-package latticebot.util;
+package pdefense.util;
 
 import battlecode.common.*;
 
@@ -12,7 +12,7 @@ public class Constants {
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = true;
-    public static final boolean DEBUG_RESIGN = true;
+    public static final int DEBUG_RESIGN = 1500;
 
     public static void init(RobotController rc) throws GameActionException {
         ALLY_TEAM = rc.getTeam();

@@ -1,11 +1,11 @@
-package latticebot;
+package pdefense;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.CentralCommunication;
-import latticebot.util.Constants;
-import latticebot.util.SlandererBuild;
-import latticebot.util.Util;
+import pdefense.util.Cache;
+import pdefense.util.CentralCommunication;
+import pdefense.util.Constants;
+import pdefense.util.SlandererBuild;
+import pdefense.util.Util;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
     private RobotController rc;
@@ -41,10 +41,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         boolean danger = CentralCommunication.nearestEnemy != null && CentralCommunication.nearestEnemyDistanceSquared <= 25;
         if (rc.getRoundNum() == 1 && !danger) {
-            System.out.println("A");
             buildSlanderer();
         } else if (rc.getRoundNum() <= 200) {
-            System.out.println("B");
             if (rc.getInfluence() >= 200) {
                 int influence = Math.min(300, rc.getInfluence() - 50);
                 if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
@@ -76,7 +74,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
             }
         } else {
-            System.out.println("C");
             double r = Math.random();
             if (r <= 0.3 && !danger) {
                 if (buildSlanderer()) {
@@ -141,14 +138,16 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             return false;
         }
         if (CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER
-                && CentralCommunication.nearestEnemyDistanceSquared > 121) {
+                && CentralCommunication.nearestEnemyDistanceSquared > 64) {
             return false;
         }
         if (CentralCommunication.nearestEnemyType == RobotType.POLITICIAN
                 && CentralCommunication.nearestEnemyDistanceSquared > 16) {
             return false;
         }
-        System.out.println("000");
+        if (CentralCommunication.nearestEnemyType == RobotType.ENLIGHTENMENT_CENTER) {
+            return false;
+        }
         int influence = 5 * CentralCommunication.nearestEnemyInfluence + Constants.POLITICIAN_EMPOWER_PENALTY;
         influence = Math.max(influence, 12);
         if (Util.tryBuildRobotTowards(RobotType.POLITICIAN,

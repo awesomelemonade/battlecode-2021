@@ -177,39 +177,31 @@ public class UnitCommunication {
                 }
                 int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
                 int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK) - CentralCommunication.ROTATION_OFFSET;
-                MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
-                switch (rc.getRoundNum() % 5) {
-                    case 0:
-                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.mapMinX = rotationLocation.x;
-                        }
-                        if (rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.mapMinY = rotationLocation.y;
-                        }
-                        break;
-                    case 1:
-                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.mapMaxX = rotationLocation.x;
-                        }
-                        if (rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.mapMaxY = rotationLocation.y;
-                        }
-                        break;
-                    case 2: // [ally ec]
-                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
-                        }
-                        break;
-                    case 3: // [enemy ec]
-                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
-                        }
-                        break;
-                    case 4: // [neutral ec]
-                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                            MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
-                        }
-                        break;
+                if (rotationDx == 0 && rotationDy == 0) {
+                    current.lastHeartbeatTurn = rc.getRoundNum();
+                }
+                if (current.lastHeartbeatTurn != -1) {
+                    MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
+                    switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 4) {
+                        case 0: // heartbeat
+                            Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
+                            break;
+                        case 1: // [ally ec]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
+                            }
+                            break;
+                        case 2: // [enemy ec]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
+                            }
+                            break;
+                        case 3: // [neutral ec]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
+                            }
+                            break;
+                    }
                 }
                 prev = current;
             } else {
@@ -242,6 +234,7 @@ public class UnitCommunication {
         int id;
         MapLocation location;
         MapLocation nearestEnemy;
+        int lastHeartbeatTurn = -1;
         ECNode next;
         public ECNode(int id, MapLocation location, ECNode next) {
             this.id = id;

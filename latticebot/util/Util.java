@@ -155,6 +155,37 @@ public class Util {
         return tryMove(randomAdjacentDirection());
     }
 
+    public static boolean hasAdjacentAllyRobot(MapLocation location) {
+        if (Cache.ALLY_ROBOTS.length >= 20) {
+            return rc.senseNearbyRobots(location, 2, ALLY_TEAM).length > 0;
+        } else {
+            // loop through robot list
+            for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
+                if (location.isWithinDistanceSquared(Cache.ALLY_ROBOTS[i].getLocation(), 2)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public static boolean tryMoveSpacedApart(Direction direction) throws GameActionException {
+        if (rc.canMove(direction) && !Util.hasAdjacentAllyRobot(Cache.MY_LOCATION.add(direction))) {
+            Util.move(direction);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    public static boolean tryMoveTowardsSpacedApart(Direction direction) throws GameActionException {
+        for (Direction moveDirection : Constants.getAttemptOrder(direction)) {
+            if (tryMoveSpacedApart(moveDirection)) {
+                return true;
+            }
+        }
+        return Util.tryMoveTowards(direction);
+    }
+
     private static Direction previousDirection = randomAdjacentDirection();
 
     public static boolean randomExplore() throws GameActionException {

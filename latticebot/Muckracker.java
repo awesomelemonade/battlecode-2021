@@ -9,11 +9,11 @@ import latticebot.util.Util;
 import java.util.function.Predicate;
 
 public strictfp class Muckracker implements RunnableBot {
-    private RobotController rc;
-    private boolean explore;
+    private static RobotController rc;
+    private static boolean explore;
 
     public Muckracker(RobotController rc) {
-        this.rc = rc;
+        Muckracker.rc = rc;
     }
 
     @Override
@@ -31,21 +31,37 @@ public strictfp class Muckracker implements RunnableBot {
             if (tryExpose()) {
                 return;
             }
-            int camping = campEnemyEC();
-            if (camping == 1) {
+            RobotInfo enemy = Util.getClosestEnemyRobot(r -> r.getType().canBeExposed());
+            if (enemy != null) {
+                Pathfinder.execute(enemy.getLocation());
                 return;
             }
-            Predicate<RobotInfo> exposable = robot -> robot.type.canBeExposed();
-            RobotInfo enemy = Util.getClosestEnemyRobot(exposable);
-            if (enemy == null) {
-                if (!explore && camping == 0) {
-                    if(goToNearestEC()) return;
-                }
-                Util.smartExplore();
-            } else {
-                Pathfinder.execute(enemy.getLocation());
+            if (tryECSpiral()) {
+                return;
             }
+            Util.randomExplore();
         }
+    }
+
+    private static MapLocation lastECVisited = null;
+    public static boolean tryECSpiral() throws GameActionException {
+        MapLocation ec = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION);
+        if (ec != null) {
+            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec);
+            if (distanceSquared <= 9) {
+                lastECVisited = ec;
+            }
+            if (lastECVisited == null || !lastECVisited.equals(ec)) {
+                if (!Pathfinder.executeSpacedApart(ec)) {
+                    Pathfinder.execute(ec);
+                }
+            } else {
+                Direction tangent = ec.directionTo(Cache.MY_LOCATION).rotateRight().rotateRight();
+                Util.tryMoveTowardsSpacedApart(tangent);
+            }
+            return true;
+        }
+        return false;
     }
 
     public boolean goToNearestEC() throws GameActionException {

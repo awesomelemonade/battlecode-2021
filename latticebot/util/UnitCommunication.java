@@ -37,7 +37,7 @@ public class UnitCommunication {
     }
     public static final int CURRENT_DIRECTION_CENTER_SLANDERER = 9;
     public static boolean isPotentialSlanderer(RobotInfo robot) throws GameActionException {
-        return (rc.getFlag(robot.getID()) >> CURRENT_DIRECTION_SHIFT) == CURRENT_DIRECTION_CENTER_SLANDERER;
+        return ((rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG) >> CURRENT_DIRECTION_SHIFT) == CURRENT_DIRECTION_CENTER_SLANDERER;
     }
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes

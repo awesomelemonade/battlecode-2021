@@ -331,6 +331,6 @@ public class Util {
 
     public static void setIndicatorLine(MapLocation startLoc, MapLocation endLoc, int red, int green, int blue) {
         if(!Constants.DRAW_DEBUG) return;
-        rc.setIndicatorLine(MapLocation startLoc, MapLocation endLoc, int red, int green, int blue);
+        rc.setIndicatorLine(startLoc, endLoc, red, green, blue);
     }
 }

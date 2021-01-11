@@ -26,7 +26,7 @@ public strictfp class Politician implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        power = (int)((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
+        power = (int) ((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
         if (power >= 30 && tryClaimEC()) {
             rc.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
@@ -51,12 +51,11 @@ public strictfp class Politician implements RunnableBot {
 
     public boolean goToNearestEC() throws GameActionException {
         RobotInfo[] neutralECs = rc.senseNearbyRobots(-1, Team.NEUTRAL);
-        MapLocation ec = Util.getFirst(
-                () -> Util.mapToLocation(Util.getClosestRobot(neutralECs, x -> true)),
+        MapLocation ec = Util.getFirst(() -> Util.mapToLocation(Util.getClosestRobot(neutralECs, x -> true)),
                 () -> MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getClosestLocation(Cache.MY_LOCATION),
                 () -> Util.mapToLocation(Util.getClosestEnemyRobot(x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER)),
-                () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION)
-        );
+                () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
+                        .getClosestLocation(Cache.MY_LOCATION));
         if (ec != null) {
             rc.setIndicatorDot(ec, 255, 255, 0); // yellow
             Pathfinder.execute(ec);
@@ -69,22 +68,26 @@ public strictfp class Politician implements RunnableBot {
     private int getScore(int radiusSquared) {
         RobotInfo[] robots = rc.senseNearbyRobots(radiusSquared);
         int numUnits = robots.length;
-        if(numUnits == 0) return 0;
-        int damage = power/numUnits;
+        if (numUnits == 0)
+            return 0;
+        int damage = power / numUnits;
         int numKills = 0;
         int totalConviction = 0;
-        for(RobotInfo robot: robots) {
-            if(robot.getTeam() != Constants.ALLY_TEAM && robot.getConviction() < damage) {
+        for (RobotInfo robot : robots) {
+            if (robot.getTeam() != Constants.ALLY_TEAM && robot.getConviction() < damage) {
                 numKills++;
                 int transferredConviction = robot.getConviction();
-                if(robot.getType() == RobotType.POLITICIAN || robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                if (robot.getType() == RobotType.POLITICIAN) {
+                    transferredConviction += robot.getInfluence();
+                    transferredConviction -= 10;
+                } else if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                     transferredConviction += robot.getInfluence();
                 }
                 transferredConviction = Math.min(damage, transferredConviction);
                 totalConviction += transferredConviction;
             }
         }
-        return numKills*1000000 + totalConviction;
+        return numKills * 1000000 + totalConviction;
     }
 
     public boolean tryClaimEC() throws GameActionException {
@@ -107,16 +110,19 @@ public strictfp class Politician implements RunnableBot {
 
         int bestNewDist = bestDist;
         Direction bestDir = null;
-        for (Direction d : Constants.ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
-            int dist = Cache.MY_LOCATION.add(d).distanceSquaredTo(bestLoc);
-            if (dist < bestNewDist) {
-                bestNewDist = dist;
-                bestDir = d;
+        for (Direction d : Constants.ORDINAL_DIRECTIONS)
+            if (rc.canMove(d)) {
+                int dist = Cache.MY_LOCATION.add(d).distanceSquaredTo(bestLoc);
+                if (dist < bestNewDist) {
+                    bestNewDist = dist;
+                    bestDir = d;
+                }
             }
-        }
         if (bestDir == null) { // can't get any closer
-            if(bestDist > 9) return false;
-            if(bestDist >= 5 && rc.senseNearbyRobots(bestDist).length >= 6) return false;
+            if (bestDist > 9)
+                return false;
+            if (bestDist >= 5 && rc.senseNearbyRobots(bestDist).length >= 6)
+                return false;
             rc.empower(bestDist);
             return true;
         } else {
@@ -126,23 +132,25 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean tryEmpower() throws GameActionException {
-        if(power < 0) return false;
+        if (power < 0)
+            return false;
         int actionRadiusSquared = rc.getType().actionRadiusSquared;
         // if can kill something, maximize the number
         int bestRadius = -1;
         int bestScore = 0;
-        for(int r = 1; r <= actionRadiusSquared; r++) {
+        for (int r = 1; r <= actionRadiusSquared; r++) {
             int score = getScore(r);
-            if(score > bestScore) {
+            if (score > bestScore) {
                 bestScore = score;
                 bestRadius = r;
             }
         }
-        if(bestRadius == -1) return false;
+        if (bestRadius == -1)
+            return false;
 
         int numKills = bestScore / 1000000;
         int convictionGotten = bestScore % 1000000;
-        if(convictionGotten * 10 + 5 >= rc.getConviction()-10) {
+        if (convictionGotten * 2 + 10 >= rc.getConviction() - 10) {
             rc.empower(bestRadius);
             return true;
         }
@@ -152,17 +160,18 @@ public strictfp class Politician implements RunnableBot {
     private boolean chaseWorthwhileEnemy() throws GameActionException {
         int bestDist = 9999;
         MapLocation bestLoc = null;
-        for(RobotInfo robot: Cache.ENEMY_ROBOTS) {
-            if(rc.getConviction()*5 >= robot.getConviction() && robot.getConviction()*5 >= rc.getConviction()) {
+        for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
+            if (rc.getConviction() * 2 + 20 >= robot.getConviction()
+                    && robot.getConviction() * 2 + 20 >= rc.getConviction()) {
                 MapLocation loc = robot.location;
                 int dist = Cache.MY_LOCATION.distanceSquaredTo(loc);
-                if(dist < bestDist) {
+                if (dist < bestDist) {
                     bestDist = dist;
                     bestLoc = loc;
                 }
             }
         }
-        if(bestLoc == null) {
+        if (bestLoc == null) {
             return false;
         }
         return Util.tryMove(bestLoc);

@@ -22,7 +22,7 @@ public strictfp class Politician implements RunnableBot {
 
     @Override
     public void init() throws GameActionException {
-        if(rc.getRoundNum() <= 100 || Math.random() < 0.4) {
+        if(Math.random() < 0.4) {
             defender = true;
         } else {
             defender = false;
@@ -61,36 +61,29 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public int getDefenseScore(MapLocation loc) throws GameActionException {
-        if(!LatticeUtil.isLatticeLocation(loc)) return 9999;
+        if(!LatticeUtil.isLatticeLocation(loc)) return 999999;
         MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(loc);
-        if(nearestEC == null) return 9999;
+        if(nearestEC == null) return 999999;
         int dist = nearestEC.distanceSquaredTo(loc);
-        if (dist <= 16) return 9999;
+        if (dist <= 16) return 999999;
         for(Direction d: Constants.ORDINAL_DIRECTIONS) {
             MapLocation adj = loc.add(d);
             if(rc.canSenseLocation(adj)) {
                 RobotInfo robot = rc.senseRobotAtLocation(adj);
                 if(robot != null && UnitCommunication.isPotentialSlanderer(robot)) {
-                    return 9999;
+                    return 999999;
                 }
             }
         }
-        /*boolean slandererNearby = false;
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(loc, 25, Constants.ALLY_TEAM);
-        for(RobotInfo robot: nearbyRobots) {
-            if(UnitCommunication.isPotentialSlanderer(robot)) {
-                slandererNearby = true;
-                break;
-            }
-        }
-        if(!slandererNearby) return 9999;*/
-        return dist;
+        MapLocation nearestEnemyEC = Util.closestEnemyEC();
+        if(nearestEnemyEC == null) return 5000*dist;
+        return 5000*dist+nearestEnemyEC.distanceSquaredTo(loc);
     }
 
     public boolean tryDefend() throws GameActionException {
-        if(!defender) return false;
+        if(!defender && rc.getRoundNum() >= 100) return false;
         // find best defense score
-        int bestDefenseScore = 9999;
+        int bestDefenseScore = 999999;
         Direction bestDir = null;
         for(Direction d : Constants.ORDINAL_DIRECTIONS) {
             MapLocation loc = Cache.MY_LOCATION.add(d);

@@ -83,7 +83,7 @@ public class CentralCommunication {
                             }
                         }
                     }
-                    if (type == RobotType.ENLIGHTENMENT_CENTER) {
+                    if (type == RobotType.ENLIGHTENMENT_CENTER && !specifiedLocation.equals(Cache.MY_LOCATION)) {
                         MapInfo.addKnownEnlightementCenter(specifiedLocation, Team.values()[info]);
                     }
                 }
@@ -152,30 +152,17 @@ public class CentralCommunication {
         flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
         // 7 bits on relative x location and relative y location
         MapLocation rotationLocation = null;
-        switch (rc.getRoundNum() % 5) {
-            case 0: // [minX, minY]
-                if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE) {
-                    flag |= (MapInfo.mapMinX - Cache.MY_LOCATION.x + ROTATION_OFFSET) << ROTATION_SHIFT_X;
-                }
-                if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE) {
-                    flag |= (MapInfo.mapMinY - Cache.MY_LOCATION.y + ROTATION_OFFSET) << ROTATION_SHIFT_Y;
-                }
+        switch (Cache.TURN_COUNT % 4) {
+            case 0: // heartbeat
+                rotationLocation = Cache.MY_LOCATION;
                 break;
-            case 1: // [maxX, maxY]
-                if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE) {
-                    flag |= (MapInfo.mapMaxX - Cache.MY_LOCATION.x + ROTATION_OFFSET) << ROTATION_SHIFT_X;
-                }
-                if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE) {
-                    flag |= (MapInfo.mapMaxY - Cache.MY_LOCATION.y + ROTATION_OFFSET) << ROTATION_SHIFT_Y;
-                }
-                break;
-            case 2: // [ally ec]
+            case 1: // [ally ec]
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandomLocation();
                 break;
-            case 3: // [enemy ec]
+            case 2: // [enemy ec]
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation();
                 break;
-            case 4: // [neutral ec]
+            case 3: // [neutral ec]
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation();
                 break;
         }

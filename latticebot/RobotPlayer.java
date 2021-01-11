@@ -32,18 +32,22 @@ public strictfp class RobotPlayer {
             ex.printStackTrace();
         }
         boolean errored = false;
+        boolean overBytecodes = false;
         while (true) {
             try {
                 while (true) {
                     if (errored) {
-                        // Errored - RED
-                        rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
+                        rc.setIndicatorDot(rc.getLocation(), 255, 0, 0); // red
+                    }
+                    if (overBytecodes) {
+                        rc.setIndicatorDot(rc.getLocation(), 128, 0, 255); // purple
                     }
                     int currentTurn = rc.getRoundNum();
                     Util.loop();
                     bot.turn();
                     Util.postLoop();
                     if (rc.getRoundNum() != currentTurn) {
+                        overBytecodes = true;
                         // We ran out of bytecodes! - MAGENTA
                         rc.setIndicatorDot(rc.getLocation(), 255, 0, 255);
                         int over = Clock.getBytecodeNum() + (rc.getRoundNum() - currentTurn - 1) * rc.getType().bytecodeLimit;

@@ -171,6 +171,7 @@ public class Util {
 
     // ~1200 bytecodes if we need to find a new destination, ~300 otherwise
     public static boolean smartExplore() throws GameActionException {
+        rc.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
         if(timeSpentOnThisDestination == 10) {
             setExplored(exploreDest);

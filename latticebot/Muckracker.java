@@ -28,10 +28,12 @@ public strictfp class Muckracker implements RunnableBot {
     @Override
     public void turn() throws GameActionException {
         if (rc.isReady()) {
-            if (tryExpose())
+            if (tryExpose()) {
                 return;
-            if (campEnemyEC())
+            }
+            if (campEnemyEC()) {
                 return;
+            }
             Predicate<RobotInfo> exposable = robot -> robot.type.canBeExposed();
             RobotInfo enemy = Util.getClosestEnemyRobot(exposable);
             if (enemy == null) {

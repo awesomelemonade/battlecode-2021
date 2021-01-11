@@ -94,7 +94,7 @@ public class UnitCommunication {
             currentFlag |= unit.getTeam().ordinal();
         } else {
             // specify influence
-            currentFlag |= (unit.getInfluence() & CURRENT_UNIT_INFO_MASK);
+            currentFlag |= Math.min(unit.getInfluence(), CURRENT_UNIT_INFO_MASK);
         }
     }
     public static final int UNIT_INFO_BITMASK = 0b1111_1111_1111_1111_1111; // 20 bits
@@ -166,13 +166,19 @@ public class UnitCommunication {
                         }
                         break;
                     case 2: // [ally ec]
-                        MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
+                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
+                        }
                         break;
                     case 3: // [enemy ec]
-                        MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
+                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
+                        }
                         break;
                     case 4: // [neutral ec]
-                        MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
+                        if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                            MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
+                        }
                         break;
                 }
                 prev = current;

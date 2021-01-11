@@ -33,7 +33,7 @@ public class CentralCommunication {
     }
     private static UnitListNode unitListHead = null;
     private static int unitListSize = 0;
-    private static final int UNIT_LIST_MAX_SIZE = 150;
+    private static final int UNIT_LIST_MAX_SIZE = 80;
     // 14 bits: rotate between [minX, maxX], [minY, maxY], [friendly ec], [enemy ec], [neutral ec]
     public static final int ROTATION_SHIFT_X = 17;
     public static final int ROTATION_SHIFT_Y = 10;
@@ -81,7 +81,6 @@ public class CentralCommunication {
                         }
                     }
                     if (type == RobotType.ENLIGHTENMENT_CENTER) {
-                        System.out.println(current.id + " registrating enlightenment center: " + specifiedLocation);
                         MapInfo.addKnownEnlightementCenter(specifiedLocation, Team.values()[info]);
                     }
                 }

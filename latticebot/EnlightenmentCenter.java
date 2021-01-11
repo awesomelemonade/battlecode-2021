@@ -137,7 +137,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             return false;
         }
         if (CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER
-                && CentralCommunication.nearestEnemyDistanceSquared > 121) {
+                && CentralCommunication.nearestEnemyDistanceSquared > 64) {
             return false;
         }
         if (CentralCommunication.nearestEnemyType == RobotType.POLITICIAN

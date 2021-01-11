@@ -3,6 +3,7 @@ package latticebot;
 import battlecode.common.*;
 import latticebot.util.Cache;
 import latticebot.util.Constants;
+import latticebot.util.LatticeUtil;
 import latticebot.util.MapInfo;
 import latticebot.util.Pathfinder;
 import latticebot.util.UnitCommunication;
@@ -11,6 +12,9 @@ import latticebot.util.Util;
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
     private static int power;
+    private static final int[] DEFENSE_SQUARES_X = {2, 0, -2, 0, 2, 1, -1, -2, -2, -1, 1, 2, 2, -2, -2, 2, 3, 0, -3, 0};
+    private static final int[] DEFENSE_SQUARES_Y = {0, 2, 0, -2, 1, 2, 2, 1, -1, -2, -2, -1, 2, 2, -2, -2, 0, 3, 0, -3};
+    private static boolean defender;
 
     public Politician(RobotController rc) {
         Politician.rc = rc;
@@ -18,7 +22,11 @@ public strictfp class Politician implements RunnableBot {
 
     @Override
     public void init() throws GameActionException {
-
+        if(rc.getRoundNum() <= 100 || Math.random() < 0.4) {
+            defender = true;
+        } else {
+            defender = false;
+        }
     }
 
     @Override
@@ -39,6 +47,10 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
             return;
         }
+        if (rc.getConviction() < 30 && tryDefend()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
+            return;
+        }
         if (power >= 30 && goToNearestEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
@@ -46,6 +58,57 @@ public strictfp class Politician implements RunnableBot {
         if (Util.smartExplore()) {
             return;
         }
+    }
+
+    public int getDefenseScore(MapLocation loc) throws GameActionException {
+        if(!LatticeUtil.isLatticeLocation(loc)) return 9999;
+        MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(loc);
+        if(nearestEC == null) return 9999;
+        int dist = nearestEC.distanceSquaredTo(loc);
+        if (dist <= 16) return 9999;
+        for(Direction d: Constants.ORDINAL_DIRECTIONS) {
+            MapLocation adj = loc.add(d);
+            if(rc.canSenseLocation(adj)) {
+                RobotInfo robot = rc.senseRobotAtLocation(adj);
+                if(robot != null && UnitCommunication.isPotentialSlanderer(robot)) {
+                    return 9999;
+                }
+            }
+        }
+        /*boolean slandererNearby = false;
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(loc, 25, Constants.ALLY_TEAM);
+        for(RobotInfo robot: nearbyRobots) {
+            if(UnitCommunication.isPotentialSlanderer(robot)) {
+                slandererNearby = true;
+                break;
+            }
+        }
+        if(!slandererNearby) return 9999;*/
+        return dist;
+    }
+
+    public boolean tryDefend() throws GameActionException {
+        if(!defender) return false;
+        // find best defense score
+        int bestDefenseScore = 9999;
+        Direction bestDir = null;
+        for(Direction d : Constants.ORDINAL_DIRECTIONS) {
+            MapLocation loc = Cache.MY_LOCATION.add(d);
+            if(rc.canMove(d)) {
+                int score = getDefenseScore(loc);
+                if(score < bestDefenseScore) {
+                    bestDefenseScore = score;
+                    bestDir = d;
+                }
+            }
+        }
+        if(bestDir == null) {
+            return false;
+        }
+        if(getDefenseScore(Cache.MY_LOCATION) <= bestDefenseScore) {
+            return true;
+        }
+        return Util.tryMove(bestDir);
     }
 
     public boolean goToNearestEC() throws GameActionException {
@@ -150,6 +213,12 @@ public strictfp class Politician implements RunnableBot {
         int numKills = bestScore / 1000000;
         int convictionGotten = bestScore % 1000000;
         if (convictionGotten * 2 + 10 >= rc.getConviction() - 10) {
+            rc.empower(bestRadius);
+            return true;
+        }
+        MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(Cache.MY_LOCATION);
+        int dist = nearestEC == null ? 1024 : nearestEC.distanceSquaredTo(Cache.MY_LOCATION);
+        if (convictionGotten * 10 >= rc.getConviction() - 10 && dist <= 64) {
             rc.empower(bestRadius);
             return true;
         }

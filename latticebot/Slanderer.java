@@ -28,19 +28,16 @@ public strictfp class Slanderer implements RunnableBot {
             if (closestEnemyLocation == null) {
                 closestEnemyLocation = UnitCommunication.closestCommunicatedEnemy;
             }
-            if (closestEnemyLocation == null || Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 10) {
+            if (closestEnemyLocation != null && rc.getRoundNum() <= 150 && Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 10) {
+                Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
+                tryKiteFrom(closestEnemyLocation);
+            }
+            if (closestEnemyLocation == null || Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 5) {
                 Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255);
-                // lattice
-                if (LatticeUtil.isLatticeLocation(rc.getLocation())) {
-                    // do nothing
-                } else {
-                    MapLocation target = LatticeUtil.getClosestLatticeLocation(rc.getLocation());
-                    if (target == null) {
-                        Util.smartExplore();
-                    } else {
-                        Util.tryMove(target);
-                    }
+                if(hide()) {
+                    return;
                 }
+                if(Util.smartExplore()) return;
             } else {
                 Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
                 tryKiteFrom(closestEnemyLocation);
@@ -60,52 +57,26 @@ public strictfp class Slanderer implements RunnableBot {
         return Util.tryMoveTowards(location.directionTo(rc.getLocation()));
     }
 
-    private double edgeScore(MapLocation loc) throws GameActionException {
-        double x_dist = 9999;
-        if(MapInfo.mapMinX != -1) x_dist = Math.min(x_dist, loc.x-MapInfo.mapMinX);
-        if(MapInfo.mapMaxX != -1) x_dist = Math.min(x_dist, MapInfo.mapMaxX-loc.x);
-        double y_dist = 9999;
-        if(MapInfo.mapMinY != -1) y_dist = Math.min(y_dist, loc.y-MapInfo.mapMinY);
-        if(MapInfo.mapMaxY != -1) y_dist = Math.min(y_dist, MapInfo.mapMaxY-loc.y);
-
-        if(x_dist == 9999) {
-            return y_dist;
-        } else if(y_dist == 9999) {
-            return x_dist;
-        } else {
-            return 0.95*Math.min(x_dist, y_dist) + 0.05*Math.max(x_dist, y_dist);
-        }
+    private int hidingScore(MapLocation loc) throws GameActionException {
+        MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(loc);
+        int dist = nearestEC == null ? 1024 : nearestEC.distanceSquaredTo(loc);
+        if (dist <= 4) return 9999 - dist;
+        if(!LatticeUtil.isLatticeLocation(loc)) return 9999 - dist;
+        return dist;
     }
 
-    private double spawnScore(MapLocation loc) throws GameActionException {
-        /*int dx = loc.x - SPAWNEC.x;
-        int dy = loc.y - SPAWNEC.y;
-        double dist = Math.sqrt(dx*dx + dy*dy);
-        return Math.max(dist, 20*(5-dist));*/
-        // TODO
-        return 0;
-    }
-
-    private double hidingScore(MapLocation loc) throws GameActionException {
-        return 0.9*edgeScore(loc) + 0.1*spawnScore(loc);
-    }
-
-    public boolean hideAtEdge() throws GameActionException {
-        // if all edges are undiscovered, fail
-        if(MapInfo.mapMinX == -1 && MapInfo.mapMaxX == -1 && MapInfo.mapMinY == -1 && MapInfo.mapMaxY == -1) {
-            return false;
-        }
-        double bestScore = 9999;
+    public boolean hide() throws GameActionException {
+        int bestScore = 9999;
         Direction bestdir = null;
         for(Direction d: ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
             MapLocation loc = Cache.MY_LOCATION.add(d);
-            double score = hidingScore(loc);
+            int score = hidingScore(loc);
             if(score < bestScore) {
                 bestScore = score;
                 bestdir = d;
             }
         }
-        if(bestScore > hidingScore(Cache.MY_LOCATION)) {
+        if(bestScore >= hidingScore(Cache.MY_LOCATION)) {
             return true;
         }
         if(bestdir != null) {

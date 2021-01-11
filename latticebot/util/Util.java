@@ -317,7 +317,6 @@ public class Util {
         for (Supplier<MapLocation> supplier : suppliers) {
             MapLocation location = supplier.get();
             if (location != null) {
-                System.out.println(Integer.toString(location.x) + ", " + Integer.toString(location.y));
                 return location;
             }
         }

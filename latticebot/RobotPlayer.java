@@ -5,6 +5,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import latticebot.util.Cache;
+import latticebot.util.Constants;
 import latticebot.util.Util;
 
 public strictfp class RobotPlayer {
@@ -37,6 +38,9 @@ public strictfp class RobotPlayer {
             try {
                 while (true) {
                     int currentTurn = rc.getRoundNum();
+                    if (Constants.DEBUG_RESIGN && (currentTurn >= 800 || currentTurn >= 500 && rc.getRobotCount() < 10)) {
+                        rc.resign();
+                    }
                     Util.loop();
                     bot.turn();
                     Util.postLoop();

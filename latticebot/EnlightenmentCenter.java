@@ -14,18 +14,24 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int muckrakerCount = 0;
     private static int politicianCount = 0;
 
+    private static MapLocation enemyDirection;
+
     public EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
     }
 
     @Override
     public void init() throws GameActionException {
-
+        enemyDirection = rc.getLocation();
     }
 
     @Override
     public void turn() throws GameActionException {
         System.out.println("EC Turn: buff=" + rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
+        if (CentralCommunication.nearestEnemy != null) {
+            Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
+            enemyDirection = enemyDirection.add(directionToNearestEnemy);
+        }
         bid();
         if (!rc.isReady()) {
             return;
@@ -35,10 +41,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         boolean danger = CentralCommunication.nearestEnemy != null && CentralCommunication.nearestEnemyDistanceSquared <= 25;
         if (rc.getRoundNum() == 1) {
-            if (Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(),
-                    rc.getInfluence() - 10)) {
-                slandererCount++;
-            }
+            buildSlanderer();
         } else if (rc.getRoundNum() <= 200) {
             if (rc.getInfluence() >= 200) {
                 int influence = Math.min(300, rc.getInfluence() - 50);
@@ -66,18 +69,14 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return;
                 }
             } else {
-                if (Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(),
-                        Math.min(949, rc.getInfluence() / 2))) {
-                    slandererCount++;
+                if (buildSlanderer()) {
                     return;
                 }
             }
         } else {
             double r = Math.random();
             if (r <= 0.3 && !danger) {
-                if (Util.tryBuildRobotTowards(RobotType.SLANDERER, Util.randomAdjacentDirection(),
-                        Math.min(949, rc.getInfluence() / 2))) {
-                    slandererCount++;
+                if (buildSlanderer()) {
                     return;
                 }
             } else if (r <= 0.6) {
@@ -119,6 +118,19 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             amount = (int) (0.02 * rc.getInfluence());
         }
         rc.bid(amount);
+    }
+
+    public boolean buildSlanderer() throws GameActionException {
+        Direction awayFromEnemies = enemyDirection.directionTo(Cache.MY_LOCATION);
+        if (awayFromEnemies == Direction.CENTER) {
+            awayFromEnemies = Util.randomAdjacentDirection();
+        }
+        if (Util.tryBuildRobotTowards(RobotType.SLANDERER, awayFromEnemies, SlandererBuild.getBuildInfluence(rc.getInfluence() - 5))) {
+            slandererCount++;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean buildDefensivePolitician() throws GameActionException {

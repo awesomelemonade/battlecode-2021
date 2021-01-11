@@ -43,15 +43,15 @@ public strictfp class Muckracker implements RunnableBot {
         }
     }
 
-    private static boolean visitedEC = false;
+    private static MapLocation lastECVisited = null;
     public static boolean tryECSpiral() throws GameActionException {
         MapLocation ec = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION);
         if (ec != null) {
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec);
             if (distanceSquared <= 9) {
-                visitedEC = true;
+                lastECVisited = ec;
             }
-            if (!visitedEC) {
+            if (lastECVisited == null || !lastECVisited.equals(ec)) {
                 if (!Pathfinder.executeSpacedApart(ec)) {
                     Pathfinder.execute(ec);
                 }

@@ -184,8 +184,7 @@ public class UnitCommunication {
                     MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 4) {
                         case 0: // heartbeat
-                            System.out.println("Received Heartbeat at " + rotationLocation);
-                            rc.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
+                            Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {

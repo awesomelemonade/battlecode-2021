@@ -55,47 +55,47 @@ public class MapInfo {
     }
     // TODO: Communication
     private static void updateBoundaries() {
-        if(MapInfo.mapMinX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-SENSE_BOX_RADIUS, 0))) {
+        if(MapInfo.mapMinX == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-SENSE_BOX_RADIUS, 0))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(-d, 0))) {
                     MapInfo.mapMinX = Cache.MY_LOCATION.x - d;
                     break;
                 }
             }
-            if(MapInfo.mapMinX == -1) {
+            if(MapInfo.mapMinX == MAP_UNKNOWN_EDGE) {
                 MapInfo.mapMinX = Cache.MY_LOCATION.x;
             }
         }
-        if(MapInfo.mapMaxX == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(SENSE_BOX_RADIUS, 0))) {
+        if(MapInfo.mapMaxX == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(SENSE_BOX_RADIUS, 0))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(d, 0))) {
                     MapInfo.mapMaxX = Cache.MY_LOCATION.x + d;
                     break;
                 }
             }
-            if(MapInfo.mapMaxX == -1) {
+            if(MapInfo.mapMaxX == MAP_UNKNOWN_EDGE) {
                 MapInfo.mapMaxX = Cache.MY_LOCATION.x;
             }
         }
-        if(MapInfo.mapMinY == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -SENSE_BOX_RADIUS))) {
+        if(MapInfo.mapMinY == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -SENSE_BOX_RADIUS))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -d))) {
                     MapInfo.mapMinY = Cache.MY_LOCATION.y - d;
                     break;
                 }
             }
-            if(MapInfo.mapMinY == -1) {
+            if(MapInfo.mapMinY == MAP_UNKNOWN_EDGE) {
                 MapInfo.mapMinY = Cache.MY_LOCATION.y;
             }
         }
-        if(MapInfo.mapMaxY == -1 && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, SENSE_BOX_RADIUS))) {
+        if(MapInfo.mapMaxY == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, SENSE_BOX_RADIUS))) {
             for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(0, d))) {
                     MapInfo.mapMaxY = Cache.MY_LOCATION.y + d;
                     break;
                 }
             }
-            if(MapInfo.mapMaxY == -1) {
+            if(MapInfo.mapMaxY == MAP_UNKNOWN_EDGE) {
                 MapInfo.mapMaxY = Cache.MY_LOCATION.y;
             }
         }

@@ -31,15 +31,17 @@ public strictfp class Muckracker implements RunnableBot {
             if (tryExpose()) {
                 return;
             }
-            if (campEnemyEC()) {
+            int camping = campEnemyEC();
+            if (camping == 1) {
                 return;
             }
             Predicate<RobotInfo> exposable = robot -> robot.type.canBeExposed();
             RobotInfo enemy = Util.getClosestEnemyRobot(exposable);
             if (enemy == null) {
-                if (explore || !goToNearestEC()) {
-                    Util.smartExplore();
+                if (!explore && camping == 0) {
+                    if(goToNearestEC()) return;
                 }
+                Util.smartExplore();
             } else {
                 Pathfinder.execute(enemy.getLocation());
             }
@@ -85,16 +87,28 @@ public strictfp class Muckracker implements RunnableBot {
         return Util.tryMove(closest);
     }
 
-    public boolean campEnemyEC() throws GameActionException {
+    // if sees empty square next to ec, go to it
+    // 0 -> no ec in vision
+    // 1 -> ec in vision and is adjacent to it or is moving to an adjacent spot
+    // 2 -> ec in vision but no valid adjacent spots found
+    public int campEnemyEC() throws GameActionException {
+        boolean ecSeen = false;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
+            ecSeen = true;
             if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 if (rc.getLocation().distanceSquaredTo(robot.location) <= 2) {
-                    return true;
+                    return 1;
                 }
-                Pathfinder.execute(robot.getLocation());
-                return true;
+                for (Direction d : Constants.ORDINAL_DIRECTIONS) {
+                    MapLocation loc = robot.location.add(d);
+                    if(rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc)) {
+                        Util.tryMove(loc);
+                        return 1;
+                    }
+                }
             }
         }
-        return false;
+        if(ecSeen) return 2;
+        return 0;
     }
 }

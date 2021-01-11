@@ -138,13 +138,13 @@ public class Util {
     public static boolean getExplored(MapLocation loc) {
         if(Math.abs(loc.x-SPAWN.x) > 63) return true;
         if(Math.abs(loc.y-SPAWN.y) > 63) return true;
-        if (MapInfo.mapMinX != -1 && loc.x < MapInfo.mapMinX)
+        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
             return true;
-        if (MapInfo.mapMinY != -1 && loc.y < MapInfo.mapMinY)
+        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
             return true;
-        if (MapInfo.mapMaxX != -1 && loc.x > MapInfo.mapMaxX)
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
             return true;
-        if (MapInfo.mapMaxY != -1 && loc.y > MapInfo.mapMaxY)
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
             return true;
         int x = locationToExploreIndexX(loc.x);
         int y = locationToExploreIndexY(loc.y);

@@ -70,7 +70,7 @@ public strictfp class Politician implements RunnableBot {
         RobotInfo[] robots = rc.senseNearbyRobots(radiusSquared);
         int numUnits = robots.length;
         if(numUnits == 0) return 0;
-        int damage = Math.max(0, power/numUnits);
+        int damage = power/numUnits;
         int numKills = 0;
         int totalConviction = 0;
         for(RobotInfo robot: robots) {
@@ -126,6 +126,7 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean tryEmpower() throws GameActionException {
+        if(power < 0) return false;
         int actionRadiusSquared = rc.getType().actionRadiusSquared;
         // if can kill something, maximize the number
         int bestRadius = -1;
@@ -141,7 +142,7 @@ public strictfp class Politician implements RunnableBot {
 
         int numKills = bestScore / 1000000;
         int convictionGotten = bestScore % 1000000;
-        if(convictionGotten * 10 + 5 >= power) {
+        if(convictionGotten * 10 + 5 >= rc.getConviction()-10) {
             rc.empower(bestRadius);
             return true;
         }
@@ -152,7 +153,7 @@ public strictfp class Politician implements RunnableBot {
         int bestDist = 9999;
         MapLocation bestLoc = null;
         for(RobotInfo robot: Cache.ENEMY_ROBOTS) {
-            if(power*5 >= robot.getConviction() && robot.getConviction()*5 >= power) {
+            if(rc.getConviction()*5 >= robot.getConviction() && robot.getConviction()*5 >= rc.getConviction()) {
                 MapLocation loc = robot.location;
                 int dist = Cache.MY_LOCATION.distanceSquaredTo(loc);
                 if(dist < bestDist) {

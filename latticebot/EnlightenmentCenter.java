@@ -39,7 +39,11 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (buildDefensivePolitician()) {
             return;
         }
-        boolean danger = CentralCommunication.nearestEnemy != null && CentralCommunication.nearestEnemyDistanceSquared <= 25;
+        if (shouldSave()) {
+            return;
+        }
+        boolean danger = CentralCommunication.nearestEnemy != null
+                && CentralCommunication.nearestEnemyDistanceSquared <= 25;
         if (rc.getRoundNum() == 1 && !danger) {
             buildSlanderer();
         } else if (rc.getRoundNum() <= 200) {
@@ -111,6 +115,20 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         rc.bid(amount);
     }
 
+    public boolean shouldSave() {
+        MapLocation closestEnemyEC = Util.closestEnemyEC();
+        if (closestEnemyEC != null && closestEnemyEC.distanceSquaredTo(Cache.MY_LOCATION) <= 25)
+            return true;
+        if (CentralCommunication.nearestEnemy == null)
+            return false;
+        if (CentralCommunication.nearestEnemyType == RobotType.POLITICIAN
+                && CentralCommunication.nearestEnemyDistanceSquared <= 25
+                && CentralCommunication.nearestEnemyInfluence >= 50) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean buildMuckraker() throws GameActionException {
         if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1)) {
             muckrakerCount++;
@@ -124,7 +142,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (awayFromEnemies == Direction.CENTER) {
             awayFromEnemies = Util.randomAdjacentDirection();
         }
-        if (Util.tryBuildRobotTowards(RobotType.SLANDERER, awayFromEnemies, SlandererBuild.getBuildInfluence(rc.getInfluence() - 5))) {
+        if (Util.tryBuildRobotTowards(RobotType.SLANDERER, awayFromEnemies,
+                SlandererBuild.getBuildInfluence(rc.getInfluence() - 5))) {
             slandererCount++;
             return true;
         } else {

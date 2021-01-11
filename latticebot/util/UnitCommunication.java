@@ -73,9 +73,27 @@ public class UnitCommunication {
         processFlagsFromECs();
         ECNode current = ecListHead;
         while (current != null) {
-            MapLocation enemy = current.nearestEnemy;
-            checkCloseEnemy(enemy);
+            checkCloseEnemy(current.nearestEnemy);
             current = current.next;
+        }
+        if (rc.getType() == RobotType.POLITICIAN || rc.getType() == RobotType.MUCKRAKER) {
+            // To save bytecodes, we don't run this for slanderers
+            for (Team team : Team.values()) {
+                MapInfo.getKnownEnlightenmentCenterList(team).removeIf(x -> {
+                    try {
+                        if (rc.canSenseLocation(x)) {
+                            RobotInfo robot = rc.senseRobotAtLocation(x);
+                            if (robot == null || robot.getType() != RobotType.ENLIGHTENMENT_CENTER || robot.getTeam() != team) {
+                                return true;
+                            }
+                        }
+                    } catch (GameActionException ex) {
+                        ex.printStackTrace();
+                        throw new IllegalStateException();
+                    }
+                    return false;
+                });
+            }
         }
     }
     public static void postLoop() throws GameActionException {

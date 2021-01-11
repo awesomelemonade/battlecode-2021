@@ -43,7 +43,6 @@ public strictfp class Politician implements RunnableBot {
             rc.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        rc.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         if (Util.smartExplore()) {
             return;
         }

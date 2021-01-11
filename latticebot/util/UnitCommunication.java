@@ -21,9 +21,9 @@ public class UnitCommunication {
     public static final int CURRENT_UNIT_TYPE_SHIFT = 10;
     public static final int CURRENT_UNIT_TYPE_MASK = 0b11;
     public static final int CURRENT_UNIT_INFO_MASK = 0b11_1111_1111;
-    public static final int DEFAULT_FLAG = 0b1000_0111_0111_0000_0000_0000;
+    public static final int DO_NOTHING_FLAG = 0b1000_0111_0111_0000_0000_0000;
     public static final int CLEAR_FLAG = 0b0000_0111_0111_0000_0000_0000;
-    private static int currentFlag = DEFAULT_FLAG;
+    private static int currentFlag = DO_NOTHING_FLAG;
     public static MapLocation closestCommunicatedEnemy;
     public static int closestCommunicatedEnemyDistanceSquared;
     private static void checkCloseEnemy(MapLocation enemy) {
@@ -36,7 +36,7 @@ public class UnitCommunication {
         }
     }
     public static void loop() throws GameActionException {
-        rc.setFlag(DEFAULT_FLAG); // in case we run out of bytecodes
+        rc.setFlag(0); // in case we run out of bytecodes
         currentFlag = CLEAR_FLAG;
         // Prioritize
         // 1. neutral/enemy enlightenment centers
@@ -97,7 +97,7 @@ public class UnitCommunication {
         }
     }
     public static void postLoop() throws GameActionException {
-        rc.setFlag((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag);
+        rc.setFlag(((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag) ^ DO_NOTHING_FLAG);
     }
     public static void setFlag(RobotInfo unit) throws GameActionException {
         currentFlag = 0;
@@ -126,7 +126,7 @@ public class UnitCommunication {
      */
     public static MapLocation processFlagFromNearbyUnit(RobotInfo robot) throws GameActionException {
         // ally robots that are nearby may have useful information
-        int flag = rc.getFlag(robot.getID());
+        int flag = rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG;
         // check if the unit has seen anything
         if ((flag & UNIT_INFO_BITMASK) != 0) {
             Direction unitPrevDirection = Direction.values()[flag >> CURRENT_DIRECTION_SHIFT];
@@ -154,7 +154,7 @@ public class UnitCommunication {
         while (current != null) {
             int id = current.id;
             if (rc.canGetFlag(id)) {
-                int flag = rc.getFlag(id);
+                int flag = rc.getFlag(id) ^ CentralCommunication.DO_NOTHING_FLAG;
                 MapLocation ecLocation = current.location;
                 int dx = ((flag >> CentralCommunication.NEAREST_ENEMY_X_SHIFT) & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
                 int dy = (flag & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;

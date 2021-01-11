@@ -42,6 +42,7 @@ public class Pathfinder {
         }
         if (bestDirection != null) {
             Util.move(bestDirection);
+            return true;
         }
         return false;
     }

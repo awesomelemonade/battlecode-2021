@@ -36,12 +36,6 @@ public strictfp class RobotPlayer {
         while (true) {
             try {
                 while (true) {
-                    if (errored) {
-                        rc.setIndicatorDot(rc.getLocation(), 255, 0, 0); // red
-                    }
-                    if (overBytecodes) {
-                        rc.setIndicatorDot(rc.getLocation(), 128, 0, 255); // purple
-                    }
                     int currentTurn = rc.getRoundNum();
                     Util.loop();
                     bot.turn();
@@ -52,6 +46,12 @@ public strictfp class RobotPlayer {
                         rc.setIndicatorDot(rc.getLocation(), 255, 0, 255);
                         int over = Clock.getBytecodeNum() + (rc.getRoundNum() - currentTurn - 1) * rc.getType().bytecodeLimit;
                         System.out.println(rc.getID() + " out of bytecodes: " + Cache.TURN_COUNT + " (over by " + over + ")");
+                    }
+                    if (errored) {
+                        rc.setIndicatorDot(rc.getLocation(), 255, 0, 0); // red
+                    }
+                    if (overBytecodes) {
+                        rc.setIndicatorDot(rc.getLocation(), 128, 0, 255); // purple
                     }
                     Clock.yield();
                 }

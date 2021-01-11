@@ -34,6 +34,8 @@ public class CentralCommunication {
     private static UnitListNode unitListHead = null;
     private static int unitListSize = 0;
     private static final int UNIT_LIST_MAX_SIZE = 80;
+
+    public static final int DO_NOTHING_FLAG = 0b0000000_0000000_10000_10000;
     // 14 bits: rotate between [minX, maxX], [minY, maxY], [friendly ec], [enemy ec], [neutral ec]
     public static final int ROTATION_SHIFT_X = 17;
     public static final int ROTATION_SHIFT_Y = 10;
@@ -41,6 +43,7 @@ public class CentralCommunication {
     public static final int ROTATION_OFFSET = 64;
     // 10 bits: broadcast nearest known enemy to this EC
     public static void loop() throws GameActionException {
+        rc.setFlag(0); // in case we run out of bytecodes
         nearestEnemy = null;
         nearestEnemyDistanceSquared = Integer.MAX_VALUE;
         // find nearest enemy
@@ -59,7 +62,7 @@ public class CentralCommunication {
         while (current != null) {
             int id = current.id;
             if (rc.canGetFlag(id)) {
-                int flag = rc.getFlag(id);
+                int flag = rc.getFlag(id) ^ UnitCommunication.DO_NOTHING_FLAG;
                 // process info
                 int dx = ((flag >> UnitCommunication.CURRENT_UNIT_OFFSET_X_SHIFT) & UnitCommunication.CURRENT_UNIT_OFFSET_MASK) - UnitCommunication.OFFSET_SHIFT;
                 int dy = ((flag >> UnitCommunication.CURRENT_UNIT_OFFSET_Y_SHIFT) & UnitCommunication.CURRENT_UNIT_OFFSET_MASK) - UnitCommunication.OFFSET_SHIFT;
@@ -181,6 +184,6 @@ public class CentralCommunication {
             int rotationDy = rotationLocation.y - Cache.MY_LOCATION.y + ROTATION_OFFSET;
             flag = flag | (rotationDx << ROTATION_SHIFT_X) | (rotationDy << ROTATION_SHIFT_Y);
         }
-        rc.setFlag(flag);
+        rc.setFlag(flag ^ DO_NOTHING_FLAG);
     }
 }

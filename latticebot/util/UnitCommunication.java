@@ -35,6 +35,10 @@ public class UnitCommunication {
             }
         }
     }
+    public static final int CURRENT_DIRECTION_CENTER_SLANDERER = 9;
+    public static boolean isPotentialSlanderer(RobotInfo robot) throws GameActionException {
+        return (rc.getFlag(robot.getID()) >> CURRENT_DIRECTION_SHIFT) == CURRENT_DIRECTION_CENTER_SLANDERER;
+    }
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes
         currentFlag = CLEAR_FLAG;
@@ -101,7 +105,11 @@ public class UnitCommunication {
         }
     }
     public static void postLoop() throws GameActionException {
-        rc.setFlag(((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag) ^ DO_NOTHING_FLAG);
+        if (rc.getType() == RobotType.SLANDERER && Cache.lastDirection == Direction.CENTER) {
+            rc.setFlag(((CURRENT_DIRECTION_CENTER_SLANDERER << CURRENT_DIRECTION_SHIFT) | currentFlag) ^ DO_NOTHING_FLAG);
+        } else {
+            rc.setFlag(((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag) ^ DO_NOTHING_FLAG);
+        }
     }
     public static void setFlag(RobotInfo unit) throws GameActionException {
         currentFlag = 0;
@@ -133,7 +141,7 @@ public class UnitCommunication {
         int flag = rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG;
         // check if the unit has seen anything
         if ((flag & UNIT_INFO_BITMASK) != 0) {
-            Direction unitPrevDirection = Direction.values()[flag >> CURRENT_DIRECTION_SHIFT];
+            Direction unitPrevDirection = Direction.values()[Math.min(8, flag >> CURRENT_DIRECTION_SHIFT)];
             MapLocation prevLocation = robot.getLocation().add(unitPrevDirection.opposite());
             int dx = ((flag >> CURRENT_UNIT_OFFSET_X_SHIFT) & CURRENT_UNIT_OFFSET_MASK) - OFFSET_SHIFT;
             int dy = ((flag >> CURRENT_UNIT_OFFSET_Y_SHIFT) & CURRENT_UNIT_OFFSET_MASK) - OFFSET_SHIFT;

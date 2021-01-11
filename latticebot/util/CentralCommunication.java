@@ -88,7 +88,7 @@ public class CentralCommunication {
                     }
                 }
                 // update location
-                Direction dir = Direction.values()[flag >> UnitCommunication.CURRENT_DIRECTION_SHIFT];
+                Direction dir = Direction.values()[Math.min(8, flag >> UnitCommunication.CURRENT_DIRECTION_SHIFT)];
                 current.location = current.location.add(dir);
                 prev = current; // prev is shifted one over
             } else {

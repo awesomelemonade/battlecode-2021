@@ -317,7 +317,6 @@ public class Util {
         for (Supplier<MapLocation> supplier : suppliers) {
             MapLocation location = supplier.get();
             if (location != null) {
-                System.out.println(Integer.toString(location.x) + ", " + Integer.toString(location.y));
                 return location;
             }
         }
@@ -325,12 +324,12 @@ public class Util {
     }
 
     public static void setIndicatorDot(MapLocation loc, int red, int green, int blue) {
-        if(!Constants.DRAW_DEBUG) return;
+        if(!Constants.DEBUG_DRAW) return;
         rc.setIndicatorDot(loc, red, green, blue);
     }
 
     public static void setIndicatorLine(MapLocation startLoc, MapLocation endLoc, int red, int green, int blue) {
-        if(!Constants.DRAW_DEBUG) return;
+        if(!Constants.DEBUG_DRAW) return;
         rc.setIndicatorLine(startLoc, endLoc, red, green, blue);
     }
 }

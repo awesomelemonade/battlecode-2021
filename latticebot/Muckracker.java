@@ -54,7 +54,7 @@ public strictfp class Muckracker implements RunnableBot {
                 () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION)
         );
         if (ec != null) {
-            rc.setIndicatorDot(ec, 255, 255, 0); // yellow
+            Util.setIndicatorDot(ec, 255, 255, 0); // yellow
             Pathfinder.execute(ec);
             return true;
         } else {

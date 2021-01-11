@@ -54,7 +54,7 @@ public class UnitCommunication {
         }
         // communicate the interesting robot
         if (interestingRobot != null) {
-            rc.setIndicatorLine(Cache.MY_LOCATION, interestingRobot.getLocation(), 255, 255, 0);
+            Util.setIndicatorLine(Cache.MY_LOCATION, interestingRobot.getLocation(), 255, 255, 0);
             // TODO: change EC of ALL sensed enlightenment centers
             if (interestingRobot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 MapInfo.addKnownEnlightementCenter(interestingRobot.getLocation(), interestingRobot.getTeam());
@@ -79,10 +79,14 @@ public class UnitCommunication {
         if (rc.getType() == RobotType.POLITICIAN || rc.getType() == RobotType.MUCKRAKER) {
             // To save bytecodes, we don't run this for slanderers
             for (Team team : Team.values()) {
-                MapInfo.getKnownEnlightenmentCenterList(team).removeIf(x -> {
+                MapInfo.getKnownEnlightenmentCenterList(team).removeIf(loc -> {
                     try {
-                        if (rc.canSenseLocation(x)) {
-                            RobotInfo robot = rc.senseRobotAtLocation(x);
+                        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX) return true;
+                        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY) return true;
+                        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX) return true;
+                        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY) return true;
+                        if (rc.canSenseLocation(loc)) {
+                            RobotInfo robot = rc.senseRobotAtLocation(loc);
                             if (robot == null || robot.getType() != RobotType.ENLIGHTENMENT_CENTER || robot.getTeam() != team) {
                                 return true;
                             }

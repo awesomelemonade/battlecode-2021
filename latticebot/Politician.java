@@ -28,19 +28,19 @@ public strictfp class Politician implements RunnableBot {
         }
         power = (int) ((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
         if (power >= 30 && tryClaimEC()) {
-            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
         if (tryEmpower()) {
-            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
         if (chaseWorthwhileEnemy()) {
-            rc.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
             return;
         }
         if (power >= 30 && goToNearestEC()) {
-            rc.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
         if (Util.smartExplore()) {
@@ -56,7 +56,7 @@ public strictfp class Politician implements RunnableBot {
                 () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
                         .getClosestLocation(Cache.MY_LOCATION));
         if (ec != null) {
-            rc.setIndicatorDot(ec, 255, 255, 0); // yellow
+            Util.setIndicatorDot(ec, 255, 255, 0); // yellow
             Pathfinder.execute(ec);
             return true;
         } else {

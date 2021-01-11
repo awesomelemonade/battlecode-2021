@@ -46,13 +46,13 @@ public class Util {
             UnitCommunication.postLoop();
         }
         MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
-            rc.setIndicatorDot(x, 255, 255, 255);
+            Util.setIndicatorDot(x, 255, 255, 255);
         });
         MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
-            rc.setIndicatorDot(x, 128, 128, 128);
+            Util.setIndicatorDot(x, 128, 128, 128);
         });
         MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
-            rc.setIndicatorDot(x, 0, 0, 0);
+            Util.setIndicatorDot(x, 0, 0, 0);
         });
     }
 
@@ -171,7 +171,8 @@ public class Util {
 
     // ~1200 bytecodes if we need to find a new destination, ~300 otherwise
     public static boolean smartExplore() throws GameActionException {
-        rc.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
+        Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
+        // if allies nearby, move away from them
         // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
         if(timeSpentOnThisDestination == 10) {
             setExplored(exploreDest);
@@ -316,9 +317,20 @@ public class Util {
         for (Supplier<MapLocation> supplier : suppliers) {
             MapLocation location = supplier.get();
             if (location != null) {
+                System.out.println(Integer.toString(location.x) + ", " + Integer.toString(location.y));
                 return location;
             }
         }
         return null;
+    }
+
+    public static void setIndicatorDot(MapLocation loc, int red, int green, int blue) {
+        if(!Constants.DRAW_DEBUG) return;
+        rc.setIndicatorDot(loc, red, green, blue);
+    }
+
+    public static void setIndicatorLine(MapLocation startLoc, MapLocation endLoc, int red, int green, int blue) {
+        if(!Constants.DRAW_DEBUG) return;
+        rc.setIndicatorLine(MapLocation startLoc, MapLocation endLoc, int red, int green, int blue);
     }
 }

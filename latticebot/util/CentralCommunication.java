@@ -136,9 +136,9 @@ public class CentralCommunication {
         if (nearestEnemy == null) {
             // set dx, dy to be (0, 0) to signal that there are no nearestEnemies
             nearestEnemy = Cache.MY_LOCATION;
-            rc.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
         } else {
-            rc.setIndicatorDot(nearestEnemy, 0, 255, 0); // green
+            Util.setIndicatorDot(nearestEnemy, 0, 255, 0); // green
         }
         // 5 bits on relative x location and relative y location
         int dx = nearestEnemy.x - Cache.MY_LOCATION.x + NEAREST_ENEMY_OFFSET;
@@ -147,7 +147,7 @@ public class CentralCommunication {
             // underflow/overflow: set to current location to mark no enemy nearby
             dx = NEAREST_ENEMY_OFFSET;
             dy = NEAREST_ENEMY_OFFSET;
-            rc.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         }
         flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
         // 7 bits on relative x location and relative y location

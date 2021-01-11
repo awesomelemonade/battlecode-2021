@@ -40,7 +40,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             return;
         }
         boolean danger = CentralCommunication.nearestEnemy != null && CentralCommunication.nearestEnemyDistanceSquared <= 25;
-        if (rc.getRoundNum() == 1) {
+        if (rc.getRoundNum() == 1 && !danger) {
             buildSlanderer();
         } else if (rc.getRoundNum() <= 200) {
             if (rc.getInfluence() >= 200) {

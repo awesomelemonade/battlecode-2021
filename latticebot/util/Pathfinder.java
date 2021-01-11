@@ -14,7 +14,7 @@ public class Pathfinder {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
     public static boolean execute(MapLocation target) throws GameActionException {
-        rc.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
+        Util.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
         if (rc.getLocation().equals(target)) {
             // already there
             return true;

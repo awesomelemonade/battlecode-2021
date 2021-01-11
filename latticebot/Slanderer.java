@@ -29,7 +29,7 @@ public strictfp class Slanderer implements RunnableBot {
                 closestEnemyLocation = UnitCommunication.closestCommunicatedEnemy;
             }
             if (closestEnemyLocation == null || Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 10) {
-                rc.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255);
+                Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255);
                 // lattice
                 if (LatticeUtil.isLatticeLocation(rc.getLocation())) {
                     // do nothing
@@ -42,7 +42,7 @@ public strictfp class Slanderer implements RunnableBot {
                     }
                 }
             } else {
-                rc.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
+                Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
                 tryKiteFrom(closestEnemyLocation);
             }
         } else {

@@ -100,7 +100,7 @@ public class MapInfo {
             }
         }
     }
-    public static  void addKnownEnlightementCenter(MapLocation ecLocation, Team ecTeam) {
+    public static void addKnownEnlightementCenter(MapLocation ecLocation, Team ecTeam) {
         for (Team team : Team.values()) {
             MapLocationList list = enlightenmentCenterLocations[team.ordinal()];
             if (team == ecTeam) {

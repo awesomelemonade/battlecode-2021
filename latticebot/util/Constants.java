@@ -11,6 +11,7 @@ public class Constants {
     public static final int POLITICIAN_EMPOWER_PENALTY = 11;
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
+    public static final boolean DRAW_DEBUG = false;
 
     public static void init(RobotController rc) throws GameActionException {
         ALLY_TEAM = rc.getTeam();

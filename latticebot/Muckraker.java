@@ -40,7 +40,7 @@ public strictfp class Muckraker implements RunnableBot {
             if (tryECSpiral()) {
                 return;
             }
-            Util.randomExplore();
+            Util.smartExplore();
         }
     }
 

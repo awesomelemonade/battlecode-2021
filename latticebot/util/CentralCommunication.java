@@ -157,13 +157,13 @@ public class CentralCommunication {
                 rotationLocation = Cache.MY_LOCATION;
                 break;
             case 1: // [ally ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandomLocation();
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandomLocation().orElse(null);
                 break;
             case 2: // [enemy ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation();
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation().orElse(null);
                 break;
             case 3: // [neutral ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation();
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation().orElse(null);
                 break;
         }
         if (rotationLocation != null) {

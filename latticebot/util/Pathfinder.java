@@ -13,9 +13,9 @@ public class Pathfinder {
     public static int moveDistance(MapLocation a, MapLocation b) {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
-    public static boolean execute(MapLocation target) throws GameActionException {
+    public static boolean execute(MapLocation target) {
         Util.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
-        if (rc.getLocation().equals(target)) {
+        if (Cache.MY_LOCATION.equals(target)) {
             // already there
             return true;
         }
@@ -25,17 +25,21 @@ public class Pathfinder {
         // move distance defined by max(dx, dy)
         // ties broken by "preferred direction" dictated by Constants.getAttemptOrder
         double highestPassability = 0;
-        int targetDistanceSquared = rc.getLocation().distanceSquaredTo(target) - 1; // subtract 1 to be strictly less
-        int targetMoveDistance = moveDistance(rc.getLocation(), target);
+        int targetDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(target) - 1; // subtract 1 to be strictly less
+        int targetMoveDistance = moveDistance(Cache.MY_LOCATION, target);
         Direction bestDirection = null;
-        for (Direction direction : Constants.getAttemptOrder(rc.getLocation().directionTo(target))) {
+        for (Direction direction : Constants.getAttemptOrder(Cache.MY_LOCATION.directionTo(target))) {
             if (rc.canMove(direction)) {
-                MapLocation location = rc.getLocation().add(direction);
+                MapLocation location = Cache.MY_LOCATION.add(direction);
                 if (location.isWithinDistanceSquared(target, targetDistanceSquared) || moveDistance(location, target) < targetMoveDistance) {
-                    double passability = rc.sensePassability(location);
-                    if (passability > highestPassability) {
-                        highestPassability = passability;
-                        bestDirection = direction;
+                    try {
+                        double passability = rc.sensePassability(location);
+                        if (passability > highestPassability) {
+                            highestPassability = passability;
+                            bestDirection = direction;
+                        }
+                    } catch (GameActionException ex) {
+                        throw new IllegalStateException(ex);
                     }
                 }
             }
@@ -46,9 +50,9 @@ public class Pathfinder {
         }
         return false;
     }
-    public static boolean executeSpacedApart(MapLocation target) throws GameActionException {
+    public static boolean executeSpacedApart(MapLocation target) {
         Util.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
-        if (rc.getLocation().equals(target)) {
+        if (Cache.MY_LOCATION.equals(target)) {
             // already there
             return true;
         }
@@ -58,17 +62,21 @@ public class Pathfinder {
         // move distance defined by max(dx, dy)
         // ties broken by "preferred direction" dictated by Constants.getAttemptOrder
         double highestPassability = 0;
-        int targetDistanceSquared = rc.getLocation().distanceSquaredTo(target) - 1; // subtract 1 to be strictly less
-        int targetMoveDistance = moveDistance(rc.getLocation(), target);
+        int targetDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(target) - 1; // subtract 1 to be strictly less
+        int targetMoveDistance = moveDistance(Cache.MY_LOCATION, target);
         Direction bestDirection = null;
-        for (Direction direction : Constants.getAttemptOrder(rc.getLocation().directionTo(target))) {
+        for (Direction direction : Constants.getAttemptOrder(Cache.MY_LOCATION.directionTo(target))) {
             if (rc.canMove(direction) && !Util.hasAdjacentAllyRobot(Cache.MY_LOCATION.add(direction))) {
-                MapLocation location = rc.getLocation().add(direction);
+                MapLocation location = Cache.MY_LOCATION.add(direction);
                 if (location.isWithinDistanceSquared(target, targetDistanceSquared) || moveDistance(location, target) < targetMoveDistance) {
-                    double passability = rc.sensePassability(location);
-                    if (passability > highestPassability) {
-                        highestPassability = passability;
-                        bestDirection = direction;
+                    try {
+                        double passability = rc.sensePassability(location);
+                        if (passability > highestPassability) {
+                            highestPassability = passability;
+                            bestDirection = direction;
+                        }
+                    } catch (GameActionException ex) {
+                        throw new IllegalStateException(ex);
                     }
                 }
             }

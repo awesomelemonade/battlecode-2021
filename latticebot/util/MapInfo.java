@@ -15,6 +15,7 @@ public class MapInfo {
     public static int mapMinY = MAP_UNKNOWN_EDGE; // not known
     public static int mapMaxY = MAP_UNKNOWN_EDGE; // not known
     public static MapLocationList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
+    public static int[] explored = new int[32];
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;
@@ -51,6 +52,7 @@ public class MapInfo {
 
 		}
         */
+        setExplored(Cache.MY_LOCATION);
         updateBoundaries();
     }
     // TODO: Communication
@@ -114,5 +116,48 @@ public class MapInfo {
     }
     public static MapLocationList getKnownEnlightenmentCenterList(Team team) {
         return enlightenmentCenterLocations[team.ordinal()];
+    }
+    // Exploration
+
+    public static int exploreIndexToLocationX(int idx) {
+        return SPAWN.x - 1 + (idx - 15) * 4;
+    }
+
+    public static int exploreIndexToLocationY(int idx) {
+        return SPAWN.y - 1 + (idx - 15) * 4;
+    }
+
+    public static MapLocation exploreIndexToLocation(int x, int y) {
+        return new MapLocation(exploreIndexToLocationX(x), exploreIndexToLocationY(y));
+    }
+
+    public static int locationToExploreIndexX(int idx) {
+        return (idx - SPAWN.x + 63) >> 2;
+    }
+
+    public static int locationToExploreIndexY(int idx) {
+        return (idx - SPAWN.y + 63) >> 2;
+    }
+
+    public static void setExplored(MapLocation loc) {
+        int x = locationToExploreIndexX(loc.x);
+        int y = locationToExploreIndexY(loc.y);
+        explored[x] |= (1 << y);
+    }
+
+    public static boolean getExplored(MapLocation loc) {
+        if(Math.abs(loc.x-SPAWN.x) > 63) return true;
+        if(Math.abs(loc.y-SPAWN.y) > 63) return true;
+        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
+            return true;
+        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
+            return true;
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
+            return true;
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
+            return true;
+        int x = locationToExploreIndexX(loc.x);
+        int y = locationToExploreIndexY(loc.y);
+        return (explored[x] & (1 << y)) != 0;
     }
 }

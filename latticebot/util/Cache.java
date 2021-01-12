@@ -8,14 +8,11 @@ public class Cache { // Cache variables that are constant throughout a turn
     public static RobotInfo[] EMPTY_ROBOTS = {};
     public static int TURN_COUNT;
     public static MapLocation MY_LOCATION;
-    public static int[] explored;
-    public static MapLocation[] enemyECs = new MapLocation[12]; // max 12 ECs in the game
 
     public static Direction lastDirection;
     public static void init(RobotController rc) {
         Cache.rc = rc;
         TURN_COUNT = 0;
-        explored = new int[32];
     }
 
     public static void loop() {
@@ -31,6 +28,5 @@ public class Cache { // Cache variables that are constant throughout a turn
         }
         TURN_COUNT++;
         MY_LOCATION = rc.getLocation();
-        Util.setExplored(MY_LOCATION);
     }
 }

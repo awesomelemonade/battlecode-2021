@@ -14,7 +14,7 @@ public class Constants {
     public static final boolean DEBUG_DRAW = true;
     public static final boolean DEBUG_RESIGN = true;
 
-    public static void init(RobotController rc) throws GameActionException {
+    public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
         SPAWN = rc.getLocation();

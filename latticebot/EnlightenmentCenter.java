@@ -7,6 +7,8 @@ import latticebot.util.Constants;
 import latticebot.util.SlandererBuild;
 import latticebot.util.Util;
 
+import java.util.Optional;
+
 public strictfp class EnlightenmentCenter implements RunnableBot {
     private RobotController rc;
 

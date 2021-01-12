@@ -3,11 +3,14 @@ package latticebot;
 import battlecode.common.*;
 import latticebot.util.Cache;
 import latticebot.util.Constants;
+import latticebot.util.LambdaUtil;
 import latticebot.util.LatticeUtil;
 import latticebot.util.MapInfo;
 import latticebot.util.Pathfinder;
 import latticebot.util.UnitCommunication;
 import latticebot.util.Util;
+
+import java.util.Comparator;
 
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
@@ -60,24 +63,27 @@ public strictfp class Politician implements RunnableBot {
         }
     }
 
-    public int getDefenseScore(MapLocation loc) throws GameActionException {
+    public int getDefenseScore(MapLocation loc) {
         if(!LatticeUtil.isLatticeLocation(loc)) return 999999;
-        MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(loc);
-        if(nearestEC == null) return 999999;
-        int dist = nearestEC.distanceSquaredTo(loc);
-        if (dist <= 16) return 999999;
-        for(Direction d: Constants.ORDINAL_DIRECTIONS) {
-            MapLocation adj = loc.add(d);
-            if(rc.canSenseLocation(adj)) {
-                RobotInfo robot = rc.senseRobotAtLocation(adj);
-                if(robot != null && UnitCommunication.isPotentialSlanderer(robot)) {
-                    return 999999;
+        return MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(loc).map(ec -> {
+            int dist = ec.distanceSquaredTo(loc);
+            if (dist <= 16) return 999999;
+            for(Direction d: Constants.ORDINAL_DIRECTIONS) {
+                MapLocation adj = loc.add(d);
+                if(rc.canSenseLocation(adj)) {
+                    try {
+                        RobotInfo robot = rc.senseRobotAtLocation(adj);
+                        if (robot != null && UnitCommunication.isPotentialSlanderer(robot)) {
+                            return 999999;
+                        }
+                    } catch (GameActionException ex) {
+                        throw new IllegalStateException(ex);
+                    }
                 }
             }
-        }
-        MapLocation nearestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(loc);
-        if(nearestEnemyEC == null) return 5000*dist;
-        return 5000*dist+nearestEnemyEC.distanceSquaredTo(loc);
+            return MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION)
+                    .map(nearestEnemyEC -> 5000 * dist + nearestEnemyEC.distanceSquaredTo(loc)).orElse(5000 * dist);
+        }).orElse(999999);
     }
 
     public boolean tryDefend() throws GameActionException {
@@ -104,20 +110,15 @@ public strictfp class Politician implements RunnableBot {
         return Util.tryMove(bestDir);
     }
 
-    public boolean goToNearestEC() throws GameActionException {
-        RobotInfo[] neutralECs = rc.senseNearbyRobots(-1, Team.NEUTRAL);
-        MapLocation ec = Util.getFirst(() -> Util.mapToLocation(Util.getClosestRobot(neutralECs, x -> true)),
+    public boolean goToNearestEC() {
+        return LambdaUtil.or(
                 () -> MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getClosestLocation(Cache.MY_LOCATION),
-                () -> Util.mapToLocation(Util.getClosestEnemyRobot(x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER)),
-                () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
-                        .getClosestLocation(Cache.MY_LOCATION));
-        if (ec != null) {
+                () -> MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION)
+        ).map(ec -> {
             Util.setIndicatorDot(ec, 255, 255, 0); // yellow
             Pathfinder.execute(ec);
             return true;
-        } else {
-            return false;
-        }
+        }).orElse(false);
     }
 
     private int getScore(int radiusSquared) {
@@ -209,8 +210,8 @@ public strictfp class Politician implements RunnableBot {
             rc.empower(bestRadius);
             return true;
         }
-        MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(Cache.MY_LOCATION);
-        int dist = nearestEC == null ? 1024 : nearestEC.distanceSquaredTo(Cache.MY_LOCATION);
+        int dist = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                .getClosestLocationDistance(1024);
         if (convictionGotten * 10 >= rc.getConviction() - 10 && dist <= 64) {
             rc.empower(bestRadius);
             return true;

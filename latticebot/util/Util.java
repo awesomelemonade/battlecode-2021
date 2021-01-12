@@ -4,13 +4,12 @@ import battlecode.common.*;
 import static latticebot.util.Constants.*;
 
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 public class Util {
     private static RobotController rc;
     private static boolean isCentral;
 
-    public static void init(RobotController rc) throws GameActionException {
+    public static void init(RobotController rc) {
         Util.rc = rc;
         // in order for units to have different rngs
         for(int i = 0; i < rc.getID()%20; i++) {
@@ -26,6 +25,15 @@ public class Util {
             CentralCommunication.init(rc);
         } else {
             UnitCommunication.init(rc);
+        }
+    }
+
+    public static void move(Direction direction) {
+        try {
+            rc.move(direction);
+            Cache.lastDirection = direction;
+        } catch (GameActionException ex) {
+            throw new IllegalStateException(ex);
         }
     }
 
@@ -56,22 +64,20 @@ public class Util {
         });
     }
 
-    public static void move(Direction direction) throws GameActionException {
-        Cache.lastDirection = direction;
-        rc.move(direction);
-    }
-
-    public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) throws GameActionException {
+    public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) {
         if (rc.canBuildRobot(type, direction, influence)) {
-            rc.buildRobot(type, direction, influence);
+            try {
+                rc.buildRobot(type, direction, influence);
+            } catch (GameActionException ex) {
+                throw new IllegalStateException(ex);
+            }
             return true;
         } else {
             return false;
         }
     }
 
-    public static boolean tryBuildRobotTowards(RobotType type, Direction direction, int influence)
-            throws GameActionException {
+    public static boolean tryBuildRobotTowards(RobotType type, Direction direction, int influence) {
         for (Direction buildDirection : Constants.getAttemptOrder(direction)) {
             if (tryBuildRobot(type, buildDirection, influence)) {
                 return true;
@@ -80,7 +86,7 @@ public class Util {
         return false;
     }
 
-    public static boolean tryMove(Direction direction) throws GameActionException {
+    public static boolean tryMove(Direction direction) {
         if (rc.canMove(direction)) {
             move(direction);
             return true;
@@ -89,18 +95,11 @@ public class Util {
         }
     }
 
-    public static boolean tryMove(MapLocation loc) throws GameActionException {
+    public static boolean tryMove(MapLocation loc) {
         return Pathfinder.execute(loc);
     }
 
-    public static boolean tryMoveAway(MapLocation loc) throws GameActionException {
-        int cur_x = Cache.MY_LOCATION.x;
-        int cur_y = Cache.MY_LOCATION.y;
-        MapLocation dest = new MapLocation(2*cur_x - loc.x, 2*cur_y - loc.y);
-        return Pathfinder.execute(dest);
-    }
-
-    public static boolean tryMoveTowards(Direction direction) throws GameActionException {
+    public static boolean tryMoveTowards(Direction direction) {
         for (Direction moveDirection : Constants.getAttemptOrder(direction)) {
             if (tryMove(moveDirection)) {
                 return true;
@@ -109,49 +108,7 @@ public class Util {
         return false;
     }
 
-    public static int exploreIndexToLocationX(int idx) {
-        return SPAWN.x - 1 + (idx - 15) * 4;
-    }
-
-    public static int exploreIndexToLocationY(int idx) {
-        return SPAWN.y - 1 + (idx - 15) * 4;
-    }
-
-    public static MapLocation exploreIndexToLocation(int x, int y) {
-        return new MapLocation(exploreIndexToLocationX(x), exploreIndexToLocationY(y));
-    }
-
-    public static int locationToExploreIndexX(int idx) {
-        return (idx - SPAWN.x + 63) >> 2;
-    }
-
-    public static int locationToExploreIndexY(int idx) {
-        return (idx - SPAWN.y + 63) >> 2;
-    }
-
-    public static void setExplored(MapLocation loc) {
-        int x = locationToExploreIndexX(loc.x);
-        int y = locationToExploreIndexY(loc.y);
-        Cache.explored[x] |= (1 << y);
-    }
-
-    public static boolean getExplored(MapLocation loc) {
-        if(Math.abs(loc.x-SPAWN.x) > 63) return true;
-        if(Math.abs(loc.y-SPAWN.y) > 63) return true;
-        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
-            return true;
-        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
-            return true;
-        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
-            return true;
-        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
-            return true;
-        int x = locationToExploreIndexX(loc.x);
-        int y = locationToExploreIndexY(loc.y);
-        return (Cache.explored[x] & (1 << y)) != 0;
-    }
-
-    public static boolean tryRandomMove() throws GameActionException {
+    public static boolean tryRandomMove() {
         return tryMove(randomAdjacentDirection());
     }
 
@@ -169,15 +126,15 @@ public class Util {
         }
     }
 
-    public static boolean tryMoveSpacedApart(Direction direction) throws GameActionException {
+    public static boolean tryMoveSpacedApart(Direction direction) {
         if (rc.canMove(direction) && !Util.hasAdjacentAllyRobot(Cache.MY_LOCATION.add(direction))) {
-            Util.move(direction);
+            move(direction);
             return true;
         } else {
             return false;
         }
     }
-    public static boolean tryMoveTowardsSpacedApart(Direction direction) throws GameActionException {
+    public static boolean tryMoveTowardsSpacedApart(Direction direction) {
         for (Direction moveDirection : Constants.getAttemptOrder(direction)) {
             if (tryMoveSpacedApart(moveDirection)) {
                 return true;
@@ -188,7 +145,7 @@ public class Util {
 
     private static Direction previousDirection = randomAdjacentDirection();
 
-    public static boolean randomExplore() throws GameActionException {
+    public static boolean randomExplore() {
         if (tryMove(previousDirection)) {
             return true;
         }
@@ -201,28 +158,28 @@ public class Util {
     private static int timeSpentOnThisDestination = 0;
 
     // ~1200 bytecodes if we need to find a new destination, ~300 otherwise
-    public static boolean smartExplore() throws GameActionException {
+    public static boolean smartExplore() {
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         // if allies nearby, move away from them
         // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
         if(timeSpentOnThisDestination == 10) {
-            setExplored(exploreDest);
+            MapInfo.setExplored(exploreDest);
         }
-        if (exploreDest == null || getExplored(exploreDest)) {
+        if (exploreDest == null || MapInfo.getExplored(exploreDest)) {
             timeSpentOnThisDestination = 0;
             if (Clock.getBytecodesLeft() < 2000) {
                 return randomExplore();
             }
             // pick a random unexplored location within a 3x3 area of the explored array
             // centered on current position
-            int x = locationToExploreIndexX(Cache.MY_LOCATION.x);
-            int y = locationToExploreIndexY(Cache.MY_LOCATION.y);
+            int x = MapInfo.locationToExploreIndexX(Cache.MY_LOCATION.x);
+            int y = MapInfo.locationToExploreIndexY(Cache.MY_LOCATION.y);
             MapLocation[] possibilities = new MapLocation[9];
             int ptr = 0;
             for (int newx = x - 1; newx <= x + 1; newx++) {
                 for (int newy = y - 1; newy <= y + 1; newy++) {
-                    MapLocation loc = exploreIndexToLocation(newx, newy);
-                    if(!getExplored(loc)) {
+                    MapLocation loc = MapInfo.exploreIndexToLocation(newx, newy);
+                    if(!MapInfo.getExplored(loc)) {
                         possibilities[ptr++] = loc;
                     }
                 }
@@ -303,55 +260,9 @@ public class Util {
         return bestRobot;
     }
 
-    public static void addToEnemyECs(MapLocation loc) {
-        if (!inEnemyECs(loc)) {
-            //System.out.println("Found enemy EC at " + loc);
-            for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
-                if (Cache.enemyECs[i] == null) {
-                    Cache.enemyECs[i] = loc;
-                    return;
-                }
-            }
-        }
-    }
-
-    public static boolean inEnemyECs(MapLocation loc) {
-        for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
-            if (Cache.enemyECs[i] != null && loc.equals(Cache.enemyECs[i])) {
-                // dup, dont broadcast this one
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static MapLocation closestEnemyEC() {
-        int min_dist = -1;
-        MapLocation closest = null;
-        for (int i = Cache.enemyECs.length - 1; i >= 0; i--) {
-            if (Cache.enemyECs[i] != null &&
-                    (min_dist == -1 || Cache.MY_LOCATION.distanceSquaredTo(Cache.enemyECs[i]) < min_dist)) {
-                min_dist = Cache.MY_LOCATION.distanceSquaredTo(Cache.enemyECs[i]);
-                closest = Cache.enemyECs[i];
-            }
-        }
-        return closest;
-    }
-
     // Replacement for Optional.map(RobotInfo::getLocation) to save bytecodes
     public static MapLocation mapToLocation(RobotInfo robot) {
         return robot == null ? null : robot.getLocation();
-    }
-
-    // Replacement for Optional.orElseGet()
-    public static MapLocation getFirst(Supplier<MapLocation>... suppliers) {
-        for (Supplier<MapLocation> supplier : suppliers) {
-            MapLocation location = supplier.get();
-            if (location != null) {
-                return location;
-            }
-        }
-        return null;
     }
 
     public static void setIndicatorDot(MapLocation loc, int red, int green, int blue) {

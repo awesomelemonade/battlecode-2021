@@ -2,6 +2,8 @@ package latticebot.util;
 
 import battlecode.common.MapLocation;
 
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -12,30 +14,15 @@ public class MapLocationList {
         head = new MapLocationListNode(location, head);
         size++;
     }
-    public MapLocation getClosestLocation(MapLocation location) {
-        MapLocation closestLocation = null;
-        int closestDistanceSquared = Integer.MAX_VALUE;
-        MapLocationListNode current = head;
-        while (current != null) {
-            MapLocation currentLocation = current.location;
-            int distanceSquared = location.distanceSquaredTo(currentLocation);
-            if (distanceSquared < closestDistanceSquared) {
-                closestLocation = currentLocation;
-                closestDistanceSquared = distanceSquared;
-            }
-            current = current.next;
-        }
-        return closestLocation;
-    }
-    public MapLocation getRandomLocation() {
+    public Optional<MapLocation> getRandomLocation() {
         if (size == 0) {
-            return null;
+            return Optional.empty();
         }
         MapLocationListNode current = head;
         for (int i = (int) (size * Math.random()); --i >= 0;) {
             current = current.next;
         }
-        return current.location;
+        return Optional.of(current.location);
     }
     public boolean contains(MapLocation location) {
         MapLocationListNode current = head;
@@ -70,6 +57,33 @@ public class MapLocationList {
             consumer.accept(current.location);
             current = current.next;
         }
+    }
+    public int getClosestLocationDistance(MapLocation location, int defaultDistance) {
+        return getClosestLocation(location).map(x -> x.distanceSquaredTo(location)).orElse(defaultDistance);
+    }
+    public int getClosestLocationDistance(int defaultDistance) {
+        return getClosestLocation().map(x -> x.distanceSquaredTo(Cache.MY_LOCATION)).orElse(defaultDistance);
+    }
+    public Optional<MapLocation> getClosestLocation() {
+        return getClosestLocation(Cache.MY_LOCATION);
+    }
+    public Optional<MapLocation> getClosestLocation(MapLocation location) {
+        return min(Comparator.comparingInt(x -> x.distanceSquaredTo(location)));
+    }
+    public Optional<MapLocation> min(Comparator<MapLocation> comparator) {
+        if (size == 0) {
+            return Optional.empty();
+        }
+        MapLocation minLocation = head.location;
+        MapLocationListNode current = head.next;
+        while (current != null) {
+            MapLocation location = current.location;
+            if (comparator.compare(location, minLocation) < 0) {
+                minLocation = location;
+            }
+            current = current.next;
+        }
+        return Optional.of(minLocation);
     }
     static class MapLocationListNode {
         MapLocation location;

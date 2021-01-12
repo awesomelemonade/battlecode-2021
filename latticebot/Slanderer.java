@@ -57,9 +57,9 @@ public strictfp class Slanderer implements RunnableBot {
         return Util.tryMoveTowards(location.directionTo(rc.getLocation()));
     }
 
-    private int hidingScore(MapLocation loc) throws GameActionException {
-        MapLocation nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation(loc);
-        int dist = nearestEC == null ? 1024 : nearestEC.distanceSquaredTo(loc);
+    private int hidingScore(MapLocation loc) {
+        int dist = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                .getClosestLocationDistance(loc, 1024);
         if (dist <= 4) return 9999 - dist;
         if(!LatticeUtil.isLatticeLocation(loc)) return 9999 - dist;
         return dist;
@@ -68,7 +68,7 @@ public strictfp class Slanderer implements RunnableBot {
     public boolean hide() throws GameActionException {
         int bestScore = 9999;
         Direction bestdir = null;
-        for(Direction d: ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
+        for(Direction d: Constants.ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
             MapLocation loc = Cache.MY_LOCATION.add(d);
             int score = hidingScore(loc);
             if(score < bestScore) {

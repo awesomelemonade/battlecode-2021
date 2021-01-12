@@ -8,6 +8,8 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 
+import java.util.Comparator;
+
 public class UnitCommunication {
     private static RobotController rc;
     public static void init(RobotController rc) {
@@ -36,8 +38,12 @@ public class UnitCommunication {
         }
     }
     public static final int CURRENT_DIRECTION_CENTER_SLANDERER = 9;
-    public static boolean isPotentialSlanderer(RobotInfo robot) throws GameActionException {
-        return ((rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG) >> CURRENT_DIRECTION_SHIFT) == CURRENT_DIRECTION_CENTER_SLANDERER;
+    public static boolean isPotentialSlanderer(RobotInfo robot) {
+        try {
+            return ((rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG) >> CURRENT_DIRECTION_SHIFT) == CURRENT_DIRECTION_CENTER_SLANDERER;
+        } catch (GameActionException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes
@@ -46,25 +52,28 @@ public class UnitCommunication {
         // 1. neutral/enemy enlightenment centers
         // 2. neutral/enemy units
         // 3. ally enlightenment centers
-        RobotInfo interestingRobot = Util.getClosestRobot(Cache.ALL_ROBOTS,
-                x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER && x.getTeam() != Constants.ALLY_TEAM);
-        if (interestingRobot == null) {
-            interestingRobot = Util.getClosestRobot(Cache.ALL_ROBOTS,
-                    x -> x.getTeam() != Constants.ALLY_TEAM);
-        }
-        if (interestingRobot == null) {
-            interestingRobot = Util.getClosestRobot(Cache.ALLY_ROBOTS,
-                    x -> x.getType() == RobotType.ENLIGHTENMENT_CENTER);
-        }
-        // communicate the interesting robot
-        if (interestingRobot != null) {
-            Util.setIndicatorLine(Cache.MY_LOCATION, interestingRobot.getLocation(), 255, 255, 0);
-            // TODO: change EC of ALL sensed enlightenment centers
-            if (interestingRobot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapInfo.addKnownEnlightementCenter(interestingRobot.getLocation(), interestingRobot.getTeam());
+        LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
+                r -> r.getType() == RobotType.ENLIGHTENMENT_CENTER || r.getTeam() != Constants.ALLY_TEAM,
+                Comparator.comparingInt(r -> {
+            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(r.getLocation());
+            boolean isEnlightenmentCenter = r.getType() == RobotType.ENLIGHTENMENT_CENTER;
+            boolean isNotAlly = r.getTeam() != Constants.ALLY_TEAM;
+            if (isEnlightenmentCenter && isNotAlly) {
+                return distanceSquared - 20000;
+            } else if (isNotAlly) {
+                return distanceSquared - 10000;
+            } else {
+                return distanceSquared;
             }
-            setFlag(interestingRobot);
-        }
+        })).ifPresent(r -> {
+            Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
+            if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
+            }
+            setFlag(r);
+        });
+
+
         closestCommunicatedEnemy = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
         for (RobotInfo ally : Cache.ALLY_ROBOTS) {
@@ -111,7 +120,7 @@ public class UnitCommunication {
             rc.setFlag(((Cache.lastDirection.ordinal() << CURRENT_DIRECTION_SHIFT) | currentFlag) ^ DO_NOTHING_FLAG);
         }
     }
-    public static void setFlag(RobotInfo unit) throws GameActionException {
+    public static void setFlag(RobotInfo unit) {
         currentFlag = 0;
         MapLocation unitLocation = unit.getLocation();
         int dx = unitLocation.x - Cache.MY_LOCATION.x + OFFSET_SHIFT; // 4 bits on relative x location
@@ -185,6 +194,7 @@ public class UnitCommunication {
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 4) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
+                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {

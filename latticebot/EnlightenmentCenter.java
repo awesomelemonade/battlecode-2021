@@ -116,9 +116,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public boolean shouldSave() {
-        MapLocation closestEnemyEC = Util.closestEnemyEC();
-        if (closestEnemyEC != null && closestEnemyEC.distanceSquaredTo(Cache.MY_LOCATION) <= 25)
-            return true;
         if (CentralCommunication.nearestEnemy == null)
             return false;
         if (CentralCommunication.nearestEnemyType == RobotType.POLITICIAN

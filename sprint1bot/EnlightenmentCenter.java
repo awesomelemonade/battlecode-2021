@@ -1,11 +1,11 @@
-package latticebot;
+package sprint1bot;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.CentralCommunication;
-import latticebot.util.Constants;
-import latticebot.util.SlandererBuild;
-import latticebot.util.Util;
+import sprint1bot.util.Cache;
+import sprint1bot.util.CentralCommunication;
+import sprint1bot.util.Constants;
+import sprint1bot.util.SlandererBuild;
+import sprint1bot.util.Util;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
     private RobotController rc;
@@ -40,7 +40,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             return;
         }
         if (shouldSave()) {
-            buildMuckraker();
             return;
         }
         boolean danger = CentralCommunication.nearestEnemy != null
@@ -120,7 +119,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (CentralCommunication.nearestEnemy == null)
             return false;
         if (CentralCommunication.nearestEnemyType == RobotType.POLITICIAN
-                && CentralCommunication.nearestEnemyDistanceSquared <= 100
+                && CentralCommunication.nearestEnemyDistanceSquared <= 25
                 && CentralCommunication.nearestEnemyInfluence >= 50) {
             return true;
         }

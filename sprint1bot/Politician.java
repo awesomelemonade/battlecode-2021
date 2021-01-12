@@ -1,13 +1,13 @@
-package latticebot;
+package sprint1bot;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.LatticeUtil;
-import latticebot.util.MapInfo;
-import latticebot.util.Pathfinder;
-import latticebot.util.UnitCommunication;
-import latticebot.util.Util;
+import sprint1bot.util.Cache;
+import sprint1bot.util.Constants;
+import sprint1bot.util.LatticeUtil;
+import sprint1bot.util.MapInfo;
+import sprint1bot.util.Pathfinder;
+import sprint1bot.util.UnitCommunication;
+import sprint1bot.util.Util;
 
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
@@ -75,13 +75,13 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        MapLocation nearestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(loc);
+        MapLocation nearestEnemyEC = Util.closestEnemyEC();
         if(nearestEnemyEC == null) return 5000*dist;
         return 5000*dist+nearestEnemyEC.distanceSquaredTo(loc);
     }
 
     public boolean tryDefend() throws GameActionException {
-        if(!defender) return false;
+        if(!defender && rc.getRoundNum() >= 100) return false;
         // find best defense score
         int bestDefenseScore = 999999;
         Direction bestDir = null;
@@ -205,7 +205,7 @@ public strictfp class Politician implements RunnableBot {
 
         int numKills = bestScore / 1000000;
         int convictionGotten = bestScore % 1000000;
-        if (convictionGotten * 2 >= rc.getConviction() - 10 || rc.getConviction() <= 30 && numKills >= 2) {
+        if (convictionGotten * 2 + 10 >= rc.getConviction() - 10) {
             rc.empower(bestRadius);
             return true;
         }
@@ -222,16 +222,9 @@ public strictfp class Politician implements RunnableBot {
         int bestDist = 9999;
         MapLocation bestLoc = null;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
-            if (robot.getType() == RobotType.POLITICIAN && robot.getConviction() <= 20) continue;
             if (rc.getConviction() * 2 + 20 >= robot.getConviction()
                     && robot.getConviction() * 2 + 20 >= rc.getConviction()) {
-                int numNearbyPoliticians = 0;
                 MapLocation loc = robot.location;
-                RobotInfo[] nearbyAllies = rc.senseNearbyRobots(loc, 5, Constants.ALLY_TEAM);
-                for(RobotInfo robot2 : nearbyAllies) {
-                    if(robot2.getType() == RobotType.POLITICIAN) numNearbyPoliticians++;
-                }
-                if(numNearbyPoliticians >= 2) continue;
                 int dist = Cache.MY_LOCATION.distanceSquaredTo(loc);
                 if (dist < bestDist) {
                     bestDist = dist;

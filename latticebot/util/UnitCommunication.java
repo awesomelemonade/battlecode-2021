@@ -50,24 +50,29 @@ public class UnitCommunication {
         currentFlag = CLEAR_FLAG;
         // Prioritize
         // 1. neutral/enemy enlightenment centers
-        // 2. enemy muckrakers
-        // 3. enemy politicians & slanderers
-        // 4. ally enlightenment centers
+        // 2. enemy slanderers
+        // 3. enemy muckrakers
+        // 4. enemy politicians
+        // 5. ally enlightenment centers
         LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
                 r -> r.getType() == RobotType.ENLIGHTENMENT_CENTER || r.getTeam() != Constants.ALLY_TEAM,
                 Comparator.comparingInt(r -> {
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(r.getLocation());
-            boolean isEnlightenmentCenter = r.getType() == RobotType.ENLIGHTENMENT_CENTER;
-            boolean isNotAlly = r.getTeam() != Constants.ALLY_TEAM;
-            boolean isMuckraker = r.getType() == RobotType.MUCKRAKER;
-            if (isEnlightenmentCenter && isNotAlly) {
-                return distanceSquared - 30000;
-            } else if (isMuckraker) {
-                return distanceSquared - 20000;
-            } else if (isNotAlly) {
-                return distanceSquared - 10000;
-            } else {
-                return distanceSquared;
+            switch (r.getType()) {
+                case ENLIGHTENMENT_CENTER:
+                    if (r.getTeam() == Constants.ALLY_TEAM) {
+                        return distanceSquared;
+                    } else {
+                        return distanceSquared - 40000;
+                    }
+                case POLITICIAN:
+                    return distanceSquared - 10000;
+                case MUCKRAKER:
+                    return distanceSquared - 20000;
+                case SLANDERER:
+                    return distanceSquared - 30000;
+                default:
+                    throw new IllegalStateException("Unknown Type: " + r.getType());
             }
         })).ifPresent(r -> {
             Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
@@ -114,6 +119,19 @@ public class UnitCommunication {
                     return false;
                 });
             }
+            MapInfo.enemySlandererLocations.removeIf(loc -> {
+                try {
+                    if (rc.canSenseLocation(loc)) {
+                        RobotInfo robot = rc.senseRobotAtLocation(loc);
+                        if (robot == null || robot.getType() != RobotType.SLANDERER || robot.getTeam() != Constants.ENEMY_TEAM) {
+                            return true;
+                        }
+                    }
+                } catch (GameActionException ex) {
+                    throw new IllegalStateException(ex);
+                }
+                return false;
+            });
         }
     }
     public static void postLoop() throws GameActionException {
@@ -195,7 +213,7 @@ public class UnitCommunication {
                 }
                 if (current.lastHeartbeatTurn != -1) {
                     MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
-                    switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 4) {
+                    switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
                             MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
@@ -215,11 +233,19 @@ public class UnitCommunication {
                                 MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
                             }
                             break;
+                        case 4: // [enemy slanderers]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
+                                    MapInfo.enemySlandererLocations.add(rotationLocation);
+                                }
+                            }
+                            break;
                     }
                 }
                 prev = current;
             } else {
-                // remove from SLL - TODO: Should we unregister some EC locations?
+                // we lost control of EC - remove from SLL - Set EC as enemy team
+                MapInfo.addKnownEnlightementCenter(current.location, Constants.ENEMY_TEAM);
                 if (prev == null) {
                     ecListHead = current.next;
                 } else {

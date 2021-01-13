@@ -29,13 +29,12 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
-        System.out.println("EC Turn: buff=" + rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
         if (CentralCommunication.nearestEnemy != null) {
             Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
             enemyDirection = enemyDirection.add(directionToNearestEnemy);
         }
         int saveAmount = getSaveAmount();
-        System.out.println("Save Amount: " + saveAmount);
+        System.out.printf("EC Turn: save=%d, buff=%f\n", saveAmount, rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
         int influenceLeft = rc.getInfluence() - saveAmount - 1;
         buildUnit(influenceLeft);
         influenceLeft = rc.getInfluence() - saveAmount - 1;
@@ -91,11 +90,13 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
             double random = Math.random();
-            if (slandererCount == 0 || random < 0.4) {
+            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4)) {
                 if (buildSlanderer(influence)) {
                     return;
                 }
-            } else if (random < (foundEnemyEC ? 0.55 : 0.7)) {
+            }
+            random = Math.random();
+            if (random < (foundEnemyEC ? 0.4 : 0.45)) {
                 int cost = Util.randBetween(10, 20) + Constants.POLITICIAN_EMPOWER_PENALTY;
                 if (influence >= cost) {
                     if (buildPolitician(cost)) {
@@ -149,7 +150,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (awayFromEnemies == Direction.CENTER) {
             awayFromEnemies = Util.randomAdjacentDirection();
         }
-        int cost = SlandererBuild.getBuildInfluence(influence - 5);
+        int cost = SlandererBuild.getBuildInfluence(influence);
         if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, awayFromEnemies, cost)) {
             slandererCount++;
             return true;

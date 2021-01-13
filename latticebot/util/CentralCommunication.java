@@ -44,14 +44,15 @@ public class CentralCommunication {
     // 10 bits: broadcast nearest known enemy to this EC
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes
-        nearestEnemy = null;
-        nearestEnemyDistanceSquared = Integer.MAX_VALUE;
-        nearestEnemyType = null;
-        nearestEnemyConviction = 0;
         // find nearest enemy
         RobotInfo enemy = Util.getClosestEnemyRobot();
-        if (enemy != null) {
-            nearestEnemy = enemy.location;
+        if (enemy == null) {
+            nearestEnemy = null;
+            nearestEnemyDistanceSquared = Integer.MAX_VALUE;
+            nearestEnemyType = null;
+            nearestEnemyConviction = 0;
+        } else {
+            nearestEnemy = enemy.getLocation();
             nearestEnemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(nearestEnemy);
             nearestEnemyType = enemy.getType();
             nearestEnemyConviction = enemy.getInfluence();
@@ -154,7 +155,7 @@ public class CentralCommunication {
         flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
         // 7 bits on relative x location and relative y location
         MapLocation rotationLocation = null;
-        switch (Cache.TURN_COUNT % 4) {
+        switch (Cache.TURN_COUNT % 5) {
             case 0: // heartbeat
                 rotationLocation = Cache.MY_LOCATION;
                 break;
@@ -166,6 +167,9 @@ public class CentralCommunication {
                 break;
             case 3: // [neutral ec]
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation().orElse(null);
+                break;
+            case 4: // [enemy slanderers]
+                rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);
                 break;
         }
         if (rotationLocation != null) {

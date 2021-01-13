@@ -162,10 +162,8 @@ public class Pathfinder {
 
     public static boolean execute(MapLocation target) {
         Util.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
-        int before = Clock.getBytecodesLeft();
         boolean res = executeBugpath(target);
         // boolean res = executeFullHeuristic(target);
-        System.out.println("USED:" + (before - Clock.getBytecodesLeft()));
         prevLoc = Cache.MY_LOCATION;
         return res;
     	// return executeOrig(target);

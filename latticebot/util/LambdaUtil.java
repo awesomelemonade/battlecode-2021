@@ -1,9 +1,11 @@
 package latticebot.util;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 
 // Workarounds to be not as bytecode excessive
 public class LambdaUtil {
@@ -47,6 +49,37 @@ public class LambdaUtil {
             }
         }
         return Optional.ofNullable(best);
+    }
+    // Replacement for Arrays.stream(array).filter(predicate).map(mapper).min()
+    public static <T> Optional<Integer> arraysStreamMin(T[] array, Predicate<T> predicate, ToIntFunction<T> mapper) {
+        int min = Integer.MAX_VALUE;
+        for (int i = array.length; --i >= 0;) {
+            T item = array[i];
+            if (predicate.test(item)) {
+                min = Math.min(min, mapper.applyAsInt(item));
+            }
+        }
+        return min == Integer.MAX_VALUE ? Optional.empty() : Optional.of(min);
+    }
+    // Replacement for Arrays.stream(array).filter(predicate).mapToInt(mapper).sum()
+    public static <T> int arraysStreamSum(T[] array, Predicate<T> predicate, ToIntFunction<T> mapper) {
+        int sum = 0;
+        for (int i = array.length; --i >= 0;) {
+            T item = array[i];
+            if (predicate.test(item)) {
+                sum += mapper.applyAsInt(item);
+            }
+        }
+        return sum;
+    }
+    // Replacement for Arrays.stream(array).anyMatch(predicate)
+    public static <T> boolean arraysAnyMatch(T[] array, Predicate<T> predicate) {
+        for (int i = array.length; --i >= 0;) {
+            if (predicate.test(array[i])) {
+                return true;
+            }
+        }
+        return false;
     }
     // Java 8 doesn't have Optional.or()
     @SafeVarargs

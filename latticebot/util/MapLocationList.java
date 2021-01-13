@@ -85,6 +85,9 @@ public class MapLocationList {
         }
         return Optional.of(minLocation);
     }
+    public boolean isEmpty() {
+        return size == 0;
+    }
     static class MapLocationListNode {
         MapLocation location;
         MapLocationListNode next;

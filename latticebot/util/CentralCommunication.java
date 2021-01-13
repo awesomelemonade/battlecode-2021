@@ -14,7 +14,7 @@ public class CentralCommunication {
     public static MapLocation nearestEnemy;
     public static int nearestEnemyDistanceSquared = Integer.MAX_VALUE;
     public static RobotType nearestEnemyType;
-    public static int nearestEnemyInfluence = 0;
+    public static int nearestEnemyConviction = 0;
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
@@ -47,14 +47,14 @@ public class CentralCommunication {
         nearestEnemy = null;
         nearestEnemyDistanceSquared = Integer.MAX_VALUE;
         nearestEnemyType = null;
-        nearestEnemyInfluence = 0;
+        nearestEnemyConviction = 0;
         // find nearest enemy
         RobotInfo enemy = Util.getClosestEnemyRobot();
         if (enemy != null) {
             nearestEnemy = enemy.location;
             nearestEnemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(nearestEnemy);
             nearestEnemyType = enemy.getType();
-            nearestEnemyInfluence = enemy.getInfluence();
+            nearestEnemyConviction = enemy.getInfluence();
         }
         int start = Clock.getBytecodeNum();
         // read flags of each known robot (delete from list if not alive)
@@ -81,7 +81,7 @@ public class CentralCommunication {
                             nearestEnemy = specifiedLocation;
                             nearestEnemyType = type;
                             if (type != RobotType.ENLIGHTENMENT_CENTER) {
-                                nearestEnemyInfluence = info;
+                                nearestEnemyConviction = info;
                             }
                         }
                     }

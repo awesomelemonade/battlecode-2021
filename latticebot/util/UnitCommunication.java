@@ -26,14 +26,14 @@ public class UnitCommunication {
     public static final int DO_NOTHING_FLAG = 0b1000_0111_0111_0000_0000_0000;
     public static final int CLEAR_FLAG = 0b0000_0111_0111_0000_0000_0000;
     private static int currentFlag = DO_NOTHING_FLAG;
-    public static MapLocation closestCommunicatedEnemy;
+    public static MapLocation closestCommunicatedEnemyToKite; // Currently used to by slanderers
     public static int closestCommunicatedEnemyDistanceSquared;
     private static void checkCloseEnemy(MapLocation enemy) {
         if (enemy != null) {
             int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
             if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
                 closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
-                closestCommunicatedEnemy = enemy;
+                closestCommunicatedEnemyToKite = enemy;
             }
         }
     }
@@ -78,13 +78,13 @@ public class UnitCommunication {
         });
 
 
-        closestCommunicatedEnemy = null;
+        closestCommunicatedEnemyToKite = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
         for (RobotInfo ally : Cache.ALLY_ROBOTS) {
             if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 registerOurTeamEC(ally);
             } else {
-                checkCloseEnemy(processFlagFromNearbyUnit(ally));
+                checkCloseEnemy(processEnemiesFromNearbyUnits(ally));
             }
         }
         processFlagsFromECs();
@@ -135,8 +135,8 @@ public class UnitCommunication {
             // specify team
             currentFlag |= unit.getTeam().ordinal();
         } else {
-            // specify influence
-            currentFlag |= Math.min(unit.getInfluence(), CURRENT_UNIT_INFO_MASK);
+            // specify conviction
+            currentFlag |= Math.min(unit.getConviction(), CURRENT_UNIT_INFO_MASK);
         }
     }
     public static final int UNIT_INFO_BITMASK = 0b1111_1111_1111_1111_1111; // 20 bits
@@ -148,7 +148,7 @@ public class UnitCommunication {
      * @return a location of a muckraker retrieved from flag, otherwise null
      * @throws GameActionException
      */
-    public static MapLocation processFlagFromNearbyUnit(RobotInfo robot) throws GameActionException {
+    public static MapLocation processEnemiesFromNearbyUnits(RobotInfo robot) throws GameActionException {
         // ally robots that are nearby may have useful information
         int flag = rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG;
         // check if the unit has seen anything
@@ -165,7 +165,8 @@ public class UnitCommunication {
             RobotType type = RobotType.values()[(flag >> CURRENT_UNIT_TYPE_SHIFT) & CURRENT_UNIT_TYPE_MASK];
             int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
             // we see type at specifiedLocation
-            if (type != RobotType.ENLIGHTENMENT_CENTER || Team.values()[info] == Constants.ENEMY_TEAM) {
+            if (Team.values()[info] == Constants.ENEMY_TEAM &&
+                    (type == RobotType.MUCKRAKER || type == RobotType.ENLIGHTENMENT_CENTER)) {
                 // we see enemy!!
                 return specifiedLocation;
             }

@@ -58,8 +58,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     CentralCommunication.nearestEnemyDistanceSquared <= 25;
             // do we have slanderers? is there danger (muckrakers)? build defender politicians
             if ((slandererCount > 0 && muckrakerNear) || politicianNear) {
-                System.out.println("Defending against slanderers: " + CentralCommunication.nearestEnemyInfluence);
-                int cost = 3 * CentralCommunication.nearestEnemyInfluence + Constants.POLITICIAN_EMPOWER_PENALTY;
+                int cost = 5 * CentralCommunication.nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
                 if (influence >= cost) {
                     buildPolitician(cost);
                 } else {
@@ -73,7 +72,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     r -> r.getTeam() != Constants.ALLY_TEAM && r.getType() == RobotType.ENLIGHTENMENT_CENTER,
                     r -> r.getConviction() + Constants.POLITICIAN_EMPOWER_PENALTY).map(cost -> {
                 if (influence >= cost) {
-                    System.out.println("Attacking neutral/enemy EC: " + cost);
                     buildPolitician(influence);
                     return true;
                 } else {

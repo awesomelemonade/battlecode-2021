@@ -15,6 +15,7 @@ public class MapInfo {
     public static int mapMinY = MAP_UNKNOWN_EDGE; // not known
     public static int mapMaxY = MAP_UNKNOWN_EDGE; // not known
     public static MapLocationList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
+    public static MapLocationList enemySlandererLocations;
     public static int[] explored = new int[32];
 
     public static void init(RobotController rc) {
@@ -27,6 +28,7 @@ public class MapInfo {
         for (int i = 0; i < enlightenmentCenterLocations.length; i++) {
             enlightenmentCenterLocations[i] = new MapLocationList();
         }
+        enemySlandererLocations = new MapLocationList();
     }
     public static void setKnownPassability(MapLocation location) throws GameActionException {
         int offsetX = location.x - origin.x;
@@ -117,6 +119,7 @@ public class MapInfo {
     public static MapLocationList getKnownEnlightenmentCenterList(Team team) {
         return enlightenmentCenterLocations[team.ordinal()];
     }
+
     // Exploration
 
     public static int exploreIndexToLocationX(int idx) {

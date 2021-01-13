@@ -30,22 +30,32 @@ public strictfp class Muckraker implements RunnableBot {
             if (tryExpose()) {
                 return;
             }
+            RobotInfo enemy = Util.getClosestEnemyRobot(r -> r.getType().canBeExposed());
+            if (enemy != null) {
+                Pathfinder.execute(enemy.getLocation());
+                return;
+            }
+            if (goToCommunicatedSlanderers()) {
+                return;
+            }
             if (!explore) {
-                RobotInfo enemy = Util.getClosestEnemyRobot(r -> r.getType().canBeExposed());
-                if (enemy != null) {
-                    Pathfinder.execute(enemy.getLocation());
+                if (tryECSpiral()) {
                     return;
                 }
             }
-            if (tryECSpiral()) {
-                return;
-            }
-            Util.smartExplore();
+            Util.randomExplore();
         }
     }
 
+    public static boolean goToCommunicatedSlanderers() {
+        return MapInfo.enemySlandererLocations.getClosestLocation().map(enemy -> {
+            Pathfinder.execute(enemy);
+            return true;
+        }).orElse(false);
+    }
+
     private static MapLocation lastECVisited = null;
-    public static boolean tryECSpiral() throws GameActionException {
+    public static boolean tryECSpiral() {
         return MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).map(ec -> {
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec);
             if (distanceSquared <= 9) {

@@ -165,8 +165,8 @@ public class UnitCommunication {
             RobotType type = RobotType.values()[(flag >> CURRENT_UNIT_TYPE_SHIFT) & CURRENT_UNIT_TYPE_MASK];
             int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
             // we see type at specifiedLocation
-            if (Team.values()[info] == Constants.ENEMY_TEAM &&
-                    (type == RobotType.MUCKRAKER || type == RobotType.ENLIGHTENMENT_CENTER)) {
+            if (type == RobotType.MUCKRAKER ||
+                    type == RobotType.ENLIGHTENMENT_CENTER && Team.values()[info] == Constants.ENEMY_TEAM) {
                 // we see enemy!!
                 return specifiedLocation;
             }

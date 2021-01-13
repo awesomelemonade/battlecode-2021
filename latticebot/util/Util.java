@@ -12,7 +12,7 @@ public class Util {
     public static void init(RobotController rc) {
         Util.rc = rc;
         // in order for units to have different rngs
-        for(int i = 0; i < rc.getID()%20; i++) {
+        for(int i = 0; i < rc.getID() % 20; i++) {
             double blah = Math.random();
         }
         Constants.init(rc);
@@ -53,15 +53,17 @@ public class Util {
         } else {
             UnitCommunication.postLoop();
         }
-        MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
-            Util.setIndicatorDot(x, 255, 255, 255);
-        });
-        MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
-            Util.setIndicatorDot(x, 128, 128, 128);
-        });
-        MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
-            Util.setIndicatorDot(x, 0, 0, 0);
-        });
+        if (DEBUG_DRAW) {
+            MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
+                Util.setIndicatorDot(x, 255, 255, 255);
+            });
+            MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
+                Util.setIndicatorDot(x, 128, 128, 128);
+            });
+            MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
+                Util.setIndicatorDot(x, 0, 0, 0);
+            });
+        }
     }
 
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) {
@@ -126,6 +128,21 @@ public class Util {
         }
     }
 
+    public static int numAllyRobotsWithin(MapLocation location, int distanceSquared) {
+        if (Cache.ALLY_ROBOTS.length >= 20) {
+            return rc.senseNearbyRobots(location, distanceSquared, ALLY_TEAM).length;
+        } else {
+            // loop through robot list
+            int count = 0;
+            for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
+                if (location.isWithinDistanceSquared(Cache.ALLY_ROBOTS[i].getLocation(), distanceSquared)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+    }
+
     public static boolean tryMoveSpacedApart(Direction direction) {
         if (rc.canMove(direction) && !Util.hasAdjacentAllyRobot(Cache.MY_LOCATION.add(direction))) {
             move(direction);
@@ -146,10 +163,26 @@ public class Util {
     private static Direction previousDirection = randomAdjacentDirection();
 
     public static boolean randomExplore() {
-        if (tryMove(previousDirection)) {
+        Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
+        // TODO: Incorporate pathfinding algorithms?
+        Direction bestDirection = null;
+        int minAllies = Integer.MAX_VALUE;
+        for (Direction direction : Constants.getAttemptOrder(previousDirection)) {
+            if (rc.canMove(direction)) {
+                MapLocation next = Cache.MY_LOCATION.add(direction);
+                int numAllies = numAllyRobotsWithin(next, 10);
+                if (numAllies < minAllies) {
+                    bestDirection = direction;
+                    minAllies = numAllies;
+                }
+            }
+        }
+        if (bestDirection != null) {
+            Util.move(bestDirection);
+            previousDirection = bestDirection;
             return true;
         }
-        previousDirection = randomAdjacentDirection();
+        // traffic jam
         return false;
     }
 

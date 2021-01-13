@@ -2,7 +2,6 @@ package latticebot;
 
 import battlecode.common.*;
 import latticebot.util.*;
-import static latticebot.util.Constants.*;
 
 public strictfp class Slanderer implements RunnableBot {
     private RobotController rc;
@@ -23,12 +22,13 @@ public strictfp class Slanderer implements RunnableBot {
             return;
         }
         if (rc.getType() == RobotType.SLANDERER) {
-            RobotInfo closestEnemy = Util.getClosestEnemyRobot();
+            RobotInfo closestEnemy = Util.getClosestEnemyRobot(r -> r.getType() == RobotType.MUCKRAKER);
             MapLocation closestEnemyLocation = closestEnemy == null ? null : closestEnemy.getLocation();
             if (closestEnemyLocation == null) {
-                closestEnemyLocation = UnitCommunication.closestCommunicatedEnemy;
+                closestEnemyLocation = UnitCommunication.closestCommunicatedEnemyToKite;
             }
-            if (closestEnemyLocation != null && rc.getRoundNum() <= 150 && Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) <= 10) {
+            if (closestEnemyLocation != null && rc.getRoundNum() <= 150 &&
+                    Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) <= 10) {
                 Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
                 tryKiteFrom(closestEnemyLocation);
             }

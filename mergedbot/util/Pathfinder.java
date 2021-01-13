@@ -288,7 +288,7 @@ public class Pathfinder {
   		      	if (nextLoc.distanceSquaredTo(target) < Cache.MY_LOCATION.distanceSquaredTo(target)) {
   				    	if (getAngle(nextLoc, target, Cache.MY_LOCATION) > 0) {
   				    		bugpathTermCount++;
-  				    		if (bugpathTermCount > 0) {
+  				    		if (bugpathTermCount > 1) {
   				      		bugpathBlocked = false;
                     bugpathTurnCount = 0;
   				    		}

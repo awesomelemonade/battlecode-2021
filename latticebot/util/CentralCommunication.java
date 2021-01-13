@@ -46,6 +46,8 @@ public class CentralCommunication {
         rc.setFlag(0); // in case we run out of bytecodes
         nearestEnemy = null;
         nearestEnemyDistanceSquared = Integer.MAX_VALUE;
+        nearestEnemyType = null;
+        nearestEnemyInfluence = 0;
         // find nearest enemy
         RobotInfo enemy = Util.getClosestEnemyRobot();
         if (enemy != null) {

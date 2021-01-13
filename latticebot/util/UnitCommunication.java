@@ -50,15 +50,19 @@ public class UnitCommunication {
         currentFlag = CLEAR_FLAG;
         // Prioritize
         // 1. neutral/enemy enlightenment centers
-        // 2. neutral/enemy units
-        // 3. ally enlightenment centers
+        // 2. enemy muckrakers
+        // 3. enemy politicians & slanderers
+        // 4. ally enlightenment centers
         LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
                 r -> r.getType() == RobotType.ENLIGHTENMENT_CENTER || r.getTeam() != Constants.ALLY_TEAM,
                 Comparator.comparingInt(r -> {
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(r.getLocation());
             boolean isEnlightenmentCenter = r.getType() == RobotType.ENLIGHTENMENT_CENTER;
             boolean isNotAlly = r.getTeam() != Constants.ALLY_TEAM;
+            boolean isMuckraker = r.getType() == RobotType.MUCKRAKER;
             if (isEnlightenmentCenter && isNotAlly) {
+                return distanceSquared - 30000;
+            } else if (isMuckraker) {
                 return distanceSquared - 20000;
             } else if (isNotAlly) {
                 return distanceSquared - 10000;
@@ -105,8 +109,7 @@ public class UnitCommunication {
                             }
                         }
                     } catch (GameActionException ex) {
-                        ex.printStackTrace();
-                        throw new IllegalStateException();
+                        throw new IllegalStateException(ex);
                     }
                     return false;
                 });

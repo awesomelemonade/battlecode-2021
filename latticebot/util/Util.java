@@ -196,7 +196,7 @@ public class Util {
     }
 
     public static int randBetween(int l, int r) {
-        return l + (int)(Math.random()*(r-l+1));
+        return l + (int) (Math.random() * (r - l + 1));
     }
 
     /**
@@ -258,11 +258,6 @@ public class Util {
             }
         }
         return bestRobot;
-    }
-
-    // Replacement for Optional.map(RobotInfo::getLocation) to save bytecodes
-    public static MapLocation mapToLocation(RobotInfo robot) {
-        return robot == null ? null : robot.getLocation();
     }
 
     public static void setIndicatorDot(MapLocation loc, int red, int green, int blue) {

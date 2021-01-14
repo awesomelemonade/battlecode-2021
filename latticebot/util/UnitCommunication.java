@@ -75,8 +75,13 @@ public class UnitCommunication {
         // 4. enemy politicians
         // 5. ally enlightenment centers
         if (Cache.ALL_ROBOTS.length >= 17) {
-            LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
-                    importantRobotComparator).ifPresent(r -> {
+            LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
+                    importantRobotComparator), () ->
+                    // Broadcast known ally center
+                    MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation()
+                            .map(location -> new RobotInfo(-1, Constants.ALLY_TEAM, RobotType.ENLIGHTENMENT_CENTER,
+                                    -1, -1, location))
+            ).ifPresent(r -> {
                 Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                 if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                     MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
@@ -104,6 +109,8 @@ public class UnitCommunication {
             if (type == RobotType.ENLIGHTENMENT_CENTER) {
                 registerOurTeamEC(ally);
             } else {
+                // Don't process enemies from nearby units if slanderer is on turn count 1
+                // this is turn 1 initialization bytecode optimization
                 if (Cache.TURN_COUNT > 1 || type != RobotType.SLANDERER) {
                     processEnemiesFromNearbyUnits(ally);
                 }

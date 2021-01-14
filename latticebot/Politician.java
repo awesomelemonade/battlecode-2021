@@ -335,11 +335,11 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean shouldEmpower(int ecKills, int mKills, int pKills, int mecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {
-        /*System.out.println("ecKills = " + ecKills);
-        System.out.println("mKills = " + mKills);
-        System.out.println("pKills = " + pKills);
-        System.out.println("distPtoEC = " + distPtoEC);
-        System.out.println("distMtoS = " + distMtoS);*/
+        /*Util.println("ecKills = " + ecKills);
+        Util.println("mKills = " + mKills);
+        Util.println("pKills = " + pKills);
+        Util.println("distPtoEC = " + distPtoEC);
+        Util.println("distMtoS = " + distMtoS);*/
         if (ecKills >= 1) {
             return true;
         }

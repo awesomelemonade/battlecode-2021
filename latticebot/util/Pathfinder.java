@@ -265,7 +265,7 @@ public class Pathfinder {
         	}
         }*/
         if (bugpathBlocked && bugpathTurnCount > 4) {
-          // System.out.println("BUGPATHFAIL: " + Cache.MY_LOCATION);
+          // Util.println("BUGPATHFAIL: " + Cache.MY_LOCATION);
           return executeFallback(target, next);
         }
         if ((!bugpathBlocked && Cache.MY_LOCATION.add(Constants.ORDINAL_DIRECTIONS[next]).distanceSquaredTo(target) < Cache.MY_LOCATION.distanceSquaredTo(target))) {

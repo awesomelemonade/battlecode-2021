@@ -195,6 +195,9 @@ public class Util {
 
     // ~1200 bytecodes if we need to find a new destination, ~300 otherwise
     public static boolean smartExplore() {
+        if(rc.getRoundNum() <= 50) {
+            return randomExplore();
+        }
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         // if allies nearby, move away from them
         // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
@@ -304,5 +307,10 @@ public class Util {
     public static void setIndicatorLine(MapLocation startLoc, MapLocation endLoc, int red, int green, int blue) {
         if(!Constants.DEBUG_DRAW) return;
         rc.setIndicatorLine(startLoc, endLoc, red, green, blue);
+    }
+
+    public static void println(String s) {
+        if(!Constants.DEBUG_PRINT) return;
+        System.out.println(s);
     }
 }

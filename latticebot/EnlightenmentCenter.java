@@ -15,6 +15,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int slandererCount = 0;
     private static int muckrakerCount = 0;
     private static int politicianCount = 0;
+    private static int turnsSincePolitician = 0;
 
     private static MapLocation enemyDirection;
 
@@ -33,8 +34,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
             enemyDirection = enemyDirection.add(directionToNearestEnemy);
         }
+        turnsSincePolitician++;
         int saveAmount = getSaveAmount();
-        System.out.printf("EC Turn: save=%d, buff=%f\n", saveAmount, rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
+        Util.println("EC Turn: save=" + saveAmount + ", buff=" + rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
         int influenceLeft = rc.getInfluence() - saveAmount - 1;
         buildUnit(influenceLeft);
         influenceLeft = rc.getInfluence() - saveAmount - 1;
@@ -47,6 +49,10 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             if (LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS, r -> r.getType() == RobotType.SLANDERER)) {
                 buildMuckraker();
                 return;
+            }
+            // if too long with no politician built, build one
+            if(turnsSincePolitician >= 10) {
+                buildPolitician(Math.max(Util.randBetween(16, 20), (int)(0.1*influence)));
             }
             // TODO: Loop through all communicated units to figure this out
             boolean muckrakerNear = CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER &&
@@ -84,7 +90,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             // no danger? build slanderers / big p
             if (influence >= 150 && Math.random() < 0.2) {
                 // build politician w/ minimum 150
-                if (rc.getRoundNum() > 350 && Math.random() < 0.5) {
+                if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
                     if (buildMuckraker(Math.max(influence - 50, 150))) {
                         return;
                     }
@@ -172,6 +178,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public static boolean buildPolitician(int influence) {
+        turnsSincePolitician = 0;
+        int cap = Math.max(1000, (int)(0.1 * rc.getInfluence()));
+        influence = Math.min(influence, cap);
         if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
             politicianCount++;
             return true;

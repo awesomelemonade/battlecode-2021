@@ -11,8 +11,8 @@ public class Constants {
     public static final int POLITICIAN_EMPOWER_PENALTY = 11;
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
-    public static final boolean DEBUG_DRAW = true;
-    public static final boolean DEBUG_RESIGN = true;
+    public static final boolean DEBUG_DRAW = false;
+    public static final boolean DEBUG_RESIGN = false;
 
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();

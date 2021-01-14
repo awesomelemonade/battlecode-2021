@@ -1,14 +1,14 @@
-package mergedbot;
+package buildorderv2;
 
 import battlecode.common.*;
-import mergedbot.util.Cache;
-import mergedbot.util.Constants;
-import mergedbot.util.LambdaUtil;
-import mergedbot.util.LatticeUtil;
-import mergedbot.util.MapInfo;
-import mergedbot.util.Pathfinder;
-import mergedbot.util.UnitCommunication;
-import mergedbot.util.Util;
+import buildorderv2.util.Cache;
+import buildorderv2.util.Constants;
+import buildorderv2.util.LambdaUtil;
+import buildorderv2.util.LatticeUtil;
+import buildorderv2.util.MapInfo;
+import buildorderv2.util.Pathfinder;
+import buildorderv2.util.UnitCommunication;
+import buildorderv2.util.Util;
 import java.util.Optional;
 
 import java.util.Comparator;

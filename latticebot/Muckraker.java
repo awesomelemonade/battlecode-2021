@@ -51,6 +51,12 @@ public strictfp class Muckraker implements RunnableBot {
                         }
                     }
                 }
+                if (target != null) {
+                    // Invalidate bad communicated targets
+                    if (!MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).contains(target)) {
+                        target = null;
+                    }
+                }
                 if (target == null) {
                     target = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation().orElse(null);
                 }

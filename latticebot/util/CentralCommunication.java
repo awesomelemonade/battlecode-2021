@@ -75,19 +75,30 @@ public class CentralCommunication {
                     MapLocation specifiedLocation = current.location.translate(dx, dy);
                     RobotType type = RobotType.values()[(flag >> UnitCommunication.CURRENT_UNIT_TYPE_SHIFT) & UnitCommunication.CURRENT_UNIT_TYPE_MASK];
                     int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
-                    if (type != RobotType.ENLIGHTENMENT_CENTER || Team.values()[info] == Constants.ENEMY_TEAM) {
-                        int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
-                        if (distanceSquared < nearestEnemyDistanceSquared) {
-                            nearestEnemyDistanceSquared = distanceSquared;
-                            nearestEnemy = specifiedLocation;
-                            nearestEnemyType = type;
-                            if (type != RobotType.ENLIGHTENMENT_CENTER) {
-                                nearestEnemyConviction = info;
-                            }
+                    if (type == RobotType.SLANDERER) {
+                        if (!MapInfo.enemySlandererLocations.contains(specifiedLocation)) {
+                            MapInfo.enemySlandererLocations.add(specifiedLocation, Cache.TURN_COUNT);
                         }
                     }
-                    if (type == RobotType.ENLIGHTENMENT_CENTER && !specifiedLocation.equals(Cache.MY_LOCATION)) {
-                        MapInfo.addKnownEnlightementCenter(specifiedLocation, Team.values()[info]);
+                    switch (type) {
+                        case ENLIGHTENMENT_CENTER:
+                            Team ecTeam = Team.values()[info];
+                            if (!specifiedLocation.equals(Cache.MY_LOCATION)) {
+                                MapInfo.addKnownEnlightementCenter(specifiedLocation, ecTeam);
+                            }
+                            if (ecTeam == Constants.ALLY_TEAM) {
+                                break;
+                            }
+                        default:
+                            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
+                            if (distanceSquared < nearestEnemyDistanceSquared) {
+                                nearestEnemyDistanceSquared = distanceSquared;
+                                nearestEnemy = specifiedLocation;
+                                nearestEnemyType = type;
+                                if (type != RobotType.ENLIGHTENMENT_CENTER) {
+                                    nearestEnemyConviction = info;
+                                }
+                            }
                     }
                 }
                 // update location

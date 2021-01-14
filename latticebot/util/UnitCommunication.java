@@ -55,7 +55,7 @@ public class UnitCommunication {
         // 4. enemy politicians
         // 5. ally enlightenment centers
         LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
-                r -> r.getType() == RobotType.ENLIGHTENMENT_CENTER || r.getTeam() != Constants.ALLY_TEAM,
+                r -> r.getTeam() != Constants.ALLY_TEAM || r.getType() == RobotType.ENLIGHTENMENT_CENTER,
                 Comparator.comparingInt(r -> {
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(r.getLocation());
             switch (r.getType()) {
@@ -69,7 +69,7 @@ public class UnitCommunication {
                     return distanceSquared - 10000;
                 case MUCKRAKER:
                     return distanceSquared - 20000;
-                case SLANDERER:
+                case SLANDERER: // Remember: Only muckrakers can see this
                     return distanceSquared - 30000;
                 default:
                     throw new IllegalStateException("Unknown Type: " + r.getType());
@@ -85,11 +85,15 @@ public class UnitCommunication {
 
         closestCommunicatedEnemyToKite = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
-        for (RobotInfo ally : Cache.ALLY_ROBOTS) {
-            if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+        for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
+            RobotInfo ally = Cache.ALLY_ROBOTS[i];
+            RobotType type = ally.getType();
+            if (type == RobotType.ENLIGHTENMENT_CENTER) {
                 registerOurTeamEC(ally);
             } else {
-                checkCloseEnemy(processEnemiesFromNearbyUnits(ally));
+                if (Cache.TURN_COUNT > 1 || type != RobotType.SLANDERER) {
+                    checkCloseEnemy(processEnemiesFromNearbyUnits(ally));
+                }
             }
         }
         processFlagsFromECs();
@@ -119,19 +123,6 @@ public class UnitCommunication {
                     return false;
                 });
             }
-            MapInfo.enemySlandererLocations.removeIf(loc -> {
-                try {
-                    if (rc.canSenseLocation(loc)) {
-                        RobotInfo robot = rc.senseRobotAtLocation(loc);
-                        if (robot == null || robot.getType() != RobotType.SLANDERER || robot.getTeam() != Constants.ENEMY_TEAM) {
-                            return true;
-                        }
-                    }
-                } catch (GameActionException ex) {
-                    throw new IllegalStateException(ex);
-                }
-                return false;
-            });
         }
     }
     public static void postLoop() throws GameActionException {
@@ -236,7 +227,7 @@ public class UnitCommunication {
                         case 4: // [enemy slanderers]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
                                 if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
-                                    MapInfo.enemySlandererLocations.add(rotationLocation);
+                                    MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT);
                                 }
                             }
                             break;

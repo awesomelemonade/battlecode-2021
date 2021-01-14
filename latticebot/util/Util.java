@@ -63,6 +63,9 @@ public class Util {
             MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
                 Util.setIndicatorDot(x, 0, 0, 0);
             });
+            MapInfo.enemySlandererLocations.forEach(x -> {
+                Util.setIndicatorDot(x, 0, 128, 0); // dark green
+            });
         }
     }
 

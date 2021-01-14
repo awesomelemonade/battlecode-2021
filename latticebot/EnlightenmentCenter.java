@@ -82,9 +82,14 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             // TODO: neutral ec (communicated)
             // TODO: enemy ec (communicated)
             // no danger? build slanderers / big p
-            if (Math.random() < 0.2 && influence >= 150) {
-                // build politician w/ minimum 150 and maximum rc.getRoundNum() / 2
-                if (buildPolitician(Math.min(Math.max(influence - 50, 150), Math.max(150, rc.getRoundNum() / 2)))) {
+            if (influence >= 150 && Math.random() < 0.2) {
+                // build politician w/ minimum 150
+                if (rc.getRoundNum() > 350 && Math.random() < 0.5) {
+                    if (buildMuckraker(Math.max(influence - 50, 150))) {
+                        return;
+                    }
+                }
+                if (buildPolitician(Math.max(influence - 50, 150))) {
                     return;
                 }
             }
@@ -139,6 +144,14 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     public static boolean buildMuckraker() {
         if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), 1)) {
+            muckrakerCount++;
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean buildMuckraker(int influence) {
+        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), influence)) {
             muckrakerCount++;
             return true;
         }

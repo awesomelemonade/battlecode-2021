@@ -10,6 +10,8 @@ import latticebot.util.Util;
 public strictfp class Muckraker implements RunnableBot {
     private static RobotController rc;
     private static boolean explore;
+    private static boolean targeted;
+    private static MapLocation target;
 
     public Muckraker(RobotController rc) {
         Muckraker.rc = rc;
@@ -17,7 +19,8 @@ public strictfp class Muckraker implements RunnableBot {
 
     @Override
     public void init() throws GameActionException {
-        if (Math.random() > 0.8) {
+        targeted = rc.getConviction() > 5;
+        if (Math.random() < 0.2) {
             explore = true;
         } else {
             explore = false;
@@ -38,6 +41,15 @@ public strictfp class Muckraker implements RunnableBot {
             if (goToCommunicatedSlanderers()) {
                 return;
             }
+            if (targeted) {
+                if (target == null && Cache.TURN_COUNT > 100) {
+                    target = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation().orElse(null);
+                }
+                if (target != null) {
+                    tryECSpiral(target);
+                    return;
+                }
+            }
             if (!explore) {
                 if (tryECSpiral()) {
                     return;
@@ -57,20 +69,24 @@ public strictfp class Muckraker implements RunnableBot {
     private static MapLocation lastECVisited = null;
     public static boolean tryECSpiral() {
         return MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).map(ec -> {
-            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec);
-            if (distanceSquared <= 9) {
-                lastECVisited = ec;
-            }
-            if (lastECVisited == null || !lastECVisited.equals(ec)) {
-                if (!Pathfinder.executeSpacedApart(ec)) {
-                    Pathfinder.execute(ec);
-                }
-            } else {
-                Direction tangent = ec.directionTo(Cache.MY_LOCATION).rotateRight().rotateRight();
-                Util.tryMoveTowardsSpacedApart(tangent);
-            }
+            tryECSpiral(ec);
             return true;
         }).orElse(false);
+    }
+
+    public static void tryECSpiral(MapLocation ec) {
+        int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec);
+        if (distanceSquared <= 9) {
+            lastECVisited = ec;
+        }
+        if (lastECVisited == null || !lastECVisited.equals(ec)) {
+            if (!Pathfinder.executeSpacedApart(ec)) {
+                Pathfinder.execute(ec);
+            }
+        } else {
+            Direction tangent = ec.directionTo(Cache.MY_LOCATION).rotateRight().rotateRight();
+            Util.tryMoveTowardsSpacedApart(tangent);
+        }
     }
 
     public boolean tryExpose() throws GameActionException {

@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public class Cache { // Cache variables that are constant throughout a turn
     private static RobotController rc;
-    public static RobotInfo[] ALL_ROBOTS, ALLY_ROBOTS, ENEMY_ROBOTS;
+    public static RobotInfo[] ALL_ROBOTS, ALLY_ROBOTS, ENEMY_ROBOTS, NEUTRAL_ROBOTS;
     public static RobotInfo[] EMPTY_ROBOTS = {};
     public static int TURN_COUNT;
     public static MapLocation MY_LOCATION;
@@ -22,9 +22,11 @@ public class Cache { // Cache variables that are constant throughout a turn
             // save 200 bytecodes
             ALLY_ROBOTS = EMPTY_ROBOTS;
             ENEMY_ROBOTS = EMPTY_ROBOTS;
+            NEUTRAL_ROBOTS = EMPTY_ROBOTS;
         } else {
             ALLY_ROBOTS = rc.senseNearbyRobots(-1, Constants.ALLY_TEAM);
             ENEMY_ROBOTS = rc.senseNearbyRobots(-1, Constants.ENEMY_TEAM);
+            NEUTRAL_ROBOTS = rc.senseNearbyRobots(-1, Team.NEUTRAL);
         }
         TURN_COUNT++;
         MY_LOCATION = rc.getLocation();

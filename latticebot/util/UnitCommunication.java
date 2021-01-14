@@ -12,8 +12,28 @@ import java.util.Comparator;
 
 public class UnitCommunication {
     private static RobotController rc;
+    private static Comparator<RobotInfo> importantRobotComparator;
     public static void init(RobotController rc) {
         UnitCommunication.rc = rc;
+        importantRobotComparator = Comparator.comparingInt(r -> {
+            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(r.getLocation());
+            switch (r.getType()) {
+                case ENLIGHTENMENT_CENTER:
+                    if (r.getTeam() == Constants.ALLY_TEAM) {
+                        return distanceSquared;
+                    } else {
+                        return distanceSquared - 40000;
+                    }
+                case POLITICIAN:
+                    return distanceSquared - 10000;
+                case MUCKRAKER:
+                    return distanceSquared - 20000;
+                case SLANDERER: // Remember: Only muckrakers can see this
+                    return distanceSquared - 30000;
+                default:
+                    throw new IllegalStateException("Unknown Type: " + r.getType());
+            }
+        });
     }
     public static final int OFFSET_SHIFT = 7;
     public static final int CURRENT_DIRECTION_SHIFT = 20;
@@ -54,33 +74,26 @@ public class UnitCommunication {
         // 3. enemy muckrakers
         // 4. enemy politicians
         // 5. ally enlightenment centers
-        LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
-                r -> r.getTeam() != Constants.ALLY_TEAM || r.getType() == RobotType.ENLIGHTENMENT_CENTER,
-                Comparator.comparingInt(r -> {
-            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(r.getLocation());
-            switch (r.getType()) {
-                case ENLIGHTENMENT_CENTER:
-                    if (r.getTeam() == Constants.ALLY_TEAM) {
-                        return distanceSquared;
-                    } else {
-                        return distanceSquared - 40000;
-                    }
-                case POLITICIAN:
-                    return distanceSquared - 10000;
-                case MUCKRAKER:
-                    return distanceSquared - 20000;
-                case SLANDERER: // Remember: Only muckrakers can see this
-                    return distanceSquared - 30000;
-                default:
-                    throw new IllegalStateException("Unknown Type: " + r.getType());
-            }
-        })).ifPresent(r -> {
-            Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
-            if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
-            }
-            setFlag(r);
-        });
+        if (Cache.ALL_ROBOTS.length >= 17) {
+            LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
+                    importantRobotComparator).ifPresent(r -> {
+                Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
+                if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
+                }
+                setFlag(r);
+            });
+        } else {
+            LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
+                    r -> r.getTeam() != Constants.ALLY_TEAM || r.getType() == RobotType.ENLIGHTENMENT_CENTER,
+                    importantRobotComparator).ifPresent(r -> {
+                Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
+                if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
+                }
+                setFlag(r);
+            });
+        }
 
 
         closestCommunicatedEnemyToKite = null;

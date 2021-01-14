@@ -111,12 +111,11 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             // otherwise, build 1 cost muckrakers
             buildMuckraker();
-            // TODO: Break ties with huge muckraker?
         }
     }
 
     public static void bid(int influence) throws GameActionException {
-        if (rc.getTeamVotes() == 1500) {
+        if (rc.getTeamVotes() == 751) {
             return;
         }
         if (influence <= 100) {

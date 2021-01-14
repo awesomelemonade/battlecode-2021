@@ -43,12 +43,6 @@ public class Pathfinder {
         if (nextLoc.equals(prevLoc)) {
           continue;
         }
-        
-        double dx2 = target.x - nextLoc.x;
-        double dy2 = target.y - nextLoc.y;
-        double mag = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-        dx2 /= mag;
-        dy2 /= mag;
 
         switch (Constants.ORDINAL_DIRECTIONS[i]) {
           case NORTH:
@@ -225,6 +219,11 @@ public class Pathfinder {
           bugpathTurnCount = 0;
         }
 
+        if (bugpathTurnCount > 4) {
+          // System.out.println("BUGPATHFAIL: " + Cache.MY_LOCATION);
+          return executeOrig(target);
+        }
+
         // int greedy = -1;
         // int greedyDist = 1048576;
         int next = -1;
@@ -244,10 +243,7 @@ public class Pathfinder {
         		greedy = i;
         	}
         }*/
-        if (bugpathTurnCount > 4) {
-          // System.out.println("BUGPATHFAIL: " + Cache.MY_LOCATION);
-          return executeOrig(target);
-        }
+        
         if ((!bugpathBlocked && Cache.MY_LOCATION.add(Constants.ORDINAL_DIRECTIONS[next]).distanceSquaredTo(target) < Cache.MY_LOCATION.distanceSquaredTo(target))) {
         	if (rc.canMove(Constants.ORDINAL_DIRECTIONS[next])) {
 	        	Util.move(Constants.ORDINAL_DIRECTIONS[next]);

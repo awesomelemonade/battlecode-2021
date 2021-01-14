@@ -44,12 +44,6 @@ public class Pathfinder {
           continue;
         }
         
-        double dx2 = target.x - nextLoc.x;
-        double dy2 = target.y - nextLoc.y;
-        double mag = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-        dx2 /= mag;
-        dy2 /= mag;
-
         switch (Constants.ORDINAL_DIRECTIONS[i]) {
           case NORTH:
             tempHeuristic = Math.max(Math.max(getMoveHeuristic(nextLoc.add(Direction.NORTH), target, nextLoc), getMoveHeuristic(nextLoc.add(Direction.NORTHEAST), target, nextLoc)), getMoveHeuristic(nextLoc.add(Direction.NORTHWEST), target, nextLoc));
@@ -215,6 +209,32 @@ public class Pathfinder {
         return false;
     }
 
+    public static int greedyMove(MapLocation target) {
+        int leastDist = target.distanceSquaredTo(Cache.MY_LOCATION);
+        int next = -1;
+        for (int i = 0; i < Constants.ORDINAL_DIRECTIONS.length; i++) {
+            MapLocation nextLoc = Cache.MY_LOCATION.add(Constants.ORDINAL_DIRECTIONS[i]);
+            int temp_dist = nextLoc.distanceSquaredTo(target);
+            if (temp_dist < leastDist && rc.canMove(Constants.ORDINAL_DIRECTIONS[i])) {
+                leastDist = temp_dist;
+                next = i;
+            }
+        }
+        return next;
+    }
+
+    public static boolean executeFallback(MapLocation target, int next) {
+      int greedy = greedyMove(target);
+      if (greedy == next) {
+        bugpathBlocked = false;
+      }
+      if (greedy != -1) {
+        Util.move(Constants.ORDINAL_DIRECTIONS[greedy]);
+        return true;
+      }
+      return false;
+    }
+
     public static boolean executeBugpath(MapLocation target) {
         if (Cache.MY_LOCATION.equals(target)) {
             // already there
@@ -244,9 +264,9 @@ public class Pathfinder {
         		greedy = i;
         	}
         }*/
-        if (bugpathTurnCount > 4) {
+        if (bugpathBlocked && bugpathTurnCount > 4) {
           // System.out.println("BUGPATHFAIL: " + Cache.MY_LOCATION);
-          return executeOrig(target);
+          return executeFallback(target, next);
         }
         if ((!bugpathBlocked && Cache.MY_LOCATION.add(Constants.ORDINAL_DIRECTIONS[next]).distanceSquaredTo(target) < Cache.MY_LOCATION.distanceSquaredTo(target))) {
         	if (rc.canMove(Constants.ORDINAL_DIRECTIONS[next])) {
@@ -279,7 +299,7 @@ public class Pathfinder {
             MapLocation nextLoc = Cache.MY_LOCATION.add(Constants.ORDINAL_DIRECTIONS[next]);
             if (getAngle(nextLoc, target, Cache.MY_LOCATION) < -0.5) {
               bugpathTurnCount = 5;
-              return executeOrig(target);
+              return executeFallback(target, next);
             }
   		      if (rc.canMove(Constants.ORDINAL_DIRECTIONS[next]))  {
               Util.move(Constants.ORDINAL_DIRECTIONS[next]);

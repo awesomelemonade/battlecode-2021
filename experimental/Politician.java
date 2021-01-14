@@ -1,14 +1,14 @@
-package latticebot;
+package experimental;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.LambdaUtil;
-import latticebot.util.LatticeUtil;
-import latticebot.util.MapInfo;
-import latticebot.util.Pathfinder;
-import latticebot.util.UnitCommunication;
-import latticebot.util.Util;
+import experimental.util.Cache;
+import experimental.util.Constants;
+import experimental.util.LambdaUtil;
+import experimental.util.LatticeUtil;
+import experimental.util.MapInfo;
+import experimental.util.Pathfinder;
+import experimental.util.UnitCommunication;
+import experimental.util.Util;
 import java.util.Optional;
 
 import java.util.Comparator;

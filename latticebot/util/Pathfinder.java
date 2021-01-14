@@ -15,12 +15,12 @@ public class Pathfinder {
     public static void init(RobotController rc) {
         Pathfinder.rc = rc;
     }
-    // public static int moveDistance(MapLocation a, MapLocation b) {
-    //     return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
-    // }
     public static int moveDistance(MapLocation a, MapLocation b) {
-        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+        return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
+    // public static int moveDistance(MapLocation a, MapLocation b) {
+        // return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    // }
     public static double getAngle(MapLocation a, MapLocation b, MapLocation c) {
       // vector c->a and c->b
     	int dx1 = a.x - c.x;

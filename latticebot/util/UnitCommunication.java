@@ -74,7 +74,7 @@ public class UnitCommunication {
         // 3. enemy muckrakers
         // 4. enemy politicians
         // 5. ally enlightenment centers
-        if (Cache.ALL_ROBOTS.length >= 17) {
+        if (Cache.ALLY_ROBOTS.length >= 17) {
             LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
                     importantRobotComparator), () ->
                     // Broadcast known ally center
@@ -250,9 +250,12 @@ public class UnitCommunication {
                             }
                             break;
                         case 4: // [enemy slanderers]
-                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
-                                    MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT);
+                            if (rc.getType() == RobotType.MUCKRAKER) {
+                                // Only muckrakers need this
+                                if (rotationDx != -CentralCommunication.ROTATION_OFFSET && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                    if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
+                                        MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT);
+                                    }
                                 }
                             }
                             break;

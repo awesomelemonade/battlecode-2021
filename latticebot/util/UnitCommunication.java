@@ -105,7 +105,7 @@ public class UnitCommunication {
                 registerOurTeamEC(ally);
             } else {
                 if (Cache.TURN_COUNT > 1 || type != RobotType.SLANDERER) {
-                    checkCloseEnemy(processEnemiesFromNearbyUnits(ally));
+                    processEnemiesFromNearbyUnits(ally);
                 }
             }
         }
@@ -170,7 +170,7 @@ public class UnitCommunication {
      * @return a location of a muckraker retrieved from flag, otherwise null
      * @throws GameActionException
      */
-    public static MapLocation processEnemiesFromNearbyUnits(RobotInfo robot) throws GameActionException {
+    public static void processEnemiesFromNearbyUnits(RobotInfo robot) throws GameActionException {
         // ally robots that are nearby may have useful information
         int flag = rc.getFlag(robot.getID()) ^ DO_NOTHING_FLAG;
         // check if the unit has seen anything
@@ -181,19 +181,24 @@ public class UnitCommunication {
             int dy = ((flag >> CURRENT_UNIT_OFFSET_Y_SHIFT) & CURRENT_UNIT_OFFSET_MASK) - OFFSET_SHIFT;
             if (dx == 0 && dy == 0) {
                 // communicating about map edge, ignore
-                return null;
+                return;
             }
             MapLocation specifiedLocation = prevLocation.translate(dx, dy);
             RobotType type = RobotType.values()[(flag >> CURRENT_UNIT_TYPE_SHIFT) & CURRENT_UNIT_TYPE_MASK];
             int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
             // we see type at specifiedLocation
-            if (type == RobotType.MUCKRAKER ||
-                    type == RobotType.ENLIGHTENMENT_CENTER && Team.values()[info] == Constants.ENEMY_TEAM) {
+            if (type == RobotType.MUCKRAKER) {
                 // we see enemy!!
-                return specifiedLocation;
+                checkCloseEnemy(specifiedLocation);
+            }
+            if (type == RobotType.ENLIGHTENMENT_CENTER) {
+                Team team = Team.values()[info];
+                if (team == Constants.ENEMY_TEAM) {
+                    checkCloseEnemy(specifiedLocation);
+                }
+                MapInfo.addKnownEnlightementCenter(specifiedLocation, team);
             }
         }
-        return null;
     }
     public static void processFlagsFromECs() throws GameActionException {
         ECNode prev = null;

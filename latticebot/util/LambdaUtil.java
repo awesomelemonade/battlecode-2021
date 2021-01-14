@@ -109,4 +109,11 @@ public class LambdaUtil {
         }
         return Optional.empty();
     }
+    public static <T> Optional<T> or(Optional<T> optional, Supplier<Optional<T>> supplier) {
+        if (optional.isPresent()) {
+            return optional;
+        } else {
+            return supplier.get();
+        }
+    }
 }

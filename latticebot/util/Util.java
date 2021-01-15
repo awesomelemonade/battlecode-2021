@@ -45,19 +45,6 @@ public class Util {
     }
 
     public static void postLoop() throws GameActionException {
-        if (isCentral) {
-            CentralCommunication.postLoop();
-        } else {
-            if (rc.getRoundNum() == RobotPlayer.currentTurn && Clock.getBytecodesLeft() >= 150) {
-                if (Cache.lastDirection != Direction.CENTER) {
-                    rc.move(Cache.lastDirection);
-                }
-                UnitCommunication.postLoop();
-            } else {
-                Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255);
-                Util.println("WARNING: Didn't move (not enough bytecodes)");
-            }
-        }
         if (DEBUG_DRAW) {
             MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
                 Util.setIndicatorDot(x, 255, 255, 255);
@@ -71,6 +58,19 @@ public class Util {
             MapInfo.enemySlandererLocations.forEach(x -> {
                 Util.setIndicatorDot(x, 0, 128, 0); // dark green
             });
+        }
+        if (isCentral) {
+            CentralCommunication.postLoop();
+        } else {
+            if (rc.getRoundNum() == RobotPlayer.currentTurn && Clock.getBytecodesLeft() >= 160) {
+                if (Cache.lastDirection != Direction.CENTER) {
+                    rc.move(Cache.lastDirection);
+                }
+                UnitCommunication.postLoop();
+            } else {
+                Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255);
+                Util.println("WARNING: Didn't move (not enough bytecodes)");
+            }
         }
     }
 

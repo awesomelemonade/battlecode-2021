@@ -118,14 +118,17 @@ public class MapInfo {
                 enlightenmentCenterLocations[0].add(ecLocation);
                 enlightenmentCenterLocations[1].removeIf(x -> x.equals(ecLocation));
                 enlightenmentCenterLocations[2].removeIf(x -> x.equals(ecLocation));
+                break;
             case 1:
                 enlightenmentCenterLocations[0].removeIf(x -> x.equals(ecLocation));
                 enlightenmentCenterLocations[1].add(ecLocation);
                 enlightenmentCenterLocations[2].removeIf(x -> x.equals(ecLocation));
+                break;
             case 2:
                 enlightenmentCenterLocations[0].removeIf(x -> x.equals(ecLocation));
                 enlightenmentCenterLocations[1].removeIf(x -> x.equals(ecLocation));
                 enlightenmentCenterLocations[2].add(ecLocation);
+                break;
         }
     }
     public static MapLocationList getKnownEnlightenmentCenterList(Team team) {

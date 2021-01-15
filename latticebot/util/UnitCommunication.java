@@ -81,7 +81,7 @@ public class UnitCommunication {
         // 3. enemy muckrakers
         // 4. enemy politicians
         // 5. ally enlightenment centers
-        if (Cache.ALLY_ROBOTS.length >= 17) {
+        if (Cache.ALLY_ROBOTS.length >= 15) {
             LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
                     importantRobotComparator), () ->
                     // Broadcast known ally center

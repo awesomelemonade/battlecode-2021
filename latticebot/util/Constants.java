@@ -9,6 +9,7 @@ public class Constants {
     public static final int MAX_MAP_SIZE = 64;
     public static final int MAX_DISTANCE_SQUARED = (MAX_MAP_SIZE - 1) * (MAX_MAP_SIZE - 1);
     public static final int POLITICIAN_EMPOWER_PENALTY = 11;
+    public static final int POLITICIAN_ACTION_RADIUS_SQUARED = RobotType.POLITICIAN.actionRadiusSquared;
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = false;

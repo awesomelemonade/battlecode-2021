@@ -29,12 +29,7 @@ public class Util {
     }
 
     public static void move(Direction direction) {
-        try {
-            rc.move(direction);
-            Cache.lastDirection = direction;
-        } catch (GameActionException ex) {
-            throw new IllegalStateException(ex);
-        }
+        Cache.lastDirection = direction;
     }
 
     public static void loop() throws GameActionException {
@@ -51,6 +46,9 @@ public class Util {
         if (isCentral) {
             CentralCommunication.postLoop();
         } else {
+            if (Cache.lastDirection != Direction.CENTER) {
+                rc.move(Cache.lastDirection);
+            }
             UnitCommunication.postLoop();
         }
         if (DEBUG_DRAW) {

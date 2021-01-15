@@ -94,7 +94,7 @@ public class UnitCommunication {
             ).ifPresent(r -> {
                 Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                 if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                    MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
+                    MapInfo.addKnownEnlightenmentCenter(r.getLocation(), r.getTeam());
                 }
                 setFlag(r);
             });
@@ -104,7 +104,7 @@ public class UnitCommunication {
                     importantRobotComparator).ifPresent(r -> {
                         Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                         if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                            MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
+                            MapInfo.addKnownEnlightenmentCenter(r.getLocation(), r.getTeam());
                         }
                         setFlag(r);
                     });
@@ -222,7 +222,7 @@ public class UnitCommunication {
                 if (team == Constants.ENEMY_TEAM) {
                     checkCloseEnemy(specifiedLocation);
                 }
-                MapInfo.addKnownEnlightementCenter(specifiedLocation, team);
+                MapInfo.addKnownEnlightenmentCenter(specifiedLocation, team);
             }
         }
     }
@@ -254,24 +254,24 @@ public class UnitCommunication {
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
-                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
+                            MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ALLY_TEAM);
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
+                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ALLY_TEAM);
                             }
                             break;
                         case 2: // [enemy ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
+                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ENEMY_TEAM);
                             }
                             break;
                         case 3: // [neutral ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
+                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Team.NEUTRAL);
                             }
                             break;
                         case 4: // [enemy slanderers]
@@ -290,7 +290,7 @@ public class UnitCommunication {
                 prev = current;
             } else {
                 // we lost control of EC - remove from SLL - Set EC as enemy team
-                MapInfo.addKnownEnlightementCenter(current.location, Constants.ENEMY_TEAM);
+                MapInfo.addKnownEnlightenmentCenter(current.location, Constants.ENEMY_TEAM);
                 if (prev == null) {
                     ecListHead = current.next;
                 } else {

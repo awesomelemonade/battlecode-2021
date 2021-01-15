@@ -46,14 +46,22 @@ public strictfp class Politician implements RunnableBot {
     private void preTurn() throws GameActionException {
         power = (int) ((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
 
-        nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().map(x -> x).orElse(null);
+        nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
         int minDist = 9999;
-        for (RobotInfo robot : Cache.ALLY_ROBOTS) {
+
+        RobotInfo[] robots = Cache.ALLY_ROBOTS;
+        if (robots.length > 20) {
+            // pigeonhole principle
+            robots = rc.senseNearbyRobots(19, Constants.ALLY_TEAM);
+        }
+        for (int i = robots.length; --i >= 0;) {
+            RobotInfo robot = robots[i];
             if (UnitCommunication.isPotentialSlanderer(robot)) {
-                int dist = robot.location.distanceSquaredTo(Cache.MY_LOCATION);
+                MapLocation location = robot.getLocation();
+                int dist = location.distanceSquaredTo(Cache.MY_LOCATION);
                 if (dist < minDist) {
                     minDist = dist;
-                    nearestS = robot.location;
+                    nearestS = location;
                 }
             }
         }
@@ -183,7 +191,7 @@ public strictfp class Politician implements RunnableBot {
 
     // if sees empty square next to ec, go to it
     public boolean campEnemyEC() throws GameActionException {
-        MapLocation enemyECLoc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().map(x -> x).orElse(null);
+        MapLocation enemyECLoc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().orElse(null);
         if(enemyECLoc == null) return false;
         if (rc.getLocation().distanceSquaredTo(enemyECLoc) >= 25) {
             return Util.tryMove(enemyECLoc);

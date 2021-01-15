@@ -84,7 +84,7 @@ public class CentralCommunication {
                         case ENLIGHTENMENT_CENTER:
                             Team ecTeam = Team.values()[info];
                             if (!specifiedLocation.equals(Cache.MY_LOCATION)) {
-                                MapInfo.addKnownEnlightementCenter(specifiedLocation, ecTeam);
+                                MapInfo.addKnownEnlightenmentCenter(specifiedLocation, ecTeam);
                             }
                             if (ecTeam == Constants.ALLY_TEAM) {
                                 break;

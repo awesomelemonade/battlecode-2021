@@ -49,7 +49,7 @@ public strictfp class RobotPlayer {
                         // We ran out of bytecodes! - MAGENTA
                         Util.setIndicatorDot(rc.getLocation(), 255, 0, 255);
                         int over = Clock.getBytecodeNum() + (rc.getRoundNum() - currentTurn - 1) * rc.getType().bytecodeLimit;
-                        Util.println(rc.getID() + " out of bytecodes: " + Cache.TURN_COUNT + " (over by " + over + ")");
+                        Util.println(rc.getLocation() + " out of bytecodes: " + Cache.TURN_COUNT + " (over by " + over + ")");
                     }
                     if (errored) {
                         Util.setIndicatorDot(rc.getLocation(), 255, 0, 0); // red
@@ -60,6 +60,7 @@ public strictfp class RobotPlayer {
                     Clock.yield();
                 }
             } catch (Exception ex) {
+                Util.println(rc.getLocation() + " errored: " + Cache.TURN_COUNT);
                 ex.printStackTrace();
                 errored = true;
                 Clock.yield();

@@ -106,16 +106,26 @@ public class MapInfo {
             }
         }
     }
-    public static void addKnownEnlightementCenter(MapLocation ecLocation, Team ecTeam) {
-        for (Team team : Team.values()) {
-            MapLocationList list = enlightenmentCenterLocations[team.ordinal()];
-            if (team == ecTeam) {
-                if (!list.contains(ecLocation)) {
-                    list.add(ecLocation);
-                }
-            } else {
-                list.removeIf(x -> x.equals(ecLocation));
-            }
+    public static void addKnownEnlightenmentCenter(MapLocation ecLocation, Team ecTeam) {
+        int ecTeamOrdinal = ecTeam.ordinal();
+        if (enlightenmentCenterLocations[ecTeamOrdinal].contains(ecLocation)) {
+            // duplicate
+            return;
+        }
+        // loop unrolling
+        switch (ecTeamOrdinal) {
+            case 0:
+                enlightenmentCenterLocations[0].add(ecLocation);
+                enlightenmentCenterLocations[1].removeIf(x -> x.equals(ecLocation));
+                enlightenmentCenterLocations[2].removeIf(x -> x.equals(ecLocation));
+            case 1:
+                enlightenmentCenterLocations[0].removeIf(x -> x.equals(ecLocation));
+                enlightenmentCenterLocations[1].add(ecLocation);
+                enlightenmentCenterLocations[2].removeIf(x -> x.equals(ecLocation));
+            case 2:
+                enlightenmentCenterLocations[0].removeIf(x -> x.equals(ecLocation));
+                enlightenmentCenterLocations[1].removeIf(x -> x.equals(ecLocation));
+                enlightenmentCenterLocations[2].add(ecLocation);
         }
     }
     public static MapLocationList getKnownEnlightenmentCenterList(Team team) {

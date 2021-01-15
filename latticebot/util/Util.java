@@ -1,6 +1,8 @@
 package latticebot.util;
 
 import battlecode.common.*;
+import latticebot.RobotPlayer;
+
 import static latticebot.util.Constants.*;
 
 import java.util.function.Predicate;
@@ -46,10 +48,15 @@ public class Util {
         if (isCentral) {
             CentralCommunication.postLoop();
         } else {
-            if (Cache.lastDirection != Direction.CENTER) {
-                rc.move(Cache.lastDirection);
+            if (rc.getRoundNum() == RobotPlayer.currentTurn && Clock.getBytecodesLeft() >= 150) {
+                if (Cache.lastDirection != Direction.CENTER) {
+                    rc.move(Cache.lastDirection);
+                }
+                UnitCommunication.postLoop();
+            } else {
+                Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255);
+                Util.println("WARNING: Didn't move (not enough bytecodes)");
             }
-            UnitCommunication.postLoop();
         }
         if (DEBUG_DRAW) {
             MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {

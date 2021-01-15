@@ -222,7 +222,10 @@ public class UnitCommunication {
                 if (team == Constants.ENEMY_TEAM) {
                     checkCloseEnemy(specifiedLocation);
                 }
-                MapInfo.addKnownEnlightenmentCenter(specifiedLocation, team);
+                if (rc.getType() != RobotType.SLANDERER) {
+                    // Conserve bytecodes for slanderers
+                    MapInfo.addKnownEnlightenmentCenter(specifiedLocation, team);
+                }
             }
         }
     }

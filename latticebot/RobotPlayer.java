@@ -9,6 +9,7 @@ import latticebot.util.Constants;
 import latticebot.util.Util;
 
 public strictfp class RobotPlayer {
+    public static int currentTurn;
     public static void run(RobotController rc) throws GameActionException {
         RobotType robot_type = rc.getType();
         RunnableBot bot = null;
@@ -37,7 +38,7 @@ public strictfp class RobotPlayer {
         while (true) {
             try {
                 while (true) {
-                    int currentTurn = rc.getRoundNum();
+                    currentTurn = rc.getRoundNum();
                     if (Constants.DEBUG_RESIGN && (currentTurn >= 800 || currentTurn >= 350 && rc.getRobotCount() < 10)) {
                         rc.resign();
                     }

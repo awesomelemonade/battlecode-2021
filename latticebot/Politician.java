@@ -23,7 +23,7 @@ public strictfp class Politician implements RunnableBot {
     private static MapLocation nearestEnemyEC;
     private static MapLocation nearestS;
     private static boolean selfempowerer;
-    private static boolean waving = false;
+    private static boolean attacking = false;
 
     private static int currentConviction;
     private static int currentConviction_10; // = currentConviction - 10
@@ -67,7 +67,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        if(rc.getRoundNum() > 100 && rc.getRoundNum()%100 == 50) waving = true;
+        if(rc.getRoundNum()%50 == 49) attacking = true;
     }
 
     @Override
@@ -107,7 +107,7 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        if (((defender && currentConviction < 50) || !shouldWave()) && tryDefend()) {
+        if (((defender && currentConviction < 50) || !shouldAttack()) && tryDefend()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }
@@ -116,10 +116,9 @@ public strictfp class Politician implements RunnableBot {
         }
     }
 
-    public boolean shouldWave() {
-        if (rc.getRoundNum() <= 100) return true;
-        if (nearestEnemyEC == null) return false;
-        return waving;
+    public boolean shouldAttack() {
+        if (rc.getRoundNum() <= 200) return true;
+        return attacking;
     }
 
     public boolean tryEmpowerAtEC(MapLocation loc) throws GameActionException {
@@ -278,7 +277,7 @@ public strictfp class Politician implements RunnableBot {
             Pathfinder.execute(nearestNeutralEC);
             return true;
         }
-        if (!shouldWave()) return false;
+        if (!shouldAttack()) return false;
         if (nearestEnemyEC != null) {
             Pathfinder.execute(nearestEnemyEC);
             return true;

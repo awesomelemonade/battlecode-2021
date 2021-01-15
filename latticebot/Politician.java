@@ -67,7 +67,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        if(rc.getRoundNum()%50 == 49) attacking = true;
+        if(rc.getRoundNum()%50 == 0) attacking = true;
     }
 
     @Override

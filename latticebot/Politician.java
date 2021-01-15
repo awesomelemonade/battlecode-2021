@@ -54,8 +54,8 @@ public strictfp class Politician implements RunnableBot {
         power = (int) (currentConviction_10 * currentEmpowerFactor);
 
         nearestAllyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
-        nearestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
-        nearestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
+        nearestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getClosestLocation().orElse(null);
+        nearestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().orElse(null);
         int minDist = Integer.MAX_VALUE;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
             RobotInfo robot = Cache.ALLY_ROBOTS[i];
@@ -291,6 +291,9 @@ public strictfp class Politician implements RunnableBot {
             return 0;
         }
         RobotInfo[] enemyRobots = rc.senseNearbyRobots(radiusSquared, Constants.ENEMY_TEAM);
+        if (enemyRobots.length + Cache.NEUTRAL_ROBOTS.length == 0) {
+            return 0;
+        }
         int damage = power / numUnits;
         int mKills = 0;
         int pKills = 0;

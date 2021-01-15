@@ -195,9 +195,9 @@ public class Util {
     private static int timeSpentOnThisDestination = 0;
 
     // ~1200 bytecodes if we need to find a new destination, ~300 otherwise
-    // public static boolean smartExplore() {
-    //     if(rc.getRoundNum() <= 50) {
-    //         return randomExplore();
+    // public static boolean smartExplore() throws GameActionException {
+    //     if(rc.getRoundNum() <= 150) {
+    //         return dumbExplore();
     //     }
     //     Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
     //     // if allies nearby, move away from them
@@ -208,7 +208,7 @@ public class Util {
     //     if (exploreDest == null || MapInfo.getExplored(exploreDest)) {
     //         timeSpentOnThisDestination = 0;
     //         if (Clock.getBytecodesLeft() < 2000) {
-    //             return randomExplore();
+    //             return dumbExplore();
     //         }
     //         // pick a random unexplored location within a 3x3 area of the explored array
     //         // centered on current position
@@ -225,7 +225,7 @@ public class Util {
     //             }
     //         }
     //         if(ptr == 0) {
-    //             return randomExplore();
+    //             return dumbExplore();
     //         } else {
     //             exploreDest = possibilities[randBetween(0, ptr-1)];
     //             return Pathfinder.execute(exploreDest);
@@ -236,6 +236,7 @@ public class Util {
     // }
 
     public static boolean smartExplore() throws GameActionException {
+        // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         // if allies nearby, move away from them
         // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
@@ -248,7 +249,19 @@ public class Util {
             exploreDir = -1;
             smartExplore();
         }
-        return Pathfinder.execute(new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4));
+        MapLocation target = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4);
+
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && target.x > MapInfo.mapMaxX) {
+            target = new MapLocation(MapInfo.mapMaxX - 1, target.y);
+        } else if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && target.x < MapInfo.mapMinX) {
+            target = new MapLocation(MapInfo.mapMinX + 1, target.y);
+        }
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && target.y > MapInfo.mapMaxY) {
+            target = new MapLocation(target.x, MapInfo.mapMaxY - 1);
+        } else if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && target.y < MapInfo.mapMinY) {
+            target = new MapLocation(target.x, MapInfo.mapMinY + 1);
+        }
+        return Pathfinder.execute(target);
     }
 
     public static boolean reachedBorder(int dir) throws GameActionException {

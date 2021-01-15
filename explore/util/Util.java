@@ -247,7 +247,7 @@ public class Util {
         }
         if (reachedBorder(exploreDir)) {
             exploreDir = -1;
-            smartExplore();
+            return smartExplore();
         }
         MapLocation target = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4);
 

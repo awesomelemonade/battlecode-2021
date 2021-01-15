@@ -117,7 +117,7 @@ public strictfp class Politician implements RunnableBot {
 
     public boolean shouldWave() {
         if (rc.getRoundNum() <= 100) return true;
-        if (rc.getRoundNum() % 50 <= 25) waving = true;
+        if (rc.getRoundNum() % 100 == 50) waving = true;
         return waving;
     }
 
@@ -359,7 +359,7 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         for (int i = Cache.NEUTRAL_ROBOTS.length; --i >= 0;) {
-            RobotInfo robot = Cache.ENEMY_ROBOTS[i];
+            RobotInfo robot = Cache.NEUTRAL_ROBOTS[i];
             if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 MapLocation location = robot.getLocation();
                 int distance = location.distanceSquaredTo(Cache.MY_LOCATION);

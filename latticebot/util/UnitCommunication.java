@@ -82,20 +82,22 @@ public class UnitCommunication {
         // 4. enemy politicians
         // 5. ally enlightenment centers
         if (Cache.ALLY_ROBOTS.length >= 17) {
-            LambdaUtil
-                    .or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS, importantRobotComparator),
-                            () ->
-                            // Broadcast known ally center
-                            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation()
-                                    .map(location -> new RobotInfo(-1, Constants.ALLY_TEAM,
-                                            RobotType.ENLIGHTENMENT_CENTER, -1, -1, location)))
-                    .ifPresent(r -> {
-                        Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
-                        if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                            MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
-                        }
-                        setFlag(r);
-                    });
+            LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
+                    importantRobotComparator), () ->
+                    // Broadcast known ally center
+                    MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation()
+                            .map(location ->
+                                    Pathfinder.moveDistance(Cache.MY_LOCATION, location) <= 7 ?
+                                            new RobotInfo(-1, Constants.ALLY_TEAM, RobotType.ENLIGHTENMENT_CENTER,
+                                                    -1, -1, location) : null
+                            )
+            ).ifPresent(r -> {
+                Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
+                if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
+                }
+                setFlag(r);
+            });
         } else {
             LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
                     r -> r.getTeam() != Constants.ALLY_TEAM || r.getType() == RobotType.ENLIGHTENMENT_CENTER,

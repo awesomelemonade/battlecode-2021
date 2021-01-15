@@ -61,6 +61,7 @@ public strictfp class Muckraker implements RunnableBot {
                     target = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation().orElse(null);
                 }
                 if (target != null) {
+                    rc.setIndicatorDot(target, 0, 255, 0);
                     tryECSpiral(target);
                     return;
                 }

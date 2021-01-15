@@ -1,4 +1,4 @@
-package latticebot.util;
+package explore.util;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -81,7 +81,7 @@ public class UnitCommunication {
         // 3. enemy muckrakers
         // 4. enemy politicians
         // 5. ally enlightenment centers
-        if (Cache.ALLY_ROBOTS.length >= 15) {
+        if (Cache.ALLY_ROBOTS.length >= 17) {
             LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
                     importantRobotComparator), () ->
                     // Broadcast known ally center
@@ -94,7 +94,7 @@ public class UnitCommunication {
             ).ifPresent(r -> {
                 Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                 if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                    MapInfo.addKnownEnlightenmentCenter(r.getLocation(), r.getTeam());
+                    MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
                 }
                 setFlag(r);
             });
@@ -104,7 +104,7 @@ public class UnitCommunication {
                     importantRobotComparator).ifPresent(r -> {
                         Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                         if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                            MapInfo.addKnownEnlightenmentCenter(r.getLocation(), r.getTeam());
+                            MapInfo.addKnownEnlightementCenter(r.getLocation(), r.getTeam());
                         }
                         setFlag(r);
                     });
@@ -222,10 +222,7 @@ public class UnitCommunication {
                 if (team == Constants.ENEMY_TEAM) {
                     checkCloseEnemy(specifiedLocation);
                 }
-                if (rc.getType() != RobotType.SLANDERER) {
-                    // Conserve bytecodes for slanderers
-                    MapInfo.addKnownEnlightenmentCenter(specifiedLocation, team);
-                }
+                MapInfo.addKnownEnlightementCenter(specifiedLocation, team);
             }
         }
     }
@@ -257,24 +254,24 @@ public class UnitCommunication {
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
-                            MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ALLY_TEAM);
+                            MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ALLY_TEAM);
+                                MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ALLY_TEAM);
                             }
                             break;
                         case 2: // [enemy ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ENEMY_TEAM);
+                                MapInfo.addKnownEnlightementCenter(rotationLocation, Constants.ENEMY_TEAM);
                             }
                             break;
                         case 3: // [neutral ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Team.NEUTRAL);
+                                MapInfo.addKnownEnlightementCenter(rotationLocation, Team.NEUTRAL);
                             }
                             break;
                         case 4: // [enemy slanderers]
@@ -293,7 +290,7 @@ public class UnitCommunication {
                 prev = current;
             } else {
                 // we lost control of EC - remove from SLL - Set EC as enemy team
-                MapInfo.addKnownEnlightenmentCenter(current.location, Constants.ENEMY_TEAM);
+                MapInfo.addKnownEnlightementCenter(current.location, Constants.ENEMY_TEAM);
                 if (prev == null) {
                     ecListHead = current.next;
                 } else {

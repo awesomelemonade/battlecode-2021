@@ -1,14 +1,17 @@
-package latticebot;
+package explore;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.LambdaUtil;
-import latticebot.util.LatticeUtil;
-import latticebot.util.MapInfo;
-import latticebot.util.Pathfinder;
-import latticebot.util.UnitCommunication;
-import latticebot.util.Util;
+import explore.util.Cache;
+import explore.util.Constants;
+import explore.util.LambdaUtil;
+import explore.util.LatticeUtil;
+import explore.util.MapInfo;
+import explore.util.Pathfinder;
+import explore.util.UnitCommunication;
+import explore.util.Util;
+import java.util.Optional;
+
+import java.util.Comparator;
 
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
@@ -21,7 +24,6 @@ public strictfp class Politician implements RunnableBot {
     private static MapLocation nearestEC;
     private static MapLocation nearestS;
     private static boolean selfempowerer;
-    private static int currentConviction;
 
     public Politician(RobotController rc) {
         Politician.rc = rc;
@@ -42,25 +44,16 @@ public strictfp class Politician implements RunnableBot {
     }
 
     private void preTurn() throws GameActionException {
-        currentConviction = rc.getConviction();
-        power = (int) ((currentConviction - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
+        power = (int) ((rc.getConviction() - 10) * rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
 
-        nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
-        int minDist = Integer.MAX_VALUE;
-
-        RobotInfo[] robots = Cache.ALLY_ROBOTS;
-        if (robots.length > 20) {
-            // pigeonhole principle
-            robots = rc.senseNearbyRobots(19, Constants.ALLY_TEAM);
-        }
-        for (int i = robots.length; --i >= 0;) {
-            RobotInfo robot = robots[i];
+        nearestEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().map(x -> x).orElse(null);
+        int minDist = 9999;
+        for (RobotInfo robot : Cache.ALLY_ROBOTS) {
             if (UnitCommunication.isPotentialSlanderer(robot)) {
-                MapLocation location = robot.getLocation();
-                int dist = location.distanceSquaredTo(Cache.MY_LOCATION);
+                int dist = robot.location.distanceSquaredTo(Cache.MY_LOCATION);
                 if (dist < minDist) {
                     minDist = dist;
-                    nearestS = location;
+                    nearestS = robot.location;
                 }
             }
         }
@@ -72,7 +65,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         preTurn();
-        if (currentConviction <= 10) { // useless; best thing to do is try to block an enemy ec
+        if (rc.getConviction() <= 10) { // useless; best thing to do is try to block an enemy ec
             if(campEnemyEC()) {
                 return;
             }
@@ -83,7 +76,7 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
-        if (currentConviction >= 30 && tryHealEC()) {
+        if (rc.getConviction() >= 30 && tryHealEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
             return;
         }
@@ -95,11 +88,11 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
             return;
         }
-        if (selfempowerer && currentConviction >= 30 && trySelfBuff()) {
+        if (selfempowerer && rc.getConviction() >= 30 && trySelfBuff()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 102, 153); // bluish purple
             return;
         }
-        if (currentConviction < 30 && tryDefend()) {
+        if (rc.getConviction() < 30 && tryDefend()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }
@@ -190,7 +183,7 @@ public strictfp class Politician implements RunnableBot {
 
     // if sees empty square next to ec, go to it
     public boolean campEnemyEC() throws GameActionException {
-        MapLocation enemyECLoc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().orElse(null);
+        MapLocation enemyECLoc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().map(x -> x).orElse(null);
         if(enemyECLoc == null) return false;
         if (rc.getLocation().distanceSquaredTo(enemyECLoc) >= 25) {
             return Util.tryMove(enemyECLoc);
@@ -342,11 +335,16 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean shouldEmpower(int ecKills, int mKills, int pKills, int mecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {
+        /*Util.println("ecKills = " + ecKills);
+        Util.println("mKills = " + mKills);
+        Util.println("pKills = " + pKills);
+        Util.println("distPtoEC = " + distPtoEC);
+        Util.println("distMtoS = " + distMtoS);*/
         if (ecKills >= 1) {
             return true;
         }
         int numKills = mKills + pKills;
-        if (currentConviction <= 30) {
+        if (rc.getConviction() <= 30) {
             if (numKills == 0)
                 return false;
             if (distMtoS <= 100 && mKills >= 1)
@@ -360,14 +358,14 @@ public strictfp class Politician implements RunnableBot {
                 return true;
             return false;
         } else {
-            if (numKills * 15 >= currentConviction - 10) return true;
+            if(numKills*15 >= rc.getConviction()-10) return true;
             int distFromEC = nearestEC == null ? 1024 : nearestEC.distanceSquaredTo(Cache.MY_LOCATION);
             double euclidDist = Math.sqrt(distFromEC);
             double requiredRatio = 1.0 / (0.03 * (euclidDist + 5.0)) + 1;
-            if (mecConviction * requiredRatio >= currentConviction - 10) {
+            if (mecConviction * requiredRatio >= rc.getConviction() - 10) {
                 return true;
             }
-            if(distPtoEC <= 2 && pConviction * 8 >= currentConviction - 10) {
+            if(distPtoEC <= 2 && pConviction * 8 >= rc.getConviction() - 10) {
                 return true;
             }
             return false;
@@ -409,13 +407,13 @@ public strictfp class Politician implements RunnableBot {
     private boolean shouldChase(RobotInfo robot) {
         if (robot.getType() == RobotType.POLITICIAN)
             return false;
-        if (currentConviction * 2 + 20 >= robot.getConviction()
-                && robot.getConviction() * 2 + 20 >= currentConviction)
+        if (rc.getConviction() * 2 + 20 >= robot.getConviction()
+                && robot.getConviction() * 2 + 20 >= rc.getConviction())
             return true;
         if (robot.getType() == RobotType.MUCKRAKER
                 && ((nearestS != null && robot.location.distanceSquaredTo(nearestS) <= 81)
                         || (nearestEC != null && robot.location.distanceSquaredTo(nearestEC) <= 81))
-                && robot.getConviction() * 10 + 20 >= currentConviction)
+                && robot.getConviction() * 10 + 20 >= rc.getConviction())
             return true;
         return false;
     }

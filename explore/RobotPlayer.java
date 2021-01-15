@@ -1,15 +1,14 @@
-package latticebot;
+package explore;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.Util;
+import explore.util.Cache;
+import explore.util.Constants;
+import explore.util.Util;
 
 public strictfp class RobotPlayer {
-    public static int currentTurn;
     public static void run(RobotController rc) throws GameActionException {
         RobotType robot_type = rc.getType();
         RunnableBot bot = null;
@@ -38,7 +37,7 @@ public strictfp class RobotPlayer {
         while (true) {
             try {
                 while (true) {
-                    currentTurn = rc.getRoundNum();
+                    int currentTurn = rc.getRoundNum();
                     if (Constants.DEBUG_RESIGN && (currentTurn >= 800 || currentTurn >= 350 && rc.getRobotCount() < 10)) {
                         rc.resign();
                     }
@@ -50,7 +49,7 @@ public strictfp class RobotPlayer {
                         // We ran out of bytecodes! - MAGENTA
                         Util.setIndicatorDot(rc.getLocation(), 255, 0, 255);
                         int over = Clock.getBytecodeNum() + (rc.getRoundNum() - currentTurn - 1) * rc.getType().bytecodeLimit;
-                        Util.println(rc.getLocation() + " out of bytecodes: " + Cache.TURN_COUNT + " (over by " + over + ")");
+                        Util.println(rc.getID() + " out of bytecodes: " + Cache.TURN_COUNT + " (over by " + over + ")");
                     }
                     if (errored) {
                         Util.setIndicatorDot(rc.getLocation(), 255, 0, 0); // red
@@ -61,7 +60,6 @@ public strictfp class RobotPlayer {
                     Clock.yield();
                 }
             } catch (Exception ex) {
-                Util.println(rc.getLocation() + " errored: " + Cache.TURN_COUNT);
                 ex.printStackTrace();
                 errored = true;
                 Clock.yield();

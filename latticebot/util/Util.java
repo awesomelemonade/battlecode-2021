@@ -194,49 +194,50 @@ public class Util {
         return false;
     }
 
-    private static MapLocation exploreDest;
-    private static int randomExploreCountdown = 0;
-    private static int timeSpentOnThisDestination = 0;
+    private static int exploreDir = -1;
 
-    // ~1200 bytecodes if we need to find a new destination, ~300 otherwise
-    public static boolean smartExplore() {
-        if(rc.getRoundNum() <= 50) {
-            return randomExplore();
-        }
+    public static boolean smartExplore() throws GameActionException {
+        // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         // if allies nearby, move away from them
         // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
-        if(timeSpentOnThisDestination == 10) {
-            MapInfo.setExplored(exploreDest);
-        }
-        if (exploreDest == null || MapInfo.getExplored(exploreDest)) {
-            timeSpentOnThisDestination = 0;
-            if (Clock.getBytecodesLeft() < 2000) {
-                return randomExplore();
-            }
+        if (exploreDir == -1) {
             // pick a random unexplored location within a 3x3 area of the explored array
             // centered on current position
-            int x = MapInfo.locationToExploreIndexX(Cache.MY_LOCATION.x);
-            int y = MapInfo.locationToExploreIndexY(Cache.MY_LOCATION.y);
-            MapLocation[] possibilities = new MapLocation[9];
-            int ptr = 0;
-            for (int newx = x - 1; newx <= x + 1; newx++) {
-                for (int newy = y - 1; newy <= y + 1; newy++) {
-                    MapLocation loc = MapInfo.exploreIndexToLocation(newx, newy);
-                    if(!MapInfo.getExplored(loc)) {
-                        possibilities[ptr++] = loc;
-                    }
-                }
-            }
-            if(ptr == 0) {
-                return randomExplore();
-            } else {
-                exploreDest = possibilities[randBetween(0, ptr-1)];
-                return Pathfinder.execute(exploreDest);
-            }
+            exploreDir = randBetween(0, 7);
         }
-        timeSpentOnThisDestination++;
-        return Pathfinder.execute(exploreDest);
+        if (reachedBorder(exploreDir)) {
+            exploreDir = -1;
+            // TODO: Check Bytecodes Left
+            return smartExplore();
+        }
+        MapLocation target = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4);
+
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && target.x > MapInfo.mapMaxX) {
+            target = new MapLocation(MapInfo.mapMaxX - 1, target.y);
+        } else if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && target.x < MapInfo.mapMinX) {
+            target = new MapLocation(MapInfo.mapMinX + 1, target.y);
+        }
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && target.y > MapInfo.mapMaxY) {
+            target = new MapLocation(target.x, MapInfo.mapMaxY - 1);
+        } else if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && target.y < MapInfo.mapMinY) {
+            target = new MapLocation(target.x, MapInfo.mapMinY + 1);
+        }
+        return Pathfinder.execute(target);
+    }
+
+    public static boolean reachedBorder(int dir) throws GameActionException {
+        int tempX = Constants.ORDINAL_OFFSET_X[dir];
+        int tempY = Constants.ORDINAL_OFFSET_Y[dir];
+        MapLocation loc1 = Cache.MY_LOCATION.translate(tempX * 3, 0);
+        MapLocation loc2 = Cache.MY_LOCATION.translate(0, tempY * 3);
+        if (tempX != 0 && rc.canDetectLocation(loc1) && rc.onTheMap(loc1)) {
+            return false;
+        }
+        if (tempY != 0 && rc.canDetectLocation(loc2) && rc.onTheMap(loc2)) {
+            return false;
+        }
+        return true;
     }
 
     public static int randBetween(int l, int r) {

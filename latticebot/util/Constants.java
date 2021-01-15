@@ -14,7 +14,7 @@ public class Constants {
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = true;
     public static final boolean DEBUG_RESIGN = false;
-    public static final boolean DEBUG_PRINT = false;
+    public static final boolean DEBUG_PRINT = true;
 
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();

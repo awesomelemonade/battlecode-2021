@@ -67,6 +67,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
+        if(rc.getRoundNum() > 100 && rc.getRoundNum()%100 == 50) waving = true;
     }
 
     @Override
@@ -117,7 +118,7 @@ public strictfp class Politician implements RunnableBot {
 
     public boolean shouldWave() {
         if (rc.getRoundNum() <= 100) return true;
-        if (rc.getRoundNum() % 100 == 50) waving = true;
+        if (nearestEnemyEC == null) return false;
         return waving;
     }
 

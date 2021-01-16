@@ -50,8 +50,8 @@ public class Constants {
             Direction.WEST,
             Direction.NORTHWEST,
     };
-    public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1};
-    public static final int[] ORDINAL_OFFSET_Y = {-1, -1, 0, 1, 1, 1, 0, -1};
+    public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2, -1};
+    public static final int[] ORDINAL_OFFSET_Y = {-1, -1, 0, 1, 1, 1, 0, -1, 2, 1, -1, -2, -2, -1, 1, 2};
     /*public static final RobotType[] SPAWNABLE_ROBOTS = {
             RobotType.POLITICIAN,
             RobotType.SLANDERER,

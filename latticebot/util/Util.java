@@ -195,18 +195,19 @@ public class Util {
     }
 
     private static int exploreDir = -1;
+    private static int prevExploreDir = -1;
 
     public static boolean smartExplore() throws GameActionException {
         // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
-        // if allies nearby, move away from them
-        // if we haven't reached it for 10 moves, just assume we're blocked and can't get there
-        if (exploreDir == -1) {
-            // pick a random unexplored location within a 3x3 area of the explored array
-            // centered on current position
-            exploreDir = randBetween(0, 7);
+        while (exploreDir == -1) {
+            exploreDir = randBetween(0, 15);
+            if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
+                exploreDir = -1;
+            }
         }
         if (reachedBorder(exploreDir)) {
+            prevExploreDir = exploreDir;
             exploreDir = -1;
             // TODO: Check Bytecodes Left
             return smartExplore();
@@ -229,6 +230,12 @@ public class Util {
     public static boolean reachedBorder(int dir) throws GameActionException {
         int tempX = Constants.ORDINAL_OFFSET_X[dir];
         int tempY = Constants.ORDINAL_OFFSET_Y[dir];
+        if (tempX > 1 || tempX < 1) {
+            tempX = tempX / 2;
+        }
+        if (tempY > 1 || tempY < 1) {
+            tempY = tempY / 2;
+        }
         MapLocation loc1 = Cache.MY_LOCATION.translate(tempX * 3, 0);
         MapLocation loc2 = Cache.MY_LOCATION.translate(0, tempY * 3);
         if (tempX != 0 && rc.canDetectLocation(loc1) && rc.onTheMap(loc1)) {

@@ -19,27 +19,29 @@ public class SlandererQueue {
         this.capacity = maxCapacity;
     }
     public void removeExpiredLocations(int turnNumber) {
-        while (size > 0) {
-            if (turnNumbers[(index + size) % capacity] < turnNumber) {
-                this.index++;
-                size--;
-            } else {
-                break;
-            }
+        while (size > 0 && turnNumbers[index % capacity] < turnNumber) {
+            index++;
+            size--;
         }
     }
     public boolean contains(MapLocation location) {
         for (int i = size; --i >= 0;) {
-            if (locations[(index + i) % size].equals(location)) {
+            if (locations[(index + i) % capacity].equals(location)) {
                 return true;
             }
         }
         return false;
     }
     public void add(MapLocation location, int turnNumber) {
-        int index = (this.index + (size++)) % capacity;
-        locations[index] = location;
-        turnNumbers[index] = turnNumber;
+        if (size == capacity) {
+            int index = (this.index++) % capacity;
+            locations[index] = location;
+            turnNumbers[index] = turnNumber;
+        } else {
+            int index = (this.index + (size++)) % capacity;
+            locations[index] = location;
+            turnNumbers[index] = turnNumber;
+        }
     }
     public Optional<MapLocation> getRandomLocation() {
         if (size == 0) {

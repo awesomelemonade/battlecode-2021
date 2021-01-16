@@ -119,7 +119,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
 
             double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && eM + eP == 0) {
+            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && eM == 0) {
                 if (buildSlanderer(influence)) {
                     return;
                 }

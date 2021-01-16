@@ -16,6 +16,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int muckrakerCount = 0;
     private static int politicianCount = 0;
     private static int turnsSincePolitician = 0;
+    private static int eM = 0, eS = 0, eP = 0;
 
     private static MapLocation enemyDirection;
 
@@ -100,8 +101,25 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
             }
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
+            eS = 0;
+            eM = 0;
+            eP = 0;
+            for (RobotInfo r : Cache.ENEMY_ROBOTS) {
+                switch (r.getType()) {
+                    case SLANDERER:
+                        eS++;
+                        break;
+                    case MUCKRAKER:
+                        eM++;
+                        break;
+                    case POLITICIAN:
+                        eP++;
+                        break;
+                }
+            }
+
             double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4)) {
+            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && eM + eP == 0) {
                 if (buildSlanderer(influence)) {
                     return;
                 }

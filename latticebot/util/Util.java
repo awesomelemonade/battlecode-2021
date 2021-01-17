@@ -62,9 +62,15 @@ public class Util {
         if (isCentral) {
             CentralCommunication.postLoop();
         } else {
-            if (rc.getRoundNum() == RobotPlayer.currentTurn && Clock.getBytecodesLeft() >= 160) {
+            if (Clock.getBytecodesLeft() >= 165) {
                 if (Cache.lastDirection != Direction.CENTER) {
                     rc.move(Cache.lastDirection);
+                }
+                if (rc.getRoundNum() != RobotPlayer.currentTurn) {
+                    // Do not communicate about any particular unit
+                    UnitCommunication.clearFlag();
+                    Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255);
+                    Util.println("WARNING: Cleared flag (not enough bytecodes)");
                 }
                 UnitCommunication.postLoop();
             } else {

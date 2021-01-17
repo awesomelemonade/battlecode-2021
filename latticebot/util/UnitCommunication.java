@@ -186,6 +186,10 @@ public class UnitCommunication {
         }
     }
 
+    public static void clearFlag() {
+        currentFlag = CLEAR_FLAG;
+    }
+
     public static final int UNIT_INFO_BITMASK = 0b1111_1111_1111_1111_1111; // 20 bits
 
     /**

@@ -138,33 +138,52 @@ public strictfp class Politician implements RunnableBot {
                     // empower range - see if we can take it ourselves
                     if (rc.getConviction() - 10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
                         rc.empower(distanceSquared);
+                        return true;
                     }
                 }
-                // pathfind to nearest cardinal-adjacent square
-                if (Cache.MY_LOCATION.isWithinDistanceSquared(loc, 1)) {
+                if (distanceSquared <= 16) {
                     int neighborsOnTheMap = 0;
+                    MapLocation closestCardinalAdjacentSquare = null;
+                    int closestDistanceSquared = Integer.MAX_VALUE;
                     for (Direction direction : Constants.CARDINAL_DIRECTIONS) {
-                        if (rc.onTheMap(loc.add(direction))) {
+                        MapLocation neighbor = loc.add(direction);
+                        if (rc.onTheMap(neighbor)) {
                             neighborsOnTheMap++;
+                            if (rc.senseRobotAtLocation(neighbor) == null) {
+                                int dist = Cache.MY_LOCATION.distanceSquaredTo(neighbor);
+                                if (dist < closestDistanceSquared) {
+                                    closestCardinalAdjacentSquare = neighbor;
+                                    closestDistanceSquared = dist;
+                                }
+                            }
                         }
                     }
-                    // add up all conviction we have
-                    int sumConviction = 0;
-                    RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
-                    for (RobotInfo robot : allyRobots) {
-                        if (robot.getType() == RobotType.POLITICIAN) {
-                            sumConviction += robot.getConviction() - 10;
+                    if (distanceSquared <= 1) {
+                        // add up all conviction we have
+                        int sumConviction = 0;
+                        RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
+                        for (RobotInfo robot : allyRobots) {
+                            if (robot.getType() == RobotType.POLITICIAN) {
+                                sumConviction += robot.getConviction() - 10;
+                            }
                         }
+                        // TODO: Perhaps we should check for nearby robots so we don't split damage?
+                        if ((allyRobots.length + 1) == neighborsOnTheMap || sumConviction > ecConviction) {
+                            rc.empower(1);
+                        }
+                        return true;
+                    } else {
+                        // Pathfind to nearest cardinal-adjacent square
+                        if (closestCardinalAdjacentSquare != null) {
+                            Pathfinder.execute(closestCardinalAdjacentSquare);
+                        }
+                        return true;
                     }
-                    // TODO: Perhaps we should check for nearby robots so we don't split damage?
-                    if ((allyRobots.length + 1) == neighborsOnTheMap || sumConviction > ecConviction) {
-                        rc.empower(1);
-                    }
-                    return true;
                 }
             } else {
                 if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
                     rc.empower(distanceSquared);
+                    return true;
                 }
             }
         }

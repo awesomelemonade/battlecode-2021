@@ -202,12 +202,18 @@ public class Util {
 
     private static int exploreDir = -1;
     private static int prevExploreDir = -1;
+    private static boolean first = true;
 
     public static boolean smartExplore() throws GameActionException {
         // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         while (exploreDir == -1) {
-            exploreDir = randBetween(0, 15);
+            // exploreDir = randBetween(0, 15);
+            if (first)
+                exploreDir = (rc.getRoundNum() / 2) % 16;
+            else
+                exploreDir = randBetween(0, 15);
+            first = false;
             if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
                 exploreDir = -1;
             }

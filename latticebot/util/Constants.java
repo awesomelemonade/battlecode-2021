@@ -34,12 +34,12 @@ public class Constants {
                 SENSE_BOX_RADIUS = 4;
         }
     }
-    /*public static final Direction[] CARDINAL_DIRECTIONS = {
+    public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.EAST,
             Direction.SOUTH,
             Direction.WEST,
-    };*/
+    };
     public static final Direction[] ORDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.NORTHEAST,

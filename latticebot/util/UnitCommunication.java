@@ -45,6 +45,9 @@ public class UnitCommunication {
     public static final int CURRENT_UNIT_TYPE_SHIFT = 10;
     public static final int CURRENT_UNIT_TYPE_MASK = 0b11;
     public static final int CURRENT_UNIT_INFO_MASK = 0b11_1111_1111;
+    public static final int CURRENT_EC_TEAM_SHIFT = 8;
+    public static final int CURRENT_EC_TEAM_MASK = 0b11;
+    public static final int CURRENT_EC_CONVICTION_MASK = 0b1111_1111;
     public static final int DO_NOTHING_FLAG = 0b1000_0111_0111_0000_0000_0000;
     public static final int CLEAR_FLAG = 0b0000_0111_0111_0000_0000_0000;
     private static int currentFlag = DO_NOTHING_FLAG;
@@ -177,10 +180,11 @@ public class UnitCommunication {
         currentFlag |= (unit.getType().ordinal() << CURRENT_UNIT_TYPE_SHIFT);
         if (unit.getType() == RobotType.ENLIGHTENMENT_CENTER) {
             // specify team
-            currentFlag |= unit.getTeam().ordinal();
+            currentFlag |= unit.getTeam().ordinal() << CURRENT_EC_TEAM_SHIFT; // 2 bits
+            currentFlag |= Math.min(CURRENT_EC_CONVICTION_MASK, unit.getConviction() / 2); // 8 bits - neutral ec's have max 500 conviction
         } else {
             // specify conviction
-            currentFlag |= Math.min(unit.getConviction(), CURRENT_UNIT_INFO_MASK);
+            currentFlag |= Math.min(unit.getConviction(), CURRENT_UNIT_INFO_MASK); // 10 bits
         }
     }
 
@@ -213,20 +217,21 @@ public class UnitCommunication {
             }
             MapLocation specifiedLocation = prevLocation.translate(dx, dy);
             RobotType type = RobotType.values()[(flag >> CURRENT_UNIT_TYPE_SHIFT) & CURRENT_UNIT_TYPE_MASK];
-            int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
-            // we see type at specifiedLocation
-            if (type == RobotType.MUCKRAKER) {
-                // we see enemy!!
-                checkCloseEnemy(specifiedLocation);
-            }
             if (type == RobotType.ENLIGHTENMENT_CENTER) {
-                Team team = Team.values()[info];
+                int teamOrdinal = (flag >> CURRENT_EC_TEAM_SHIFT) & CURRENT_EC_TEAM_MASK;
+                Team team = Team.values()[teamOrdinal];
                 if (team == Constants.ENEMY_TEAM) {
                     checkCloseEnemy(specifiedLocation);
                 }
                 if (rc.getType() != RobotType.SLANDERER) {
                     // Conserve bytecodes for slanderers
                     MapInfo.addKnownEnlightenmentCenter(specifiedLocation, team);
+                }
+            } else {
+                // we see type at specifiedLocation
+                if (type == RobotType.MUCKRAKER) {
+                    // we see enemy!!
+                    checkCloseEnemy(specifiedLocation);
                 }
             }
         }

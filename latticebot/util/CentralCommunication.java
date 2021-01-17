@@ -1,6 +1,5 @@
 package latticebot.util;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -72,18 +71,19 @@ public class CentralCommunication {
                 } else {
                     MapLocation specifiedLocation = current.location.translate(dx, dy);
                     RobotType type = RobotType.values()[(flag >> UnitCommunication.CURRENT_UNIT_TYPE_SHIFT) & UnitCommunication.CURRENT_UNIT_TYPE_MASK];
-                    int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
                     if (type == RobotType.SLANDERER) {
                         if (!MapInfo.enemySlandererLocations.contains(specifiedLocation)) {
                             MapInfo.enemySlandererLocations.add(specifiedLocation, Cache.TURN_COUNT);
                         }
                     }
                     if (type == RobotType.ENLIGHTENMENT_CENTER) {
-                        Team ecTeam = Team.values()[info];
+                        int teamOrdinal = (flag >> UnitCommunication.CURRENT_EC_TEAM_SHIFT) & UnitCommunication.CURRENT_EC_TEAM_MASK;
+                        Team ecTeam = Team.values()[teamOrdinal];
                         if (!specifiedLocation.equals(Cache.MY_LOCATION)) {
                             MapInfo.addKnownEnlightenmentCenter(specifiedLocation, ecTeam);
                         }
                     } else {
+                        int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
                         int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
                         if (distanceSquared < nearestEnemyDistanceSquared) {
                             nearestEnemyDistanceSquared = distanceSquared;

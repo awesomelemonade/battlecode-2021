@@ -152,7 +152,16 @@ public class Pathfinder {
         Util.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
         boolean res;
         if (Cache.MY_LOCATION.distanceSquaredTo(target) <= 2) {
-          res = executeOrig(target);
+          try {
+            if (rc.canMove(Cache.MY_LOCATION.directionTo(target))) {
+              rc.move(Cache.MY_LOCATION.directionTo(target));
+              res = true;
+            } else {
+              res = executeOrig(target);
+            }
+          } catch (GameActionException ex) {
+            throw new IllegalStateException(ex);
+          }
         } else {
           res = executeBugpath(target);
         }

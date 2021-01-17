@@ -22,7 +22,8 @@ public strictfp class Slanderer implements RunnableBot {
             return;
         }
         if (rc.getType() == RobotType.SLANDERER) {
-            RobotInfo closestEnemy = Util.getClosestEnemyRobot(r -> r.getType() == RobotType.MUCKRAKER);
+            RobotInfo closestEnemy = Util.getClosestEnemyRobot(r -> r.getType() == RobotType.MUCKRAKER ||
+                    r.getType() == RobotType.ENLIGHTENMENT_CENTER);
             MapLocation closestEnemyLocation = closestEnemy == null ? null : closestEnemy.getLocation();
             if (closestEnemyLocation == null) {
                 closestEnemyLocation = UnitCommunication.closestCommunicatedEnemyToKite;

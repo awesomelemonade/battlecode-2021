@@ -33,7 +33,7 @@ public class CentralCommunication {
     }
     private static UnitListNode unitListHead = null;
     private static int unitListSize = 0;
-    private static final int UNIT_LIST_MAX_SIZE = 80;
+    private static final int UNIT_LIST_MAX_SIZE = 120;
 
     public static final int DO_NOTHING_FLAG = 0b0000000_0000000_10000_10000;
     // 14 bits: rotate between [minX, maxX], [minY, maxY], [friendly ec], [enemy ec], [neutral ec]
@@ -78,25 +78,19 @@ public class CentralCommunication {
                             MapInfo.enemySlandererLocations.add(specifiedLocation, Cache.TURN_COUNT);
                         }
                     }
-                    switch (type) {
-                        case ENLIGHTENMENT_CENTER:
-                            Team ecTeam = Team.values()[info];
-                            if (!specifiedLocation.equals(Cache.MY_LOCATION)) {
-                                MapInfo.addKnownEnlightenmentCenter(specifiedLocation, ecTeam);
-                            }
-                            if (ecTeam == Constants.ALLY_TEAM) {
-                                break;
-                            }
-                        default:
-                            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
-                            if (distanceSquared < nearestEnemyDistanceSquared) {
-                                nearestEnemyDistanceSquared = distanceSquared;
-                                nearestEnemy = specifiedLocation;
-                                nearestEnemyType = type;
-                                if (type != RobotType.ENLIGHTENMENT_CENTER) {
-                                    nearestEnemyConviction = info;
-                                }
-                            }
+                    if (type == RobotType.ENLIGHTENMENT_CENTER) {
+                        Team ecTeam = Team.values()[info];
+                        if (!specifiedLocation.equals(Cache.MY_LOCATION)) {
+                            MapInfo.addKnownEnlightenmentCenter(specifiedLocation, ecTeam);
+                        }
+                    } else {
+                        int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
+                        if (distanceSquared < nearestEnemyDistanceSquared) {
+                            nearestEnemyDistanceSquared = distanceSquared;
+                            nearestEnemy = specifiedLocation;
+                            nearestEnemyType = type;
+                            nearestEnemyConviction = info;
+                        }
                     }
                 }
                 // update location

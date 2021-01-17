@@ -83,6 +83,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         }
                         break;
                 }
+                return;
             }
             if (rc.getEmpowerFactor(Constants.ALLY_TEAM, 15) >= 2 && turnsSinceSelfEmpowerer >= 11) {
                 int cost = influence / 2;

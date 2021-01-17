@@ -123,26 +123,57 @@ public strictfp class Politician implements RunnableBot {
         return attacking;
     }
 
-    public boolean tryEmpowerAtEC(MapLocation loc, boolean ally) throws GameActionException {
-        int bestDist = loc.distanceSquaredTo(Cache.MY_LOCATION);
-        Direction bestDir = null;
-        for (Direction d : Constants.ORDINAL_DIRECTIONS)
-            if (rc.canMove(d)) {
-                int dist = Cache.MY_LOCATION.add(d).distanceSquaredTo(loc);
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestDir = d;
+    public boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
+        if (rc.canSenseLocation(loc)) {
+            RobotInfo ec = rc.senseRobotAtLocation(loc);
+            if (ec == null) {
+                Util.println("WARNING: No EC detected at " + loc);
+                return false;
+            }
+            int ecConviction = ec.getConviction();
+            // Check if empowering will take the ec
+            int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
+            if (team == Team.NEUTRAL) {
+                if (distanceSquared <= 9) {
+                    // empower range - see if we can take it ourselves
+                    if (rc.getConviction() - 10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                        rc.empower(distanceSquared);
+                    }
+                }
+                // pathfind to nearest cardinal-adjacent square
+                if (Cache.MY_LOCATION.isWithinDistanceSquared(loc, 1)) {
+                    int neighborsOnTheMap = 0;
+                    for (Direction direction : Constants.CARDINAL_DIRECTIONS) {
+                        if (rc.onTheMap(loc.add(direction))) {
+                            neighborsOnTheMap++;
+                        }
+                    }
+                    // add up all conviction we have
+                    int sumConviction = 0;
+                    RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
+                    for (RobotInfo robot : allyRobots) {
+                        if (robot.getType() == RobotType.POLITICIAN) {
+                            sumConviction += robot.getConviction() - 10;
+                        }
+                    }
+                    // TODO: Perhaps we should check for nearby robots so we don't split damage?
+                    if (allyRobots.length == neighborsOnTheMap) {
+                        rc.empower(1);
+                    } else {
+                        if (sumConviction > ecConviction) {
+                            rc.empower(1);
+                        }
+                    }
+                    return true;
+                }
+            } else {
+                if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                    rc.empower(distanceSquared);
                 }
             }
-        if (bestDir == null) { // can't get any closer
-            int numUnits = rc.senseNearbyRobots(bestDist).length;
-            if (numUnits >= 4) return true;
-            rc.empower(bestDist);
-            return true;
-        } else {
-            Util.move(bestDir);
-            return true;
         }
+        Pathfinder.execute(loc);
+        return true;
     }
 
     public boolean shouldHeal(RobotInfo ec) throws GameActionException {
@@ -179,7 +210,7 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         if (bestLoc == null) return false;
-        return tryEmpowerAtEC(bestLoc, true);
+        return tryEmpowerAtEC(bestLoc, Constants.ALLY_TEAM);
     }
 
     public boolean tryHealEC() throws GameActionException {
@@ -197,7 +228,7 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         if (bestLoc == null) return false;
-        return tryEmpowerAtEC(bestLoc, true);
+        return tryEmpowerAtEC(bestLoc, Constants.ALLY_TEAM);
     }
 
     // if sees empty square next to ec, go to it
@@ -347,6 +378,7 @@ public strictfp class Politician implements RunnableBot {
         // if can't move any closer, explode
         MapLocation bestLoc = null;
         int bestDist = Integer.MAX_VALUE;
+        Team bestTeam = null;
 
         for (int i = Cache.ENEMY_ROBOTS.length; --i >= 0; ) {
             RobotInfo robot = Cache.ENEMY_ROBOTS[i];
@@ -356,6 +388,7 @@ public strictfp class Politician implements RunnableBot {
                 if (distance < bestDist) {
                     bestDist = distance;
                     bestLoc = location;
+                    bestTeam = Constants.ENEMY_TEAM;
                 }
             }
         }
@@ -367,12 +400,13 @@ public strictfp class Politician implements RunnableBot {
                 if (distance < bestDist) {
                     bestDist = distance;
                     bestLoc = location;
+                    bestTeam = Team.NEUTRAL;
                 }
             }
         }
         if (bestLoc == null)
             return false;
-        return tryEmpowerAtEC(bestLoc, false);
+        return tryEmpowerAtEC(bestLoc, bestTeam);
     }
 
     public boolean shouldEmpower(int ecKills, int mKills, int pKills, int mecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {

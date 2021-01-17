@@ -64,7 +64,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (rc.isReady()) {
             if (reactBuild(influence)) return;
             int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
-            if (initialEC && unitsBuilt < 40) {
+            /*if (initialEC && unitsBuilt < 40) {
                 switch (unitsBuilt % 4) {
                     case 0:
                         buildSlanderer(influence - 10);
@@ -84,7 +84,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         break;
                 }
                 return;
-            }
+            }*/
             if (rc.getEmpowerFactor(Constants.ALLY_TEAM, 15) >= 2 && turnsSinceSelfEmpowerer >= 11) {
                 int cost = influence / 2;
                 if (buildSelfEmpowerer(cost)) {

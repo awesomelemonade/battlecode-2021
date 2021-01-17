@@ -40,7 +40,7 @@ public strictfp class Politician implements RunnableBot {
         } else {
             defender = false;
         }
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.5) {
             selfempowerer = true;
         } else {
             selfempowerer = false;
@@ -67,7 +67,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        if(rc.getRoundNum()%50 == 0) attacking = true;
+        if(rc.getRoundNum()%25 == 0) attacking = true;
     }
 
     @Override
@@ -117,7 +117,7 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean shouldAttack() {
-        if (rc.getRoundNum() <= 200) return true;
+        if (rc.getRoundNum() <= 300) return true;
         return attacking;
     }
 
@@ -133,6 +133,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         if (bestDir == null) { // can't get any closer
+            //return false;
             if (bestDist > 9)
                 return false;
             if (bestDist >= 5 && rc.senseNearbyRobots(bestDist).length >= 6)
@@ -380,6 +381,8 @@ public strictfp class Politician implements RunnableBot {
         Util.println("pKills = " + pKills);
         Util.println("distPtoEC = " + distPtoEC);
         Util.println("distMtoS = " + distMtoS);*/
+        if (mecConviction + pConviction > currentConviction) return true;
+        if (ecKills + mKills + pKills >= 8) return true;
         if (ecKills >= 1) {
             return true;
         }
@@ -446,7 +449,7 @@ public strictfp class Politician implements RunnableBot {
         if (robot.getType() == RobotType.MUCKRAKER
                 && ((nearestS != null && robotLocation.isWithinDistanceSquared(nearestS, 81))
                 || (nearestAllyEC != null && robotLocation.isWithinDistanceSquared(nearestAllyEC, 81)))
-                && robotConviction * 10 + 20 >= currentConviction)
+                && robotConviction * 10 + 30 >= currentConviction)
             return true;
         return false;
     }

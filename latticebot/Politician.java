@@ -157,12 +157,8 @@ public strictfp class Politician implements RunnableBot {
                         }
                     }
                     // TODO: Perhaps we should check for nearby robots so we don't split damage?
-                    if (allyRobots.length == neighborsOnTheMap) {
+                    if ((allyRobots.length + 1) == neighborsOnTheMap || sumConviction > ecConviction) {
                         rc.empower(1);
-                    } else {
-                        if (sumConviction > ecConviction) {
-                            rc.empower(1);
-                        }
                     }
                     return true;
                 }

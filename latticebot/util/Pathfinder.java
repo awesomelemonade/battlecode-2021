@@ -150,7 +150,12 @@ public class Pathfinder {
 
     public static boolean execute(MapLocation target) {
         Util.setIndicatorLine(Cache.MY_LOCATION, target, 0, 0, 255);
-        boolean res = executeBugpath(target);
+        boolean res;
+        if (Cache.MY_LOCATION.distanceSquaredTo(target) <= 2) {
+          res = executeOrig(target);
+        } else {
+          res = executeBugpath(target);
+        }
         // boolean res = executeFullHeuristic(target);
         prevLoc = Cache.MY_LOCATION;
         prevTarget = target;

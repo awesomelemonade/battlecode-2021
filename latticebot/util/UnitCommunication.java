@@ -51,8 +51,10 @@ public class UnitCommunication {
     public static MapLocation closestCommunicatedEnemyToKite; // Currently used to by slanderers
     public static int closestCommunicatedEnemyDistanceSquared;
 
+    // Currently we should only call this if rc.getType() is a slanderer
+    // closestCommunicatedEnemyToKite is only used by Slanderer
     private static void checkCloseEnemy(MapLocation enemy) {
-        if (enemy != null) {
+        if (rc.getType() == RobotType.SLANDERER && enemy != null) {
             int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
             if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
                 closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
@@ -126,13 +128,9 @@ public class UnitCommunication {
             }
         }
         processFlagsFromECs();
-        ECNode current = ecListHead;
-        while (current != null) {
-            checkCloseEnemy(current.nearestEnemy);
-            current = current.next;
-        }
         if (rc.getType() == RobotType.POLITICIAN || rc.getType() == RobotType.MUCKRAKER) {
             // To save bytecodes, we don't run this for slanderers
+            // TODO: Is this even necessary anymore?
             for (Team team : Team.values()) {
                 MapInfo.getKnownEnlightenmentCenterList(team).removeIf(loc -> {
                     try {
@@ -248,7 +246,9 @@ public class UnitCommunication {
                 if (dx == 0 && dy == 0) {
                     current.nearestEnemy = null;
                 } else {
-                    current.nearestEnemy = ecLocation.translate(dx, dy);
+                    MapLocation nearestEnemy = ecLocation.translate(dx, dy);
+                    current.nearestEnemy = nearestEnemy;
+                    checkCloseEnemy(nearestEnemy);
                 }
                 int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
                 int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK)

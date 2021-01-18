@@ -163,22 +163,6 @@ public strictfp class Politician implements RunnableBot {
                         }
                     }
                     if (distanceSquared <= 1) {
-                        // add up all conviction we have
-                        int sumConviction = 0;
-                        RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
-                        if ((allyRobots.length + 1) == numNeighborsOpen) {
-                            rc.empower(1);
-                            return true;
-                        }
-                        for (RobotInfo robot : allyRobots) {
-                            if (robot.getType() == RobotType.POLITICIAN) {
-                                sumConviction += Math.max(0, robot.getConviction() - 10);
-                            }
-                        }
-                        if (sumConviction > ecConviction) {
-                            rc.empower(1);
-                            return true;
-                        }
                         // Add up our influence & enemy influence
                         RobotInfo[] allNearbyRobots = rc.senseNearbyRobots(loc, 16, null);
                         int convictionBalance = 0;
@@ -193,9 +177,16 @@ public strictfp class Politician implements RunnableBot {
                                 }
                             }
                         }
-                        if (convictionBalance > 20) {
-                            rc.empower(1);
-                            return true;
+                        if (convictionBalance > 5) {
+                            if (convictionBalance > ecConviction + 20) {
+                                rc.empower(1);
+                                return true;
+                            }
+                            RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
+                            if ((allyRobots.length + 1) == numNeighborsOpen) {
+                                rc.empower(1);
+                                return true;
+                            }
                         }
                         // Stay
                         return true;

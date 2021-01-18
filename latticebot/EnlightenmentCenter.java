@@ -9,6 +9,8 @@ import latticebot.util.MapInfo;
 import latticebot.util.SlandererBuild;
 import latticebot.util.Util;
 
+import java.util.Comparator;
+
 public strictfp class EnlightenmentCenter implements RunnableBot {
     private static RobotController rc;
 
@@ -93,8 +95,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     if (buildCheapMuckraker()) return;
                 }
             }
-            // TODO: neutral ec (communicated)
-            // TODO: enemy ec (communicated)
             // no danger? build slanderers / big p
             if (influence >= 150 && Math.random() < 0.2) {
                 // build politician w/ minimum 150
@@ -199,13 +199,30 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 r -> r.getTeam() != Constants.ALLY_TEAM && r.getType() == RobotType.ENLIGHTENMENT_CENTER,
                 r -> r.getConviction() + Constants.POLITICIAN_EMPOWER_PENALTY).map(cost -> {
             if (influence >= cost) {
-                buildPolitician(influence);
-                return true;
+                buildPolitician(cost);
             } else {
-                return false;
+                buildCheapMuckraker();
             }
+            return true;
         }).orElse(false)) {
             return false;
+        }
+        // find neutral EC communicated
+        if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL)
+                .min(Comparator.comparingInt(x -> x.location.distanceSquaredTo(Cache.MY_LOCATION)))
+                .map(x -> {
+                    MapLocation location = x.location;
+                    int conviction = x.lastKnownConviction;
+                    int cost = conviction + Constants.POLITICIAN_EMPOWER_PENALTY;
+                    Util.println("Spawning Politician for Neutral EC: " + cost);
+                    if (influence >= cost) {
+                        buildPolitician(cost);
+                    } else {
+                        buildCheapMuckraker();
+                    }
+                    return true;
+                }).orElse(false)) {
+            return true;
         }
         return false;
     }

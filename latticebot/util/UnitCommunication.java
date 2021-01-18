@@ -99,7 +99,7 @@ public class UnitCommunication {
             ).ifPresent(r -> {
                 Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                 if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                    MapInfo.addKnownEnlightenmentCenter(r.getLocation(), r.getTeam());
+                    MapInfo.addKnownEnlightenmentCenter(r.getTeam(), r.getLocation(), r.getConviction());
                 }
                 setFlag(r);
             });
@@ -109,7 +109,7 @@ public class UnitCommunication {
                     importantRobotComparator).ifPresent(r -> {
                         Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                         if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                            MapInfo.addKnownEnlightenmentCenter(r.getLocation(), r.getTeam());
+                            MapInfo.addKnownEnlightenmentCenter(r.getTeam(), r.getLocation(), r.getConviction());
                         }
                         setFlag(r);
                     });
@@ -181,7 +181,8 @@ public class UnitCommunication {
         if (unit.getType() == RobotType.ENLIGHTENMENT_CENTER) {
             // specify team
             currentFlag |= unit.getTeam().ordinal() << CURRENT_EC_TEAM_SHIFT; // 2 bits
-            currentFlag |= Math.min(CURRENT_EC_CONVICTION_MASK, unit.getConviction() / 2); // 8 bits - neutral ec's have max 500 conviction
+            // 8 bits - neutral ec's have max 500 conviction - divide by 2 rounded up
+            currentFlag |= Math.min(CURRENT_EC_CONVICTION_MASK, (unit.getConviction() + 1) / 2);
         } else {
             // specify conviction
             currentFlag |= Math.min(unit.getConviction(), CURRENT_UNIT_INFO_MASK); // 10 bits
@@ -219,13 +220,14 @@ public class UnitCommunication {
             RobotType type = RobotType.values()[(flag >> CURRENT_UNIT_TYPE_SHIFT) & CURRENT_UNIT_TYPE_MASK];
             if (type == RobotType.ENLIGHTENMENT_CENTER) {
                 int teamOrdinal = (flag >> CURRENT_EC_TEAM_SHIFT) & CURRENT_EC_TEAM_MASK;
+                int conviction = (flag & CURRENT_EC_CONVICTION_MASK) * 2;
                 Team team = Team.values()[teamOrdinal];
                 if (team == Constants.ENEMY_TEAM) {
                     checkCloseEnemy(specifiedLocation);
                 }
                 if (rc.getType() != RobotType.SLANDERER) {
                     // Conserve bytecodes for slanderers
-                    MapInfo.addKnownEnlightenmentCenter(specifiedLocation, team);
+                    MapInfo.addKnownEnlightenmentCenter(team, specifiedLocation, conviction);
                 }
             } else {
                 // we see type at specifiedLocation
@@ -266,24 +268,24 @@ public class UnitCommunication {
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
-                            MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ALLY_TEAM);
+                            MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, -1);
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ALLY_TEAM);
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, -1);
                             }
                             break;
                         case 2: // [enemy ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Constants.ENEMY_TEAM);
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, -1);
                             }
                             break;
                         case 3: // [neutral ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(rotationLocation, Team.NEUTRAL);
+                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, -1);
                             }
                             break;
                         case 4: // [enemy slanderers]
@@ -302,7 +304,7 @@ public class UnitCommunication {
                 prev = current;
             } else {
                 // we lost control of EC - remove from SLL - Set EC as enemy team
-                MapInfo.addKnownEnlightenmentCenter(current.location, Constants.ENEMY_TEAM);
+                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, current.location, -1);
                 if (prev == null) {
                     ecListHead = current.next;
                 } else {

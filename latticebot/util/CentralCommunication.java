@@ -78,9 +78,10 @@ public class CentralCommunication {
                     }
                     if (type == RobotType.ENLIGHTENMENT_CENTER) {
                         int teamOrdinal = (flag >> UnitCommunication.CURRENT_EC_TEAM_SHIFT) & UnitCommunication.CURRENT_EC_TEAM_MASK;
+                        int conviction = (flag & UnitCommunication.CURRENT_EC_CONVICTION_MASK) * 2;
                         Team ecTeam = Team.values()[teamOrdinal];
                         if (!specifiedLocation.equals(Cache.MY_LOCATION)) {
-                            MapInfo.addKnownEnlightenmentCenter(specifiedLocation, ecTeam);
+                            MapInfo.addKnownEnlightenmentCenter(ecTeam, specifiedLocation, conviction);
                         }
                     } else {
                         int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;

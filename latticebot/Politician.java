@@ -85,16 +85,16 @@ public strictfp class Politician implements RunnableBot {
             Util.smartExplore();
             return;
         }
-        if (tryEmpower()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
-            return;
-        }
         if (power >= 50 && tryClaimEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
         if (currentConviction >= 50 && tryHealEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
+            return;
+        }
+        if (tryEmpower()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
         if (chaseWorthwhileEnemy()) {
@@ -134,6 +134,7 @@ public strictfp class Politician implements RunnableBot {
             // Check if empowering will take the ec
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             if (team == Team.NEUTRAL) {
+                // TODO: we should only claim if there aren't that many enemy politicians nearby
                 if (distanceSquared <= 9) {
                     // empower range - see if we can take it ourselves
                     if (rc.getConviction() - 10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
@@ -323,13 +324,13 @@ public strictfp class Politician implements RunnableBot {
         Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) -> MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
                 .getClosestLocationDistance(loc, 1024))
                 .thenComparing(tiebreaker);
-        MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareECs).orElse(null);
+        MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(compareECs).orElse(null);
         if (bestNeutralEC != null) {
             Pathfinder.execute(bestNeutralEC);
             return true;
         }
         if (!shouldAttack()) return false;
-        MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).min(compareECs).orElse(null);
+        MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(compareECs).orElse(null);
         if (bestEnemyEC != null) {
             Pathfinder.execute(bestEnemyEC);
             return true;

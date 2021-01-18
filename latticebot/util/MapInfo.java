@@ -14,7 +14,7 @@ public class MapInfo {
     public static int mapMaxX = MAP_UNKNOWN_EDGE; // not known
     public static int mapMinY = MAP_UNKNOWN_EDGE; // not known
     public static int mapMaxY = MAP_UNKNOWN_EDGE; // not known
-    public static MapLocationList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
+    public static EnlightenmentCenterList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
     public static SlandererQueue enemySlandererLocations;
     public static final int ENEMY_SLANDERER_RETENTION = 20;
     public static int[] explored = new int[32];
@@ -25,9 +25,9 @@ public class MapInfo {
         MapInfo.origin = rc.getLocation().translate(-67, -67);
         // sense initial passability
         // TODO
-        enlightenmentCenterLocations = new MapLocationList[Team.values().length];
+        enlightenmentCenterLocations = new EnlightenmentCenterList[Team.values().length];
         for (int i = 0; i < enlightenmentCenterLocations.length; i++) {
-            enlightenmentCenterLocations[i] = new MapLocationList();
+            enlightenmentCenterLocations[i] = new EnlightenmentCenterList();
         }
         enemySlandererLocations = new SlandererQueue(50);
     }
@@ -44,17 +44,6 @@ public class MapInfo {
         knownPassability[chunkX][chunkY][subX][subY] = rc.sensePassability(location);
     }
     public static void loop() {
-        // based on previous movement direction, sense known passability
-        /*
-        for (controller.getType().sensorRadiusSquared) {
-
-        }
-        for (int i = 0; i < Constants.getOffsetLength(controller.getType().sensorRadiusSquared); i++) {
-            int dx = Constants.OFFSET_X[i];
-            int dy = Constants.OFFSET_Y[i];
-
-        }
-        */
         setExplored(Cache.MY_LOCATION);
         updateBoundaries();
         enemySlandererLocations.removeExpiredLocations(Cache.TURN_COUNT - ENEMY_SLANDERER_RETENTION);
@@ -106,32 +95,27 @@ public class MapInfo {
             }
         }
     }
-    public static void addKnownEnlightenmentCenter(MapLocation ecLocation, Team ecTeam) {
-        int ecTeamOrdinal = ecTeam.ordinal();
-        if (enlightenmentCenterLocations[ecTeamOrdinal].contains(ecLocation)) {
-            // duplicate
-            return;
-        }
+    public static void addKnownEnlightenmentCenter(Team ecTeam, MapLocation ecLocation, int conviction) {
         // loop unrolling
-        switch (ecTeamOrdinal) {
+        switch (ecTeam.ordinal()) {
             case 0:
-                enlightenmentCenterLocations[0].add(ecLocation);
+                enlightenmentCenterLocations[0].addOrUpdate(ecLocation, conviction);
                 enlightenmentCenterLocations[1].removeIf(x -> x.equals(ecLocation));
                 enlightenmentCenterLocations[2].removeIf(x -> x.equals(ecLocation));
                 break;
             case 1:
                 enlightenmentCenterLocations[0].removeIf(x -> x.equals(ecLocation));
-                enlightenmentCenterLocations[1].add(ecLocation);
+                enlightenmentCenterLocations[1].addOrUpdate(ecLocation, conviction);
                 enlightenmentCenterLocations[2].removeIf(x -> x.equals(ecLocation));
                 break;
             case 2:
                 enlightenmentCenterLocations[0].removeIf(x -> x.equals(ecLocation));
                 enlightenmentCenterLocations[1].removeIf(x -> x.equals(ecLocation));
-                enlightenmentCenterLocations[2].add(ecLocation);
+                enlightenmentCenterLocations[2].addOrUpdate(ecLocation, conviction);
                 break;
         }
     }
-    public static MapLocationList getKnownEnlightenmentCenterList(Team team) {
+    public static EnlightenmentCenterList getKnownEnlightenmentCenterList(Team team) {
         return enlightenmentCenterLocations[team.ordinal()];
     }
 

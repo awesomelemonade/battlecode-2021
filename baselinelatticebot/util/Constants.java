@@ -1,4 +1,4 @@
-package latticebot.util;
+package baselinelatticebot.util;
 
 import battlecode.common.*;
 
@@ -13,7 +13,7 @@ public class Constants {
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = false;
-    public static final boolean DEBUG_RESIGN = true;
+    public static final boolean DEBUG_RESIGN = false;
     public static final boolean DEBUG_PRINT = false;
 
     public static void init(RobotController rc) {
@@ -34,12 +34,12 @@ public class Constants {
                 SENSE_BOX_RADIUS = 4;
         }
     }
-    public static final Direction[] CARDINAL_DIRECTIONS = {
+    /*public static final Direction[] CARDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.EAST,
             Direction.SOUTH,
             Direction.WEST,
-    };
+    };*/
     public static final Direction[] ORDINAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.NORTHEAST,

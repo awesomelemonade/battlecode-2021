@@ -136,7 +136,7 @@ public strictfp class Politician implements RunnableBot {
                 // TODO: we should only claim if there aren't that many enemy politicians nearby
                 if (distanceSquared <= 9) {
                     // empower range - see if we can take it ourselves
-                    if (rc.getConviction() - 10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                    if (currentConviction_10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
                         rc.empower(distanceSquared);
                         return true;
                     }
@@ -150,6 +150,7 @@ public strictfp class Politician implements RunnableBot {
                         if (rc.onTheMap(neighbor)) {
                             RobotInfo neighborRobot = rc.senseRobotAtLocation(neighbor);
                             if (neighborRobot == null) {
+                                numNeighborsOpen++;
                                 int dist = Cache.MY_LOCATION.distanceSquaredTo(neighbor);
                                 if (dist < closestDistanceSquared) {
                                     closestCardinalAdjacentSquare = neighbor;

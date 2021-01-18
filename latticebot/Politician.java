@@ -202,8 +202,31 @@ public strictfp class Politician implements RunnableBot {
                     }
                 }
             } else {
-                if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
-                    rc.empower(distanceSquared);
+                if (distanceSquared <= 16) {
+                    if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                        rc.empower(distanceSquared);
+                        return true;
+                    }
+                    MapLocation closestCardinalAdjacentSquare = null;
+                    int closestDistanceSquared = Integer.MAX_VALUE;
+                    for (Direction direction : Constants.CARDINAL_DIRECTIONS) {
+                        MapLocation neighbor = loc.add(direction);
+                        if (rc.onTheMap(neighbor)) {
+                            RobotInfo neighborRobot = rc.senseRobotAtLocation(neighbor);
+                            if (neighborRobot == null) {
+                                int dist = Cache.MY_LOCATION.distanceSquaredTo(neighbor);
+                                if (dist < closestDistanceSquared) {
+                                    closestCardinalAdjacentSquare = neighbor;
+                                    closestDistanceSquared = dist;
+                                }
+                            }
+                        }
+                    }
+                    if (closestCardinalAdjacentSquare == null) {
+                        Pathfinder.execute(loc);
+                    } else {
+                        Pathfinder.execute(closestCardinalAdjacentSquare);
+                    }
                     return true;
                 }
             }

@@ -64,13 +64,13 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static void buildUnit(int influence) {
         if (rc.isReady()) {
             if (reactBuild(influence)) return;
-            boolean seesEnemyMuckraker = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
-                    r -> r.getType() == RobotType.MUCKRAKER);
+            boolean seesEnemyMuckrakerOrEC = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
+                    r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER);
             int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
             if (initialEC && unitsBuilt < 30) {
                 switch (unitsBuilt % 4) {
                     case 0:
-                        if (seesEnemyMuckraker) {
+                        if (seesEnemyMuckrakerOrEC) {
                             buildCheapMuckraker();
                         } else {
                             buildSlanderer(influence - 10);
@@ -114,7 +114,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
             double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && (!seesEnemyMuckraker)) {
+            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && (!seesEnemyMuckrakerOrEC)) {
                 if (buildSlanderer(influence)) {
                     return;
                 }

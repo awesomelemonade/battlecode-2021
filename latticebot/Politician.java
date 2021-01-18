@@ -131,7 +131,7 @@ public strictfp class Politician implements RunnableBot {
             int ecConviction = ec.getConviction();
             // Check if empowering will take the ec
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
-            /*if (team == Team.NEUTRAL) {
+            if (team == Team.NEUTRAL) {
                 // TODO: we should only claim if there aren't that many enemy politicians nearby
                 if (distanceSquared <= 9) {
                     // empower range - see if we can take it ourselves
@@ -161,30 +161,55 @@ public strictfp class Politician implements RunnableBot {
                         // add up all conviction we have
                         int sumConviction = 0;
                         RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
+                        if ((allyRobots.length + 1) == neighborsOnTheMap) {
+                            rc.empower(1);
+                            return true;
+                        }
                         for (RobotInfo robot : allyRobots) {
                             if (robot.getType() == RobotType.POLITICIAN) {
-                                sumConviction += robot.getConviction() - 10;
+                                sumConviction += Math.max(0, robot.getConviction() - 10);
                             }
                         }
-                        // TODO: Perhaps we should check for nearby robots so we don't split damage?
-                        if ((allyRobots.length + 1) == neighborsOnTheMap || sumConviction > ecConviction) {
+                        if (sumConviction > ecConviction) {
                             rc.empower(1);
+                            return true;
                         }
+                        // Add up our influence & enemy influence
+                        RobotInfo[] allNearbyRobots = rc.senseNearbyRobots(loc, 16, null);
+                        int convictionBalance = 0;
+                        for (int i = allNearbyRobots.length; --i >= 0;) {
+                            RobotInfo robot = allNearbyRobots[i];
+                            if (robot.getType() == RobotType.POLITICIAN) {
+                                if (robot.getTeam() == Constants.ALLY_TEAM) {
+                                    convictionBalance += Math.max(0, robot.getConviction() - 10);
+                                }
+                                if (robot.getTeam() == Constants.ENEMY_TEAM) {
+                                    convictionBalance -= Math.max(0, robot.getConviction() - 10);
+                                }
+                            }
+                        }
+                        if (convictionBalance > 20) {
+                            rc.empower(1);
+                            return true;
+                        }
+                        // Stay
                         return true;
                     } else {
                         // Pathfind to nearest cardinal-adjacent square
-                        if (closestCardinalAdjacentSquare != null) {
+                        if (closestCardinalAdjacentSquare == null) {
+                            Pathfinder.execute(loc);
+                        } else {
                             Pathfinder.execute(closestCardinalAdjacentSquare);
                         }
                         return true;
                     }
                 }
-            } else {*/
+            } else {
                 if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
                     rc.empower(distanceSquared);
                     return true;
                 }
-            /*}*/
+            }
         }
         Pathfinder.execute(loc);
         return true;

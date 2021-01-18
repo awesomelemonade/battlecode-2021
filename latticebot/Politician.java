@@ -370,7 +370,7 @@ public strictfp class Politician implements RunnableBot {
             MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
                     .getClosestLocationDistance(loc, 1024) +
             MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
-                    .getClosestLocationDistance(loc, 1024))
+                    .getClosestLocationDistance(loc, 1024) / 3)
             .thenComparing(tiebreaker);
     public static boolean goToECs() {
         MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(compareECs).orElse(null);

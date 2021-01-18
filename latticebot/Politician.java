@@ -365,6 +365,8 @@ public strictfp class Politician implements RunnableBot {
     private static Comparator<MapLocation> tiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
     private static Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) ->
             MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                    .getClosestLocationDistance(loc, 1024) +
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
                     .getClosestLocationDistance(loc, 1024))
             .thenComparing(tiebreaker);
     public static boolean goToECs() {

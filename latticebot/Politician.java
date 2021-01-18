@@ -480,6 +480,11 @@ public strictfp class Politician implements RunnableBot {
         Util.println("pKills = " + pKills);
         Util.println("distPtoEC = " + distPtoEC);
         Util.println("distMtoS = " + distMtoS);*/
+        // Convert remaining units if we're losing on votes
+        if (rc.getRoundNum() >= 1490 && mecConviction + pConviction > 0 &&
+                rc.getRobotCount() >= 250 && rc.getTeamVotes() < 751) {
+            return true;
+        }
         if (mecConviction + pConviction > currentConviction) return true;
         if (ecKills + mKills + pKills >= 8) return true;
         if (ecKills >= 1) {

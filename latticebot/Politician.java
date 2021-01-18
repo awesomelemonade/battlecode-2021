@@ -55,7 +55,6 @@ public strictfp class Politician implements RunnableBot {
         power = (int) (currentConviction_10 * currentEmpowerFactor);
 
         nearestAllyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
-
         nearestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().orElse(null);
         int minDist = Integer.MAX_VALUE;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0; ) {
@@ -365,25 +364,20 @@ public strictfp class Politician implements RunnableBot {
 
     public boolean goToECs() {
         Comparator<MapLocation> tiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
-        Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) ->
-                MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+        Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) -> MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
                 .getClosestLocationDistance(loc, 1024))
                 .thenComparing(tiebreaker);
         MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(compareECs).orElse(null);
+        if (bestNeutralEC != null) {
+            Pathfinder.execute(bestNeutralEC);
+            return true;
+        }
         MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(compareECs).orElse(null);
-        if (bestNeutralEC == null && bestEnemyEC == null) {
+        if (bestEnemyEC == null) {
             return false;
         }
-        if (bestEnemyEC == null || (bestNeutralEC != null && compareECs.compare(bestNeutralEC, bestEnemyEC) < 0)) {
-            // go for neutral EC
-            Pathfinder.execute(bestNeutralEC);
-        } else {
-            // go for enemy EC
-            if (!shouldAttack(bestEnemyEC)) {
-                return false;
-            }
-            Pathfinder.execute(bestEnemyEC);
-        }
+        if (!shouldAttack(bestEnemyEC)) return false;
+        Pathfinder.execute(bestEnemyEC);
         return true;
     }
 

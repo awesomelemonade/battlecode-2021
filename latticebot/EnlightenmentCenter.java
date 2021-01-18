@@ -186,6 +186,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         // do we have slanderers? is there danger (muckrakers)? build defender politicians
         if ((slandererCount > 0 && muckrakerNear) || politicianNear) {
             int cost = 5 * CentralCommunication.nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
+            cost = Math.min(cost, 3 * CentralCommunication.nearestEnemyConviction + 20);
+            cost = Math.min(cost, 2 * CentralCommunication.nearestEnemyConviction + 30);
+            cost = Math.min(cost, CentralCommunication.nearestEnemyConviction + 50);
             if (influence >= cost) {
                 buildPolitician(cost);
             } else {

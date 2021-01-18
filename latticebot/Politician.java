@@ -107,7 +107,7 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        if (((defender && currentConviction < 50/* && rc.getRoundNum() >= 100*/) || !shouldAttack()) && tryDefend()) {
+        if (((defender && currentConviction < 50/* && rc.getRoundNum() >= 100*/) || !shouldAttack(null)) && tryDefend()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }
@@ -116,9 +116,10 @@ public strictfp class Politician implements RunnableBot {
         }
     }
 
-    public boolean shouldAttack() {
+    public boolean shouldAttack(MapLocation loc) {
         if (rc.getRoundNum() <= 300) return true;
-        return attacking;
+        if (attacking) return true;
+        return loc.distanceSquaredTo(Cache.MY_LOCATION) >= 121;
     }
 
     public boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
@@ -356,8 +357,8 @@ public strictfp class Politician implements RunnableBot {
             Pathfinder.execute(bestNeutralEC);
             return true;
         }
-        if (!shouldAttack()) return false;
         MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(compareECs).orElse(null);
+        if (!shouldAttack(bestEnemyEC)) return false;
         if (bestEnemyEC != null) {
             Pathfinder.execute(bestEnemyEC);
             return true;

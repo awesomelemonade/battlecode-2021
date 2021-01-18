@@ -36,7 +36,7 @@ public strictfp class Politician implements RunnableBot {
 
     @Override
     public void init() throws GameActionException {
-        if (Math.random() < 0.6 || rc.getRoundNum() <= 100) {
+        if (Math.random() < 0.4 || rc.getRoundNum() <= 100) {
             defender = true;
         } else {
             defender = false;

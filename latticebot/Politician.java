@@ -107,7 +107,7 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        if (((defender && currentConviction < 50/* && rc.getRoundNum() >= 100*/) || !shouldAttack(null)) && tryDefend()) {
+        if ((defender && currentConviction < 50/* && rc.getRoundNum() >= 100*/) && tryDefend()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }

@@ -167,6 +167,7 @@ public strictfp class Politician implements RunnableBot {
                         // Add up our influence & enemy influence
                         RobotInfo[] allNearbyRobots = rc.senseNearbyRobots(loc, 16, null);
                         int convictionBalance = 0;
+                        boolean hasEnemy = false;
                         for (int i = allNearbyRobots.length; --i >= 0;) {
                             RobotInfo robot = allNearbyRobots[i];
                             if (robot.getType() == RobotType.POLITICIAN) {
@@ -174,11 +175,16 @@ public strictfp class Politician implements RunnableBot {
                                     convictionBalance += Math.max(0, robot.getConviction() - 10);
                                 }
                                 if (robot.getTeam() == Constants.ENEMY_TEAM) {
+                                    hasEnemy = true;
                                     convictionBalance -= Math.max(0, robot.getConviction() - 10);
                                 }
                             }
                         }
                         if (convictionBalance > 5) {
+                            if ((!hasEnemy) && convictionBalance > ecConviction) {
+                                rc.empower(1);
+                                return true;
+                            }
                             if (convictionBalance > ecConviction + 20) {
                                 rc.empower(1);
                                 return true;
@@ -404,7 +410,8 @@ public strictfp class Politician implements RunnableBot {
         int mKills = 0;
         int pKills = 0;
         int ecKills = 0;
-        int mecConviction = 0;
+        int mConviction = 0;
+        int ecConviction = 0;
         int pConviction = 0;
         int distMtoS = 9999;
         int distPtoEC = 9999;
@@ -419,13 +426,13 @@ public strictfp class Politician implements RunnableBot {
                 if (nearestAllyEC != null)
                     distPtoEC = Math.min(distPtoEC, enemy.location.distanceSquaredTo(nearestAllyEC));
             } else if (enemy.getType() == RobotType.MUCKRAKER) {
-                mecConviction += Math.min(damage, enemy.getConviction());
+                mConviction += Math.min(damage, enemy.getConviction());
                 if (damage > enemy.getConviction()) {
                     mKills++;
                 }
                 if (nearestS != null) distMtoS = Math.min(distMtoS, enemy.location.distanceSquaredTo(nearestS));
             } else if (enemy.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                mecConviction += Math.min(damage, enemy.getConviction());
+                ecConviction += Math.min(damage, enemy.getConviction());
                 if (damage > enemy.getConviction()) {
                     ecKills++;
                 }
@@ -433,15 +440,15 @@ public strictfp class Politician implements RunnableBot {
         }
         for (RobotInfo neutralEC : Cache.NEUTRAL_ROBOTS) {
             if (Cache.MY_LOCATION.isWithinDistanceSquared(neutralEC.getLocation(), radiusSquared)) {
-                mecConviction += Math.min(damage, neutralEC.getConviction());
+                ecConviction += Math.min(damage, neutralEC.getConviction());
                 if (damage > neutralEC.getConviction()) {
                     ecKills++;
                 }
             }
         }
         int numKills = ecKills + mKills + pKills;
-        int score = ecKills * 100000 * 100000 + numKills * 100000 + mecConviction;
-        if (shouldEmpower(ecKills, mKills, pKills, mecConviction, pConviction, distPtoEC, distMtoS)) {
+        int score = ecKills * 100000 * 100000 + numKills * 100000 + mConviction + ecConviction;
+        if (shouldEmpower(ecKills, mKills, pKills, mConviction, ecConviction, pConviction, distPtoEC, distMtoS)) {
             return score;
         } else {
             return 0;
@@ -484,52 +491,64 @@ public strictfp class Politician implements RunnableBot {
         return tryEmpowerAtEC(bestLoc, bestTeam);
     }
 
-    public static boolean shouldEmpower(int ecKills, int mKills, int pKills, int mecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {
+    public static boolean shouldEmpower(int ecKills, int mKills, int pKills, int mConviction, int ecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {
         /*
         Util.println("\tecKills = " + ecKills);
         Util.println("\tmKills = " + mKills);
         Util.println("\tpKills = " + pKills);
-        Util.println("\tmecConviction = " + mecConviction);
+        Util.println("\tmConviction = " + mConviction);
+        Util.println("\tecConviction = " + ecConviction);
         Util.println("\tpConviction = " + pConviction);
         Util.println("\tdistPtoEC = " + distPtoEC);
-        Util.println("\tdistMtoS = " + distMtoS);
-         */
+        Util.println("\tdistMtoS = " + distMtoS);*/
+
+        int mecConviction = mConviction + ecConviction;
+
         // Convert remaining units if we're losing on votes
         if (rc.getRoundNum() >= 1490 && mecConviction + pConviction > 0 &&
                 rc.getRobotCount() >= 250 && rc.getTeamVotes() < 751) {
+            //System.out.println("a");
             return true;
         }
         if (mecConviction + pConviction > currentConviction) return true;
         if (ecKills + mKills + pKills >= 8) return true;
         if (ecKills >= 1) {
+            //System.out.println("b");
             return true;
         }
         int numKills = mKills + pKills;
         if (currentConviction < 50) {
             if (distMtoS <= 100 && mKills >= 1) {
+                //System.out.println("c");
                 return true;
             }
             if (distPtoEC <= 8 && pKills >= 1) {
+                //System.out.println("d");
                 return true;
             }
             if (mKills >= 2) {
+                //System.out.println("e");
                 return true;
             }
             if (nearestAllyEC != null &&
                     nearestAllyEC.isWithinDistanceSquared(Cache.MY_LOCATION, 100) && mKills >= 1) {
+                //System.out.println("f");
                 return true;
             }
         }
-        if (numKills * 15 >= currentConviction_10) {
+        if (currentConviction_10 >= 50 && numKills * 15 >= currentConviction_10) {
+            //System.out.println("g");
             return true;
         }
         int distFromEC = nearestAllyEC == null ? 1024 : nearestAllyEC.distanceSquaredTo(Cache.MY_LOCATION);
         double euclidDist = Math.sqrt(distFromEC);
         double requiredRatio = 1.0 / (0.03 * (euclidDist + 5.0)) + 1;
-        if (mecConviction * requiredRatio >= currentConviction_10) {
+        if (mConviction * requiredRatio >= currentConviction_10) {
+            //System.out.println("h: " + requiredRatio + " - " + currentConviction_10);
             return true;
         }
         if (distPtoEC <= 2 && pConviction * 8 >= currentConviction_10) {
+            //System.out.println("i");
             return true;
         }
         return false;

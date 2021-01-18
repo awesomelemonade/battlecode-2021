@@ -9,6 +9,8 @@ import latticebot.util.Pathfinder;
 import latticebot.util.UnitCommunication;
 import latticebot.util.Util;
 
+import java.util.Comparator;
+
 
 public strictfp class Politician implements RunnableBot {
     private static RobotController rc;
@@ -19,7 +21,6 @@ public strictfp class Politician implements RunnableBot {
             -3};
     private static boolean defender;
     private static MapLocation nearestAllyEC;
-    private static MapLocation nearestNeutralEC;
     private static MapLocation nearestEnemyEC;
     private static MapLocation nearestS;
     private static boolean selfempowerer;
@@ -56,7 +57,6 @@ public strictfp class Politician implements RunnableBot {
         power = (int) (currentConviction_10 * currentEmpowerFactor);
 
         nearestAllyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation().orElse(null);
-        nearestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getClosestLocation().orElse(null);
         nearestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().orElse(null);
         int minDist = Integer.MAX_VALUE;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0; ) {
@@ -85,16 +85,16 @@ public strictfp class Politician implements RunnableBot {
             Util.smartExplore();
             return;
         }
+        if (tryEmpower()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
+            return;
+        }
         if (power >= 50 && tryClaimEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
         if (currentConviction >= 50 && tryHealEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
-            return;
-        }
-        if (tryEmpower()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
         if (chaseWorthwhileEnemy()) {
@@ -105,7 +105,7 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 102, 153); // bluish purple
             return;
         }
-        if (power >= 50 && goToNearestEC()) {
+        if (power >= 50 && goToECs()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
@@ -318,14 +318,20 @@ public strictfp class Politician implements RunnableBot {
         return Util.tryMove(bestDir);
     }
 
-    public boolean goToNearestEC() {
-        if (nearestNeutralEC != null) {
-            Pathfinder.execute(nearestNeutralEC);
+    public boolean goToECs() {
+        Comparator<MapLocation> tiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
+        Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) -> MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                .getClosestLocationDistance(loc, 1024))
+                .thenComparing(tiebreaker);
+        MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareECs).orElse(null);
+        if (bestNeutralEC != null) {
+            Pathfinder.execute(bestNeutralEC);
             return true;
         }
         if (!shouldAttack()) return false;
-        if (nearestEnemyEC != null) {
-            Pathfinder.execute(nearestEnemyEC);
+        MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).min(compareECs).orElse(null);
+        if (bestEnemyEC != null) {
+            Pathfinder.execute(bestEnemyEC);
             return true;
         }
         return false;

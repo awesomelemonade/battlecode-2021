@@ -1,13 +1,13 @@
-package latticebot;
+package experiment;
 
 import battlecode.common.*;
-import latticebot.util.Cache;
-import latticebot.util.Constants;
-import latticebot.util.LatticeUtil;
-import latticebot.util.MapInfo;
-import latticebot.util.Pathfinder;
-import latticebot.util.UnitCommunication;
-import latticebot.util.Util;
+import experiment.util.Cache;
+import experiment.util.Constants;
+import experiment.util.LatticeUtil;
+import experiment.util.MapInfo;
+import experiment.util.Pathfinder;
+import experiment.util.UnitCommunication;
+import experiment.util.Util;
 
 import java.util.Comparator;
 
@@ -267,7 +267,7 @@ public strictfp class Politician implements RunnableBot {
 
     // Lower defense score better
     public int getDefenseScore(MapLocation loc) {
-        if (!LatticeUtil.isLatticeLocation(loc)) {
+        if (loc.x%3 != 0 || loc.y%3 != 0) {
             return Integer.MAX_VALUE;
         }
         if (nearestAllyEC == null) {
@@ -294,27 +294,31 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public boolean tryDefend() throws GameActionException {
+        int before = Clock.getBytecodesLeft();
+        if(getDefenseScore(Cache.MY_LOCATION) < Integer.MAX_VALUE) {
+            return true;
+        }
         // find best defense score
         int bestDefenseScore = Integer.MAX_VALUE;
-        Direction bestDir = null;
-        // TODO: Potentially unroll loop
-        for (Direction d : Constants.ORDINAL_DIRECTIONS) {
-            MapLocation loc = Cache.MY_LOCATION.add(d);
-            if (rc.canMove(d)) {
-                int score = getDefenseScore(loc);
-                if (score < bestDefenseScore) {
-                    bestDefenseScore = score;
-                    bestDir = d;
+        MapLocation bestLoc = null;
+        int x = Cache.MY_LOCATION.x - Cache.MY_LOCATION.x % 3;
+        int y = Cache.MY_LOCATION.y - Cache.MY_LOCATION.y % 3;
+        for(int dx = -6; dx <= 6; dx += 3) {
+            for(int dy = -6; dy <= 6; dy += 3) {
+                MapLocation loc = new MapLocation(x + dx, y + dy);
+                if (rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc)) {
+                    int score = getDefenseScore(loc);
+                    if(score < bestDefenseScore) {
+                        bestDefenseScore = score;
+                        bestLoc = loc;
+                    }
                 }
             }
         }
-        if (bestDir == null) {
-            return false;
-        }
-        if (getDefenseScore(Cache.MY_LOCATION) <= bestDefenseScore) {
-            return true;
-        }
-        return Util.tryMove(bestDir);
+        System.out.println(before - Clock.getBytecodesLeft());
+        if(bestLoc == null) return false;
+        System.out.println(bestLoc.x + " " + bestLoc.y);
+        return Util.tryMove(bestLoc);
     }
 
     public boolean goToECs() {

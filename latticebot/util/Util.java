@@ -3,8 +3,6 @@ package latticebot.util;
 import battlecode.common.*;
 import latticebot.RobotPlayer;
 
-import static latticebot.util.Constants.*;
-
 import java.util.function.Predicate;
 
 public class Util {
@@ -45,14 +43,14 @@ public class Util {
     }
 
     public static void postLoop() throws GameActionException {
-        if (DEBUG_DRAW) {
-            MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
+        if (Constants.DEBUG_DRAW) {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).forEach(x -> {
                 Util.setIndicatorDot(x, 255, 255, 255);
             });
             MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
                 Util.setIndicatorDot(x, 128, 128, 128);
             });
-            MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).forEach(x -> {
                 Util.setIndicatorDot(x, 0, 0, 0);
             });
             MapInfo.enemySlandererLocations.forEach(x -> {
@@ -130,7 +128,7 @@ public class Util {
 
     public static boolean hasAdjacentAllyRobot(MapLocation location) {
         if (Cache.ALLY_ROBOTS.length >= 20) {
-            return rc.senseNearbyRobots(location, 2, ALLY_TEAM).length > 0;
+            return rc.senseNearbyRobots(location, 2, Constants.ALLY_TEAM).length > 0;
         } else {
             // loop through robot list
             for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
@@ -144,7 +142,7 @@ public class Util {
 
     public static int numAllyRobotsWithin(MapLocation location, int distanceSquared) {
         if (Cache.ALLY_ROBOTS.length >= 20) {
-            return rc.senseNearbyRobots(location, distanceSquared, ALLY_TEAM).length;
+            return rc.senseNearbyRobots(location, distanceSquared, Constants.ALLY_TEAM).length;
         } else {
             // loop through robot list
             int count = 0;

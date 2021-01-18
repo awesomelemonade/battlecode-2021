@@ -194,7 +194,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             return true;
         }
-        // find smallest neutral/enemy EC (in vision)
+        /*// find smallest neutral/enemy EC (in vision)
         if (LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
                 r -> r.getTeam() != Constants.ALLY_TEAM && r.getType() == RobotType.ENLIGHTENMENT_CENTER,
                 r -> r.getConviction() + Constants.POLITICIAN_EMPOWER_PENALTY).map(cost -> {
@@ -223,7 +223,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return true;
                 }).orElse(false)) {
             return true;
-        }
+        }*/
         return false;
     }
 

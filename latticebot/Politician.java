@@ -131,7 +131,7 @@ public strictfp class Politician implements RunnableBot {
             int ecConviction = ec.getConviction();
             // Check if empowering will take the ec
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
-            if (team == Team.NEUTRAL) {
+            /*if (team == Team.NEUTRAL) {
                 // TODO: we should only claim if there aren't that many enemy politicians nearby
                 if (distanceSquared <= 9) {
                     // empower range - see if we can take it ourselves
@@ -179,12 +179,12 @@ public strictfp class Politician implements RunnableBot {
                         return true;
                     }
                 }
-            } else {
+            } else {*/
                 if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
                     rc.empower(distanceSquared);
                     return true;
                 }
-            }
+            /*}*/
         }
         Pathfinder.execute(loc);
         return true;

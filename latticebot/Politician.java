@@ -141,18 +141,22 @@ public strictfp class Politician implements RunnableBot {
                     }
                 }
                 if (distanceSquared <= 16) {
-                    int neighborsOnTheMap = 0;
+                    int numNeighborsOpen = 0;
                     MapLocation closestCardinalAdjacentSquare = null;
                     int closestDistanceSquared = Integer.MAX_VALUE;
                     for (Direction direction : Constants.CARDINAL_DIRECTIONS) {
                         MapLocation neighbor = loc.add(direction);
                         if (rc.onTheMap(neighbor)) {
-                            neighborsOnTheMap++;
-                            if (rc.senseRobotAtLocation(neighbor) == null) {
+                            RobotInfo neighborRobot = rc.senseRobotAtLocation(neighbor);
+                            if (neighborRobot == null) {
                                 int dist = Cache.MY_LOCATION.distanceSquaredTo(neighbor);
                                 if (dist < closestDistanceSquared) {
                                     closestCardinalAdjacentSquare = neighbor;
                                     closestDistanceSquared = dist;
+                                }
+                            } else {
+                                if (neighborRobot.getType() != RobotType.ENLIGHTENMENT_CENTER) {
+                                    numNeighborsOpen++;
                                 }
                             }
                         }
@@ -161,7 +165,7 @@ public strictfp class Politician implements RunnableBot {
                         // add up all conviction we have
                         int sumConviction = 0;
                         RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
-                        if ((allyRobots.length + 1) == neighborsOnTheMap) {
+                        if ((allyRobots.length + 1) == numNeighborsOpen) {
                             rc.empower(1);
                             return true;
                         }

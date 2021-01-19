@@ -3,8 +3,6 @@ package experiment.util;
 import battlecode.common.*;
 import experiment.RobotPlayer;
 
-import static experiment.util.Constants.*;
-
 import java.util.function.Predicate;
 
 public class Util {
@@ -45,14 +43,14 @@ public class Util {
     }
 
     public static void postLoop() throws GameActionException {
-        if (DEBUG_DRAW) {
-            MapInfo.getKnownEnlightenmentCenterList(ALLY_TEAM).forEach(x -> {
+        if (Constants.DEBUG_DRAW) {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).forEach(x -> {
                 Util.setIndicatorDot(x, 255, 255, 255);
             });
             MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
                 Util.setIndicatorDot(x, 128, 128, 128);
             });
-            MapInfo.getKnownEnlightenmentCenterList(ENEMY_TEAM).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).forEach(x -> {
                 Util.setIndicatorDot(x, 0, 0, 0);
             });
             MapInfo.enemySlandererLocations.forEach(x -> {
@@ -130,7 +128,7 @@ public class Util {
 
     public static boolean hasAdjacentAllyRobot(MapLocation location) {
         if (Cache.ALLY_ROBOTS.length >= 20) {
-            return rc.senseNearbyRobots(location, 2, ALLY_TEAM).length > 0;
+            return rc.senseNearbyRobots(location, 2, Constants.ALLY_TEAM).length > 0;
         } else {
             // loop through robot list
             for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
@@ -144,7 +142,7 @@ public class Util {
 
     public static int numAllyRobotsWithin(MapLocation location, int distanceSquared) {
         if (Cache.ALLY_ROBOTS.length >= 20) {
-            return rc.senseNearbyRobots(location, distanceSquared, ALLY_TEAM).length;
+            return rc.senseNearbyRobots(location, distanceSquared, Constants.ALLY_TEAM).length;
         } else {
             // loop through robot list
             int count = 0;
@@ -202,18 +200,12 @@ public class Util {
 
     private static int exploreDir = -1;
     private static int prevExploreDir = -1;
-    private static boolean first = true;
 
     public static boolean smartExplore() throws GameActionException {
         // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         while (exploreDir == -1) {
-            // exploreDir = randBetween(0, 15);
-            if (first)
-                exploreDir = (rc.getRoundNum() / 2) % 16;
-            else
-                exploreDir = randBetween(0, 15);
-            first = false;
+            exploreDir = randBetween(0, 15);
             if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
                 exploreDir = -1;
             }

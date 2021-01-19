@@ -158,13 +158,20 @@ public class CentralCommunication {
                 rotationLocation = Cache.MY_LOCATION;
                 break;
             case 1: // [ally ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandomLocation().orElse(null);
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getNextLocation().orElse(null);
                 break;
             case 2: // [enemy ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation().orElse(null);
+                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getNextLocation().orElse(null);
                 break;
             case 3: // [neutral ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation().orElse(null);
+                EnlightenmentCenterList.EnlightenmentCenterListNode ec = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getNext();
+                if(ec != null) {
+                    rotationLocation = ec.location;
+                    // for neutral ecs, broadcast its conviction instead of nearest enemy location
+                    int ecConviction = ec.lastKnownConviction;
+                    flag = ecConviction;
+                    System.out.println("BROADCASTING " + rotationLocation.x + ", " + rotationLocation.y + ": " + ecConviction);
+                }
                 break;
             case 4: // [enemy slanderers]
                 rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);

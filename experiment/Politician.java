@@ -8,6 +8,7 @@ import experiment.util.MapInfo;
 import experiment.util.Pathfinder;
 import experiment.util.UnitCommunication;
 import experiment.util.Util;
+import experiment.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
 
 import java.util.Comparator;
 
@@ -30,13 +31,16 @@ public strictfp class Politician implements RunnableBot {
     private static int currentConviction_10; // = currentConviction - 10
     private static double currentEmpowerFactor;
 
+    private static MapLocation targetLoc;
+    private static Team targetTeam;
+
     public Politician(RobotController rc) {
         Politician.rc = rc;
     }
 
     @Override
     public void init() throws GameActionException {
-        if (Math.random() < 0.4) {
+        if (Math.random() < 0.4 || rc.getRoundNum() <= 100) {
             defender = true;
         } else {
             defender = false;
@@ -48,7 +52,7 @@ public strictfp class Politician implements RunnableBot {
         }
     }
 
-    private void preTurn() throws GameActionException {
+    private static void preTurn() throws GameActionException {
         currentConviction = rc.getConviction();
         currentConviction_10 = currentConviction - 10;
         currentEmpowerFactor = rc.getEmpowerFactor(Constants.ALLY_TEAM, 0);
@@ -68,6 +72,7 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         if (rc.getRoundNum() % 25 == 0) attacking = true;
+        computeTarget();
     }
 
     @Override
@@ -83,7 +88,7 @@ public strictfp class Politician implements RunnableBot {
             Util.smartExplore();
             return;
         }
-        if (power >= 50 && tryClaimEC()) {
+        if (currentConviction >= 50 && tryClaimEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
@@ -103,11 +108,11 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 102, 153); // bluish purple
             return;
         }
-        if (power >= 50 && goToECs()) {
+        if (currentConviction >= 50 && goToECs()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        if (((defender && currentConviction < 50/* && rc.getRoundNum() >= 100*/) || !shouldAttack()) && tryDefend()) {
+        if ((defender && currentConviction < 50) && tryDefend()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }
@@ -116,12 +121,13 @@ public strictfp class Politician implements RunnableBot {
         }
     }
 
-    public boolean shouldAttack() {
+    public static boolean shouldAttack(MapLocation loc) {
         if (rc.getRoundNum() <= 300) return true;
-        return attacking;
+        if (attacking) return true;
+        return loc.distanceSquaredTo(Cache.MY_LOCATION) >= 121;
     }
 
-    public boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
+    public static boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
         if (rc.canSenseLocation(loc)) {
             RobotInfo ec = rc.senseRobotAtLocation(loc);
             if (ec == null) {
@@ -135,20 +141,91 @@ public strictfp class Politician implements RunnableBot {
                 // TODO: we should only claim if there aren't that many enemy politicians nearby
                 if (distanceSquared <= 9) {
                     // empower range - see if we can take it ourselves
-                    if (rc.getConviction() - 10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                    if (currentConviction_10 > ecConviction && rc.senseNearbyRobots(distanceSquared).length == 1) {
                         rc.empower(distanceSquared);
                         return true;
                     }
                 }
                 if (distanceSquared <= 16) {
-                    int neighborsOnTheMap = 0;
+                    int numNeighborsOpen = 0;
                     MapLocation closestCardinalAdjacentSquare = null;
                     int closestDistanceSquared = Integer.MAX_VALUE;
                     for (Direction direction : Constants.CARDINAL_DIRECTIONS) {
                         MapLocation neighbor = loc.add(direction);
                         if (rc.onTheMap(neighbor)) {
-                            neighborsOnTheMap++;
-                            if (rc.senseRobotAtLocation(neighbor) == null) {
+                            RobotInfo neighborRobot = rc.senseRobotAtLocation(neighbor);
+                            if (neighborRobot == null) {
+                                numNeighborsOpen++;
+                                int dist = Cache.MY_LOCATION.distanceSquaredTo(neighbor);
+                                if (dist < closestDistanceSquared) {
+                                    closestCardinalAdjacentSquare = neighbor;
+                                    closestDistanceSquared = dist;
+                                }
+                            } else {
+                                if (neighborRobot.getType() != RobotType.ENLIGHTENMENT_CENTER) {
+                                    numNeighborsOpen++;
+                                }
+                            }
+                        }
+                    }
+                    if (distanceSquared <= 1) {
+                        // Add up our influence & enemy influence
+                        RobotInfo[] allNearbyRobots = rc.senseNearbyRobots(loc, 16, null);
+                        int convictionBalance = power; // current robot's conviction
+                        boolean hasEnemy = false;
+                        double enemyEmpowerFactor = rc.getEmpowerFactor(Constants.ENEMY_TEAM, 0);
+                        for (int i = allNearbyRobots.length; --i >= 0; ) {
+                            RobotInfo robot = allNearbyRobots[i];
+                            if (robot.getType() == RobotType.POLITICIAN) {
+                                if (robot.getTeam() == Constants.ALLY_TEAM) {
+                                    convictionBalance += (int)(Math.max(0, robot.getConviction() - 10) * currentEmpowerFactor);
+                                }
+                                if (robot.getTeam() == Constants.ENEMY_TEAM) {
+                                    hasEnemy = true;
+                                    convictionBalance -= (int)(Math.max(0, robot.getConviction() - 10) * enemyEmpowerFactor);
+                                }
+                            }
+                        }
+                        if (convictionBalance > 5) {
+                            if ((!hasEnemy) && convictionBalance > ecConviction) {
+                                rc.empower(1);
+                                return true;
+                            }
+                            if (convictionBalance > ecConviction + 20) {
+                                rc.empower(1);
+                                return true;
+                            }
+                            RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
+                            if ((allyRobots.length + 1) == numNeighborsOpen) {
+                                rc.empower(1);
+                                return true;
+                            }
+                        }
+                        // Stay
+                        return true;
+                    } else {
+                        // Pathfind to nearest cardinal-adjacent square
+                        if (closestCardinalAdjacentSquare == null) {
+                            Pathfinder.execute(loc);
+                        } else {
+                            Pathfinder.execute(closestCardinalAdjacentSquare);
+                        }
+                        return true;
+                    }
+                }
+            } else {
+                if (distanceSquared <= 16) {
+                    if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                        rc.empower(distanceSquared);
+                        return true;
+                    }
+                    MapLocation closestCardinalAdjacentSquare = null;
+                    int closestDistanceSquared = Integer.MAX_VALUE;
+                    for (Direction direction : Constants.CARDINAL_DIRECTIONS) {
+                        MapLocation neighbor = loc.add(direction);
+                        if (rc.onTheMap(neighbor)) {
+                            RobotInfo neighborRobot = rc.senseRobotAtLocation(neighbor);
+                            if (neighborRobot == null) {
                                 int dist = Cache.MY_LOCATION.distanceSquaredTo(neighbor);
                                 if (dist < closestDistanceSquared) {
                                     closestCardinalAdjacentSquare = neighbor;
@@ -157,31 +234,11 @@ public strictfp class Politician implements RunnableBot {
                             }
                         }
                     }
-                    if (distanceSquared <= 1) {
-                        // add up all conviction we have
-                        int sumConviction = 0;
-                        RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
-                        for (RobotInfo robot : allyRobots) {
-                            if (robot.getType() == RobotType.POLITICIAN) {
-                                sumConviction += robot.getConviction() - 10;
-                            }
-                        }
-                        // TODO: Perhaps we should check for nearby robots so we don't split damage?
-                        if ((allyRobots.length + 1) == neighborsOnTheMap || sumConviction > ecConviction) {
-                            rc.empower(1);
-                        }
-                        return true;
+                    if (closestCardinalAdjacentSquare == null) {
+                        Pathfinder.execute(loc);
                     } else {
-                        // Pathfind to nearest cardinal-adjacent square
-                        if (closestCardinalAdjacentSquare != null) {
-                            Pathfinder.execute(closestCardinalAdjacentSquare);
-                        }
-                        return true;
+                        Pathfinder.execute(closestCardinalAdjacentSquare);
                     }
-                }
-            } else {
-                if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
-                    rc.empower(distanceSquared);
                     return true;
                 }
             }
@@ -190,7 +247,7 @@ public strictfp class Politician implements RunnableBot {
         return true;
     }
 
-    public boolean shouldHeal(RobotInfo ec) throws GameActionException {
+    public static boolean shouldHeal(RobotInfo ec) throws GameActionException {
         if (Constants.SPAWN.isWithinDistanceSquared(ec.getLocation(), 16)) {
             return false;
         }
@@ -208,7 +265,7 @@ public strictfp class Politician implements RunnableBot {
         return false;
     }
 
-    public boolean trySelfBuff() throws GameActionException {
+    public static boolean trySelfBuff() throws GameActionException {
         if (currentEmpowerFactor < 1.5) return false;
         int bestDist = Integer.MAX_VALUE;
         MapLocation bestLoc = null;
@@ -227,7 +284,7 @@ public strictfp class Politician implements RunnableBot {
         return tryEmpowerAtEC(bestLoc, Constants.ALLY_TEAM);
     }
 
-    public boolean tryHealEC() throws GameActionException {
+    public static boolean tryHealEC() throws GameActionException {
         int bestDist = Integer.MAX_VALUE;
         MapLocation bestLoc = null;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0; ) {
@@ -246,7 +303,7 @@ public strictfp class Politician implements RunnableBot {
     }
 
     // if sees empty square next to ec, go to it
-    public boolean campEnemyEC() throws GameActionException {
+    public static boolean campEnemyEC() throws GameActionException {
         if (nearestEnemyEC == null) return false;
         if (!Cache.MY_LOCATION.isWithinDistanceSquared(nearestEnemyEC, 25)) {
             return Util.tryMove(nearestEnemyEC);
@@ -266,8 +323,8 @@ public strictfp class Politician implements RunnableBot {
     }
 
     // Lower defense score better
-    public int getDefenseScore(MapLocation loc) {
-        if (loc.x%3 != 0 || loc.y%3 != 0) {
+    public static int getDefenseScore(MapLocation loc) {
+        if (loc.x % 3 != 0 || loc.y % 3 != 0) {
             return Integer.MAX_VALUE;
         }
         if (nearestAllyEC == null) {
@@ -293,9 +350,8 @@ public strictfp class Politician implements RunnableBot {
         return nearestEnemyEC == null ? 5000 * dist : 5000 * dist + nearestEnemyEC.distanceSquaredTo(loc);
     }
 
-    public boolean tryDefend() throws GameActionException {
-        int before = Clock.getBytecodesLeft();
-        if(getDefenseScore(Cache.MY_LOCATION) < Integer.MAX_VALUE) {
+    public static boolean tryDefend() throws GameActionException {
+        if (getDefenseScore(Cache.MY_LOCATION) < Integer.MAX_VALUE) {
             return true;
         }
         // find best defense score
@@ -303,44 +359,72 @@ public strictfp class Politician implements RunnableBot {
         MapLocation bestLoc = null;
         int x = Cache.MY_LOCATION.x - Cache.MY_LOCATION.x % 3;
         int y = Cache.MY_LOCATION.y - Cache.MY_LOCATION.y % 3;
-        for(int dx = -6; dx <= 6; dx += 3) {
-            for(int dy = -6; dy <= 6; dy += 3) {
+        for (int dx = -6; dx <= 6; dx += 3) {
+            for (int dy = -6; dy <= 6; dy += 3) {
                 MapLocation loc = new MapLocation(x + dx, y + dy);
                 if (rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc)) {
                     int score = getDefenseScore(loc);
-                    if(score < bestDefenseScore) {
+                    if (score < bestDefenseScore) {
                         bestDefenseScore = score;
                         bestLoc = loc;
                     }
                 }
             }
         }
-        System.out.println(before - Clock.getBytecodesLeft());
-        if(bestLoc == null) return false;
-        System.out.println(bestLoc.x + " " + bestLoc.y);
+        if (bestLoc == null) {
+            return false;
+        }
         return Util.tryMove(bestLoc);
     }
 
-    public boolean goToECs() {
-        Comparator<MapLocation> tiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
-        Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) -> MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
-                .getClosestLocationDistance(loc, 1024))
-                .thenComparing(tiebreaker);
-        MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(compareECs).orElse(null);
+    private static Comparator<MapLocation> tiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
+    private static Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) ->
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                    .getClosestLocationDistance(loc, 1024) +
+                    MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
+                            .getClosestLocationDistance(loc, 1024) / 3)
+            .thenComparing(tiebreaker);
+    private static Comparator<EnlightenmentCenterListNode> compareNeutrals = Comparator.comparingInt((EnlightenmentCenterListNode node) -> {
+        MapLocation loc = node.location;
+        int conviction = node.lastKnownConviction == -1 ? 250 : node.lastKnownConviction;
+        if (currentConviction_10 > conviction) {
+            return loc.distanceSquaredTo(Cache.MY_LOCATION);
+        }
+        return MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                .getClosestLocationDistance(loc, 1024) +
+                MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
+                        .getClosestLocationDistance(loc, 1024) / 3;
+    });
+
+    public static void computeTarget() {
+        EnlightenmentCenterListNode bestNeutralNode = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareNeutrals).orElse(null);
+        MapLocation bestNeutralEC = bestNeutralNode == null ? null : bestNeutralNode.location;
         if (bestNeutralEC != null) {
-            Pathfinder.execute(bestNeutralEC);
-            return true;
+            System.out.println("BEST NEUTRAL: " + bestNeutralEC.x + " " + bestNeutralEC.y + " " + bestNeutralNode.lastKnownConviction);
         }
-        if (!shouldAttack()) return false;
         MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(compareECs).orElse(null);
-        if (bestEnemyEC != null) {
-            Pathfinder.execute(bestEnemyEC);
-            return true;
+        if (bestNeutralEC == null && bestEnemyEC == null) {
+            targetLoc = null;
+            targetTeam = null;
         }
-        return false;
+        if (bestNeutralEC != null/*bestEnemyEC == null || (bestNeutralEC != null && compareECs.compare(bestNeutralEC, bestEnemyEC) < 0)*/) {
+            // go for neutral EC
+            targetLoc = bestNeutralEC;
+            targetTeam = Team.NEUTRAL;
+        } else {
+            // go for enemy EC
+            targetLoc = bestEnemyEC;
+            targetTeam = Constants.ENEMY_TEAM;
+        }
     }
 
-    private int getScore(int radiusSquared) throws GameActionException {
+    public static boolean goToECs() {
+        if (targetLoc == null) return false;
+        if (!shouldAttack(targetLoc)) return false;
+        return Util.tryMove(targetLoc);
+    }
+
+    private static int getScore(int radiusSquared) throws GameActionException {
         int numUnits = rc.senseNearbyRobots(radiusSquared).length;
         if (numUnits == 0) {
             return 0;
@@ -353,7 +437,8 @@ public strictfp class Politician implements RunnableBot {
         int mKills = 0;
         int pKills = 0;
         int ecKills = 0;
-        int mecConviction = 0;
+        int mConviction = 0;
+        int ecConviction = 0;
         int pConviction = 0;
         int distMtoS = 9999;
         int distPtoEC = 9999;
@@ -368,13 +453,13 @@ public strictfp class Politician implements RunnableBot {
                 if (nearestAllyEC != null)
                     distPtoEC = Math.min(distPtoEC, enemy.location.distanceSquaredTo(nearestAllyEC));
             } else if (enemy.getType() == RobotType.MUCKRAKER) {
-                mecConviction += Math.min(damage, enemy.getConviction());
+                mConviction += Math.min(damage, enemy.getConviction());
                 if (damage > enemy.getConviction()) {
                     mKills++;
                 }
                 if (nearestS != null) distMtoS = Math.min(distMtoS, enemy.location.distanceSquaredTo(nearestS));
             } else if (enemy.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                mecConviction += Math.min(damage, enemy.getConviction());
+                ecConviction += Math.min(damage, enemy.getConviction());
                 if (damage > enemy.getConviction()) {
                     ecKills++;
                 }
@@ -382,98 +467,91 @@ public strictfp class Politician implements RunnableBot {
         }
         for (RobotInfo neutralEC : Cache.NEUTRAL_ROBOTS) {
             if (Cache.MY_LOCATION.isWithinDistanceSquared(neutralEC.getLocation(), radiusSquared)) {
-                mecConviction += Math.min(damage, neutralEC.getConviction());
+                ecConviction += Math.min(damage, neutralEC.getConviction());
                 if (damage > neutralEC.getConviction()) {
                     ecKills++;
                 }
             }
         }
         int numKills = ecKills + mKills + pKills;
-        int score = ecKills * 100000 * 100000 + numKills * 100000 + mecConviction;
-        if (shouldEmpower(ecKills, mKills, pKills, mecConviction, pConviction, distPtoEC, distMtoS)) {
+        int score = ecKills * 100000 * 100000 + numKills * 100000 + mConviction + ecConviction;
+        if (shouldEmpower(ecKills, mKills, pKills, mConviction, ecConviction, pConviction, distPtoEC, distMtoS)) {
             return score;
         } else {
             return 0;
         }
     }
 
-    public boolean tryClaimEC() throws GameActionException {
-        // if we see enemy/neutral ec, try to move closer to it
-        // if can't move any closer, explode
-        MapLocation bestLoc = null;
-        int bestDist = Integer.MAX_VALUE;
-        Team bestTeam = null;
-
-        for (int i = Cache.ENEMY_ROBOTS.length; --i >= 0; ) {
-            RobotInfo robot = Cache.ENEMY_ROBOTS[i];
-            if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapLocation location = robot.getLocation();
-                int distance = location.distanceSquaredTo(Cache.MY_LOCATION);
-                if (distance < bestDist) {
-                    bestDist = distance;
-                    bestLoc = location;
-                    bestTeam = Constants.ENEMY_TEAM;
-                }
-            }
-        }
-        for (int i = Cache.NEUTRAL_ROBOTS.length; --i >= 0; ) {
-            RobotInfo robot = Cache.NEUTRAL_ROBOTS[i];
-            if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapLocation location = robot.getLocation();
-                int distance = location.distanceSquaredTo(Cache.MY_LOCATION);
-                if (distance < bestDist) {
-                    bestDist = distance;
-                    bestLoc = location;
-                    bestTeam = Team.NEUTRAL;
-                }
-            }
-        }
-        if (bestLoc == null)
+    public static boolean tryClaimEC() throws GameActionException {
+        if (targetLoc == null)
             return false;
-        return tryEmpowerAtEC(bestLoc, bestTeam);
+        return tryEmpowerAtEC(targetLoc, targetTeam);
     }
 
-    public boolean shouldEmpower(int ecKills, int mKills, int pKills, int mecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {
-        /*Util.println("ecKills = " + ecKills);
-        Util.println("mKills = " + mKills);
-        Util.println("pKills = " + pKills);
-        Util.println("distPtoEC = " + distPtoEC);
-        Util.println("distMtoS = " + distMtoS);*/
+    public static boolean shouldEmpower(int ecKills, int mKills, int pKills, int mConviction, int ecConviction, int pConviction, int distPtoEC, int distMtoS) throws GameActionException {
+        /*
+        Util.println("\tecKills = " + ecKills);
+        Util.println("\tmKills = " + mKills);
+        Util.println("\tpKills = " + pKills);
+        Util.println("\tmConviction = " + mConviction);
+        Util.println("\tecConviction = " + ecConviction);
+        Util.println("\tpConviction = " + pConviction);
+        Util.println("\tdistPtoEC = " + distPtoEC);
+        Util.println("\tdistMtoS = " + distMtoS);*/
+
+        int mecConviction = mConviction + ecConviction;
+
+        // Convert remaining units if we're losing on votes
+        if (rc.getRoundNum() >= 1490 && mecConviction + pConviction > 0 &&
+                rc.getRobotCount() >= 250 && rc.getTeamVotes() < 751) {
+            //System.out.println("a");
+            return true;
+        }
         if (mecConviction + pConviction > currentConviction) return true;
         if (ecKills + mKills + pKills >= 8) return true;
         if (ecKills >= 1) {
+            //System.out.println("b");
             return true;
         }
         int numKills = mKills + pKills;
         if (currentConviction < 50) {
-            if (numKills == 0)
-                return false;
-            if (distMtoS <= 100 && mKills >= 1)
+            if (distMtoS <= 100 && mKills >= 1) {
+                //System.out.println("c");
                 return true;
-            if (distPtoEC <= 8 && pKills >= 1)
+            }
+            if (distPtoEC <= 8 && pKills >= 1) {
+                //System.out.println("d");
                 return true;
+            }
             if (mKills >= 2) {
+                //System.out.println("e");
                 return true;
             }
-            if (nearestAllyEC != null && nearestAllyEC.isWithinDistanceSquared(Cache.MY_LOCATION, 100) && mKills >= 1)
-                return true;
-            return false;
-        } else {
-            if (numKills * 15 >= currentConviction_10) return true;
-            int distFromEC = nearestAllyEC == null ? 1024 : nearestAllyEC.distanceSquaredTo(Cache.MY_LOCATION);
-            double euclidDist = Math.sqrt(distFromEC);
-            double requiredRatio = 1.0 / (0.03 * (euclidDist + 5.0)) + 1;
-            if (mecConviction * requiredRatio >= currentConviction_10) {
+            if (nearestAllyEC != null &&
+                    nearestAllyEC.isWithinDistanceSquared(Cache.MY_LOCATION, 100) && mKills >= 1) {
+                //System.out.println("f");
                 return true;
             }
-            if (distPtoEC <= 2 && pConviction * 8 >= currentConviction_10) {
-                return true;
-            }
-            return false;
         }
+        if (currentConviction_10 >= 50 && numKills * 15 >= currentConviction_10) {
+            //System.out.println("g");
+            return true;
+        }
+        int distFromEC = nearestAllyEC == null ? 1024 : nearestAllyEC.distanceSquaredTo(Cache.MY_LOCATION);
+        double euclidDist = Math.sqrt(distFromEC);
+        double requiredRatio = 1.0 / (0.03 * (euclidDist + 5.0)) + 1;
+        if (mConviction * requiredRatio >= currentConviction_10) {
+            //System.out.println("h: " + requiredRatio + " - " + currentConviction_10);
+            return true;
+        }
+        if (distPtoEC <= 2 && pConviction * 8 >= currentConviction_10) {
+            //System.out.println("i");
+            return true;
+        }
+        return false;
     }
 
-    public boolean tryEmpower() throws GameActionException {
+    public static boolean tryEmpower() throws GameActionException {
         if (power <= 0) {
             return false;
         }
@@ -497,7 +575,7 @@ public strictfp class Politician implements RunnableBot {
         return true;
     }
 
-    private boolean shouldChase(RobotInfo robot) {
+    private static boolean shouldChase(RobotInfo robot) {
         if (robot.getType() == RobotType.POLITICIAN)
             return false;
         int robotConviction = robot.getConviction();
@@ -513,7 +591,7 @@ public strictfp class Politician implements RunnableBot {
         return false;
     }
 
-    private boolean chaseWorthwhileEnemy() throws GameActionException {
+    private static boolean chaseWorthwhileEnemy() throws GameActionException {
         int totx = 0;
         int toty = 0;
         int tot = 0;

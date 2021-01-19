@@ -2,8 +2,6 @@ package experiment.util;
 
 import battlecode.common.*;
 
-import static experiment.util.Constants.*;
-
 public class MapInfo {
     private static RobotController rc;
     private static MapLocation origin;
@@ -50,8 +48,8 @@ public class MapInfo {
     }
     // TODO: Communication
     private static void updateBoundaries() {
-        if(MapInfo.mapMinX == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-SENSE_BOX_RADIUS, 0))) {
-            for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
+        if(MapInfo.mapMinX == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(-Constants.SENSE_BOX_RADIUS, 0))) {
+            for(int d = Constants.SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(-d, 0))) {
                     MapInfo.mapMinX = Cache.MY_LOCATION.x - d;
                     break;
@@ -61,8 +59,8 @@ public class MapInfo {
                 MapInfo.mapMinX = Cache.MY_LOCATION.x;
             }
         }
-        if(MapInfo.mapMaxX == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(SENSE_BOX_RADIUS, 0))) {
-            for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
+        if(MapInfo.mapMaxX == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(Constants.SENSE_BOX_RADIUS, 0))) {
+            for(int d = Constants.SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(d, 0))) {
                     MapInfo.mapMaxX = Cache.MY_LOCATION.x + d;
                     break;
@@ -72,8 +70,8 @@ public class MapInfo {
                 MapInfo.mapMaxX = Cache.MY_LOCATION.x;
             }
         }
-        if(MapInfo.mapMinY == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -SENSE_BOX_RADIUS))) {
-            for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
+        if(MapInfo.mapMinY == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -Constants.SENSE_BOX_RADIUS))) {
+            for(int d = Constants.SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(0, -d))) {
                     MapInfo.mapMinY = Cache.MY_LOCATION.y - d;
                     break;
@@ -83,8 +81,8 @@ public class MapInfo {
                 MapInfo.mapMinY = Cache.MY_LOCATION.y;
             }
         }
-        if(MapInfo.mapMaxY == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, SENSE_BOX_RADIUS))) {
-            for(int d = SENSE_BOX_RADIUS-1; d >= 1; d--) {
+        if(MapInfo.mapMaxY == MAP_UNKNOWN_EDGE && !rc.canSenseLocation(Cache.MY_LOCATION.translate(0, Constants.SENSE_BOX_RADIUS))) {
+            for(int d = Constants.SENSE_BOX_RADIUS-1; d >= 1; d--) {
                 if(rc.canSenseLocation(Cache.MY_LOCATION.translate(0, d))) {
                     MapInfo.mapMaxY = Cache.MY_LOCATION.y + d;
                     break;
@@ -122,11 +120,11 @@ public class MapInfo {
     // Exploration
 
     public static int exploreIndexToLocationX(int idx) {
-        return SPAWN.x - 1 + (idx - 15) * 4;
+        return Constants.SPAWN.x - 1 + (idx - 15) * 4;
     }
 
     public static int exploreIndexToLocationY(int idx) {
-        return SPAWN.y - 1 + (idx - 15) * 4;
+        return Constants.SPAWN.y - 1 + (idx - 15) * 4;
     }
 
     public static MapLocation exploreIndexToLocation(int x, int y) {
@@ -134,11 +132,11 @@ public class MapInfo {
     }
 
     public static int locationToExploreIndexX(int idx) {
-        return (idx - SPAWN.x + 63) >> 2;
+        return (idx - Constants.SPAWN.x + 63) >> 2;
     }
 
     public static int locationToExploreIndexY(int idx) {
-        return (idx - SPAWN.y + 63) >> 2;
+        return (idx - Constants.SPAWN.y + 63) >> 2;
     }
 
     public static void setExplored(MapLocation loc) {
@@ -148,18 +146,23 @@ public class MapInfo {
     }
 
     public static boolean getExplored(MapLocation loc) {
-        if(Math.abs(loc.x-SPAWN.x) > 63) return true;
-        if(Math.abs(loc.y-SPAWN.y) > 63) return true;
-        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
-            return true;
-        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
-            return true;
-        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
-            return true;
-        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
-            return true;
+        if(Math.abs(loc.x-Constants.SPAWN.x) > 63) return true;
+        if(Math.abs(loc.y-Constants.SPAWN.y) > 63) return true;
+        if(!potentiallyInBounds(loc)) return true;
         int x = locationToExploreIndexX(loc.x);
         int y = locationToExploreIndexY(loc.y);
         return (explored[x] & (1 << y)) != 0;
+    }
+
+    public static boolean potentiallyInBounds(MapLocation loc) {
+        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
+            return false;
+        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
+            return false;
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
+            return false;
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
+            return false;
+        return true;
     }
 }

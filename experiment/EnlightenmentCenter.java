@@ -17,7 +17,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int slandererCount = 0;
     private static int muckrakerCount = 0;
     private static int politicianCount = 0;
-    private static int eM = 0, eS = 0, eP = 0;
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
     private static int turnsSinceSelfEmpowerer = 0;
@@ -65,11 +64,17 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static void buildUnit(int influence) {
         if (rc.isReady()) {
             if (reactBuild(influence)) return;
-            /*int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
-            if (initialEC && unitsBuilt < 40) {
+            boolean seesEnemyMuckrakerOrEC = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
+                    r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER);
+            int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
+            if (initialEC && unitsBuilt < 30) {
                 switch (unitsBuilt % 4) {
                     case 0:
-                        buildSlanderer(influence - 10);
+                        if (seesEnemyMuckrakerOrEC) {
+                            buildCheapMuckraker();
+                        } else {
+                            buildSlanderer(influence - 10);
+                        }
                         break;
                     case 1:
                         buildCheapMuckraker();
@@ -78,15 +83,15 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         buildCheapMuckraker();
                         break;
                     case 3:
-                        if(influence >= 500) {
-                            int cost = Math.max(150, influence - 463);
-                            buildPolitician(cost);
+                        if (influence >= 300) {
+                            buildPolitician(influence - 100);
                         } else {
                             buildCheapPolitician();
                         }
+                        break;
                 }
                 return;
-            }*/
+            }
             if (rc.getEmpowerFactor(Constants.ALLY_TEAM, 15) >= 2 && turnsSinceSelfEmpowerer >= 11) {
                 int cost = influence / 2;
                 if (buildSelfEmpowerer(cost)) {
@@ -108,25 +113,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
             }
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
-            eS = 0;
-            eM = 0;
-            eP = 0;
-            for (RobotInfo r : Cache.ENEMY_ROBOTS) {
-                switch (r.getType()) {
-                    case SLANDERER:
-                        eS++;
-                        break;
-                    case MUCKRAKER:
-                        eM++;
-                        break;
-                    case POLITICIAN:
-                        eP++;
-                        break;
-                }
-            }
-
             double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && eM == 0) {
+            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && (!seesEnemyMuckrakerOrEC)) {
                 if (buildSlanderer(influence)) {
                     return;
                 }
@@ -186,6 +174,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         // do we have slanderers? is there danger (muckrakers)? build defender politicians
         if ((slandererCount > 0 && muckrakerNear) || politicianNear) {
             int cost = 5 * CentralCommunication.nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
+            cost = Math.min(cost, 3 * CentralCommunication.nearestEnemyConviction + 20);
+            cost = Math.min(cost, 2 * CentralCommunication.nearestEnemyConviction + 30);
+            cost = Math.min(cost, CentralCommunication.nearestEnemyConviction + 50);
             if (influence >= cost) {
                 buildPolitician(cost);
             } else {
@@ -194,7 +185,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             return true;
         }
-        // find smallest neutral/enemy EC (in vision)
+        /*// find smallest neutral/enemy EC (in vision)
         if (LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
                 r -> r.getTeam() != Constants.ALLY_TEAM && r.getType() == RobotType.ENLIGHTENMENT_CENTER,
                 r -> r.getConviction() + Constants.POLITICIAN_EMPOWER_PENALTY).map(cost -> {
@@ -223,7 +214,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return true;
                 }).orElse(false)) {
             return true;
-        }
+        }*/
         return false;
     }
 

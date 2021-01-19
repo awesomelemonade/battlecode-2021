@@ -21,7 +21,11 @@ public class UnitCommunication {
             switch (r.getType()) {
                 case ENLIGHTENMENT_CENTER:
                     if (r.getTeam() == Constants.ALLY_TEAM) {
-                        return distanceSquared;
+                        if(r.getLocation().distanceSquaredTo(Constants.SPAWN) <= 25) {
+                            return distanceSquared;
+                        } else {
+                            return distanceSquared - 40000;
+                        }
                     } else {
                         return distanceSquared - 40000;
                     }
@@ -82,10 +86,11 @@ public class UnitCommunication {
         currentFlag = CLEAR_FLAG;
         // Prioritize
         // 1. neutral/enemy enlightenment centers
-        // 2. enemy slanderers
-        // 3. enemy muckrakers
-        // 4. enemy politicians
-        // 5. ally enlightenment centers
+        // 2. ally enlightenment centers far from spawn
+        // 3. enemy slanderers
+        // 4. enemy muckrakers
+        // 5. enemy politicians
+        // 6. other ally enlightenment centers
         if (Cache.ALLY_ROBOTS.length >= 15) {
             LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
                     importantRobotComparator), () ->
@@ -119,15 +124,20 @@ public class UnitCommunication {
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
             RobotInfo ally = Cache.ALLY_ROBOTS[i];
-            RobotType type = ally.getType();
+            RobotType type = ally.type;
             if (type == RobotType.ENLIGHTENMENT_CENTER) {
                 registerOurTeamEC(ally);
             } else {
                 // Don't process enemies from nearby units if slanderer is on turn count 1
                 // this is turn 1 initialization bytecode optimization
-                if (Cache.TURN_COUNT > 1 || type != RobotType.SLANDERER) {
-                    processEnemiesFromNearbyUnits(ally);
+                if (Cache.TURN_COUNT == 1 && type == RobotType.SLANDERER) continue;
+                // temporary (neutrals not broadcasting nearby enemies would mess this up)
+                if (type == RobotType.ENLIGHTENMENT_CENTER) {
+                    int heartbeatTurn = getLastHeartbeatTurn(ally.ID);
+                    if(heartbeatTurn == -1) continue;
+                    if((rc.getRoundNum() - heartbeatTurn) % 5 == 3) continue; // it's broadcasting neutral ec influence, not enemy loc
                 }
+                processEnemiesFromNearbyUnits(ally);
             }
         }
         processFlagsFromECs();
@@ -137,14 +147,7 @@ public class UnitCommunication {
             for (Team team : Team.values()) {
                 MapInfo.getKnownEnlightenmentCenterList(team).removeIf(loc -> {
                     try {
-                        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
-                            return true;
-                        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
-                            return true;
-                        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
-                            return true;
-                        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
-                            return true;
+                        if (!MapInfo.potentiallyInBounds(loc)) return true;
                         if (rc.canSenseLocation(loc)) {
                             RobotInfo robot = rc.senseRobotAtLocation(loc);
                             if (robot == null || robot.getType() != RobotType.ENLIGHTENMENT_CENTER
@@ -285,7 +288,9 @@ public class UnitCommunication {
                         case 3: // [neutral ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, -1);
+                                System.out.println("ADDING NEUTRAL " + (flag ^ CentralCommunication.DO_NOTHING_FLAG));
+                                int conviction = flag & CURRENT_UNIT_INFO_MASK;
+                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, conviction);
                             }
                             break;
                         case 4: // [enemy slanderers]
@@ -316,6 +321,17 @@ public class UnitCommunication {
     }
 
     public static ECNode ecListHead;
+
+    public static int getLastHeartbeatTurn(int id) {
+        ECNode current = ecListHead;
+        while (current != null) {
+            if (current.id == id) {
+                return current.lastHeartbeatTurn;
+            }
+            current = current.next;
+        }
+        return -1;
+    }
 
     public static void registerOurTeamEC(RobotInfo ec) {
         int id = ec.getID();

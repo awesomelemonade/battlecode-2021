@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 
 public class EnlightenmentCenterList {
     private EnlightenmentCenterListNode head = null;
+    private EnlightenmentCenterListNode curptr = null;
     private int size;
     public void addOrUpdate(MapLocation location, int conviction) {
         EnlightenmentCenterListNode current = head;
@@ -23,12 +24,37 @@ public class EnlightenmentCenterList {
         head = new EnlightenmentCenterListNode(location, conviction, head);
         size++;
     }
+    public EnlightenmentCenterListNode getNext() {
+        if (size == 0) {
+            return null;
+        }
+        if(curptr == null) {
+            curptr = head;
+            return curptr;
+        }
+        curptr = curptr.next;
+        if(curptr == null) curptr = head;
+        return curptr;
+    }
+    public Optional<MapLocation> getNextLocation() {
+        if (size == 0) {
+            return Optional.empty();
+        }
+        if(curptr == null) {
+            curptr = head;
+            return Optional.of(curptr.location);
+        }
+        curptr = curptr.next;
+        if(curptr == null) curptr = head;
+        return Optional.of(curptr.location);
+    }
     public Optional<MapLocation> getRandomLocation() {
         if (size == 0) {
             return Optional.empty();
         }
         EnlightenmentCenterListNode current = head;
-        for (int i = (int) (size * Math.random()); --i >= 0;) {
+        int r = (int) (size * Math.random());
+        for (int i = r; --i >= 0;) {
             current = current.next;
         }
         return Optional.of(current.location);
@@ -48,6 +74,9 @@ public class EnlightenmentCenterList {
         EnlightenmentCenterListNode current = head;
         while (current != null) {
             if (predicate.test(current.location)) {
+                if(current == curptr) {
+                    curptr = current.next;
+                }
                 if (prev == null) {
                     head = current.next;
                 } else {

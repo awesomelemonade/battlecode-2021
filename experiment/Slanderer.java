@@ -29,7 +29,7 @@ public strictfp class Slanderer implements RunnableBot {
                 closestEnemyLocation = UnitCommunication.closestCommunicatedEnemyToKite;
             }
             if (closestEnemyLocation != null && rc.getRoundNum() <= 150 &&
-                    Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) <= 10) {
+                    Cache.MY_LOCATION.distanceSquaredTo(closestEnemyLocation) <= 144) {
                 Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
                 tryKiteFrom(closestEnemyLocation);
             }

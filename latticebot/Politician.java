@@ -166,7 +166,7 @@ public strictfp class Politician implements RunnableBot {
                     if (distanceSquared <= 1) {
                         // Add up our influence & enemy influence
                         RobotInfo[] allNearbyRobots = rc.senseNearbyRobots(loc, 16, null);
-                        int convictionBalance = 0;
+                        int convictionBalance = Math.max(0, currentConviction_10); // current robot's conviction
                         boolean hasEnemy = false;
                         for (int i = allNearbyRobots.length; --i >= 0;) {
                             RobotInfo robot = allNearbyRobots[i];

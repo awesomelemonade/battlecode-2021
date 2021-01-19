@@ -418,9 +418,9 @@ public strictfp class Politician implements RunnableBot {
         for (int i = enemyRobots.length; --i >= 0; ) {
             RobotInfo enemy = enemyRobots[i];
             if (enemy.getType() == RobotType.POLITICIAN) {
-                pConviction += Math.min(damage,
-                        Math.max(0, enemy.getConviction() - 10) + Math.max(0, enemy.getInfluence() - 10));
-                if (damage > enemy.getConviction()) {
+                pConviction += Math.max(0, Math.min(damage, enemy.getConviction() - 10)) +
+                        Math.max(0, Math.min(damage - enemy.getConviction(), enemy.getInfluence()) - 10);
+                if (damage > enemy.getConviction() - 10) {
                     pKills++;
                 }
                 if (nearestAllyEC != null)

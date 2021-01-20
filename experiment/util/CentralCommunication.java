@@ -161,16 +161,23 @@ public class CentralCommunication {
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getNextLocation().orElse(null);
                 break;
             case 2: // [enemy ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getNextLocation().orElse(null);
+                EnlightenmentCenterList.EnlightenmentCenterListNode tmp1 = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getNext();
+                if(tmp1 != null) {
+                    rotationLocation = tmp1.location;
+                    // for neutral ecs, broadcast its conviction instead of nearest enemy location
+                    int ecConviction = tmp1.lastKnownConviction;
+                    flag = ecConviction;
+                    System.out.println("BROADCASTING ENEMY " + rotationLocation.x + ", " + rotationLocation.y + ": " + ecConviction);
+                }
                 break;
             case 3: // [neutral ec]
-                EnlightenmentCenterList.EnlightenmentCenterListNode ec = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getNext();
-                if(ec != null) {
-                    rotationLocation = ec.location;
+                EnlightenmentCenterList.EnlightenmentCenterListNode tmp2 = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getNext();
+                if(tmp2 != null) {
+                    rotationLocation = tmp2.location;
                     // for neutral ecs, broadcast its conviction instead of nearest enemy location
-                    int ecConviction = ec.lastKnownConviction;
+                    int ecConviction = tmp2.lastKnownConviction;
                     flag = ecConviction;
-                    System.out.println("BROADCASTING " + rotationLocation.x + ", " + rotationLocation.y + ": " + ecConviction);
+                    System.out.println("BROADCASTING NEUTRAL " + rotationLocation.x + ", " + rotationLocation.y + ": " + ecConviction);
                 }
                 break;
             case 4: // [enemy slanderers]

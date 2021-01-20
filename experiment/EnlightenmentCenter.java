@@ -86,7 +86,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         if (influence >= 300) {
                             buildPolitician(influence - 100);
                         } else {
-                            if(Math.random() < 0.3) {
+                            if(unitsBuilt != 11) {
                                 buildCheapPolitician();
                             } else {
                                 buildMuckraker(Util.randBetween(10, 20));

@@ -384,30 +384,34 @@ public strictfp class Politician implements RunnableBot {
                     MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
                             .getClosestLocationDistance(loc, 1024) / 3)
             .thenComparing(tiebreaker);
-    private static Comparator<EnlightenmentCenterListNode> compareNeutrals = Comparator.comparingInt((EnlightenmentCenterListNode node) -> {
+    private static Comparator<EnlightenmentCenterListNode> compareConvictions = Comparator.comparingInt((EnlightenmentCenterListNode node) -> {
         MapLocation loc = node.location;
-        int conviction = node.lastKnownConviction == -1 ? 250 : node.lastKnownConviction;
+        int conviction = node.lastKnownConviction == -1 ? 500 : node.lastKnownConviction;
         if (currentConviction_10 > conviction) {
             return loc.distanceSquaredTo(Cache.MY_LOCATION);
         }
-        return MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+        return 100000+MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
                 .getClosestLocationDistance(loc, 1024) +
                 MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
                         .getClosestLocationDistance(loc, 1024) / 3;
     });
 
     public static void computeTarget() {
-        EnlightenmentCenterListNode bestNeutralNode = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareNeutrals).orElse(null);
+        EnlightenmentCenterListNode bestNeutralNode = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareConvictions).orElse(null);
         MapLocation bestNeutralEC = bestNeutralNode == null ? null : bestNeutralNode.location;
+        EnlightenmentCenterListNode bestEnemyNode = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).min(compareConvictions).orElse(null);
+        MapLocation bestEnemyEC = bestEnemyNode == null ? null : bestEnemyNode.location;
         if (bestNeutralEC != null) {
             System.out.println("BEST NEUTRAL: " + bestNeutralEC.x + " " + bestNeutralEC.y + " " + bestNeutralNode.lastKnownConviction);
         }
-        MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(compareECs).orElse(null);
+        if (bestEnemyEC != null) {
+            System.out.println("BEST ENEMY: " + bestEnemyEC.x + " " + bestEnemyEC.y + " " + bestEnemyNode.lastKnownConviction);
+        }
         if (bestNeutralEC == null && bestEnemyEC == null) {
             targetLoc = null;
             targetTeam = null;
         }
-        if (bestNeutralEC != null/*bestEnemyEC == null || (bestNeutralEC != null && compareECs.compare(bestNeutralEC, bestEnemyEC) < 0)*/) {
+        if (bestEnemyEC == null || (bestNeutralEC != null && compareECs.compare(bestNeutralEC, bestEnemyEC) < 0)) {
             // go for neutral EC
             targetLoc = bestNeutralEC;
             targetTeam = Team.NEUTRAL;

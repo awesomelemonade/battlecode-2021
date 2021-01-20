@@ -135,7 +135,8 @@ public class UnitCommunication {
                 if (type == RobotType.ENLIGHTENMENT_CENTER) {
                     int heartbeatTurn = getLastHeartbeatTurn(ally.ID);
                     if(heartbeatTurn == -1) continue;
-                    if((rc.getRoundNum() - heartbeatTurn) % 5 == 3) continue; // it's broadcasting neutral ec influence, not enemy loc
+                    int beatNum = (rc.getRoundNum() - heartbeatTurn) % 5;
+                    if(beatNum == 2 || beatNum == 3) continue; // it's broadcasting ec influence, not enemy loc
                 }
                 processEnemiesFromNearbyUnits(ally);
             }
@@ -282,7 +283,9 @@ public class UnitCommunication {
                         case 2: // [enemy ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, -1);
+                                System.out.println("ADDING ENEMY " + (flag ^ CentralCommunication.DO_NOTHING_FLAG));
+                                int conviction = flag & CURRENT_UNIT_INFO_MASK;
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, conviction);
                             }
                             break;
                         case 3: // [neutral ec]

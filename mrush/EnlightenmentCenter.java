@@ -1,13 +1,13 @@
-package experiment;
+package mrush;
 
 import battlecode.common.*;
-import experiment.util.Cache;
-import experiment.util.CentralCommunication;
-import experiment.util.Constants;
-import experiment.util.LambdaUtil;
-import experiment.util.MapInfo;
-import experiment.util.SlandererBuild;
-import experiment.util.Util;
+import mrush.util.Cache;
+import mrush.util.CentralCommunication;
+import mrush.util.Constants;
+import mrush.util.LambdaUtil;
+import mrush.util.MapInfo;
+import mrush.util.SlandererBuild;
+import mrush.util.Util;
 
 import java.util.Comparator;
 
@@ -86,7 +86,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         if (influence >= 300) {
                             buildPolitician(influence - 100);
                         } else {
-                            if(Math.random() < 0.3) {
+                            if(Math.random() < 0.2) {
                                 buildCheapPolitician();
                             } else {
                                 buildMuckraker(Util.randBetween(10, 20));

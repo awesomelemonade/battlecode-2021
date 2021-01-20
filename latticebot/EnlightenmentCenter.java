@@ -152,7 +152,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static int getSaveAmount() {
         // Save if we see enemy EC or enemy politician
         int res = LambdaUtil.arraysStreamSum(Cache.ALL_ROBOTS,
-                r -> r.getTeam() != Constants.ALLY_TEAM &&
+                r -> r.getTeam() == Constants.ENEMY_TEAM &&
                         (r.getType() == RobotType.ENLIGHTENMENT_CENTER || r.getType() == RobotType.POLITICIAN),
                 r -> Math.max(r.getConviction() - Constants.POLITICIAN_EMPOWER_PENALTY + 1, 0));
         //if(perTurnProfit >= 50) res = Math.max(res, 2 * perTurnProfit);

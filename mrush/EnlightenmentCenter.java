@@ -20,7 +20,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
     private static int turnsSinceSelfEmpowerer = 0;
-    private static boolean initialEC;
+    public static boolean initialEC;
 
     private static MapLocation enemyDirection;
 
@@ -89,7 +89,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                             if(Math.random() < 0.2) {
                                 buildCheapPolitician();
                             } else {
-                                buildMuckraker(Util.randBetween(10, 20));
+                                buildMuckraker(Util.randBetween(15, 20));
                             }
                         }
                         break;

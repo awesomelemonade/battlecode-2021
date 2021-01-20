@@ -8,12 +8,20 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 
+import mrush.EnlightenmentCenter;
+
 public class CentralCommunication {
     private static RobotController rc;
     public static MapLocation nearestEnemy;
     public static int nearestEnemyDistanceSquared = Integer.MAX_VALUE;
     public static RobotType nearestEnemyType;
     public static int nearestEnemyConviction = 0;
+    private static int receivedInfoCount = 0;
+    private static double guessX = 0;
+    private static double guessY = 0;
+    private static double centroidX = 0;
+    private static double centroidY = 0;
+    private static MapLocation enemyGuess;
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
@@ -92,6 +100,39 @@ public class CentralCommunication {
                             nearestEnemyType = type;
                             nearestEnemyConviction = info;
                         }
+                        if (receivedInfoCount < 1 && EnlightenmentCenter.initialEC) {
+                            int tempDx = specifiedLocation.x - current.location.x;
+                            int tempDy = specifiedLocation.y - current.location.y;
+                            guessX += tempDx;
+                            guessY += tempDy;
+                            int tempDx2 = (current.location.x - Cache.MY_LOCATION.x);
+                            int tempDy2 = (current.location.y - Cache.MY_LOCATION.y);
+                            double mag = Math.sqrt(tempDx2 * tempDx2 + tempDy2 * tempDy2);
+                            double correctionX = tempDx2 / 6.0;
+                            double correctionY = tempDy2 / 6.0;
+                            guessX += correctionX;
+                            guessY += correctionY;
+                            System.out.println("VEC1: " + tempDx + " " + tempDy);
+                            System.out.println("VEC2: " + correctionX + " " + correctionY);
+                            System.out.println("GUESS VEC " + guessX + " " + guessY);
+                            if (receivedInfoCount == 0) {
+                                int symmetry = Util.findSymmetry(guessX, guessY);
+                                int symmetry2 = Util.findSymmetry2(guessX, guessY, symmetry);
+                                guessX = Constants.ORDINAL_OFFSET_X[symmetry] * 61;
+                                guessY = Constants.ORDINAL_OFFSET_Y[symmetry] * 61;
+
+                                MapLocation guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
+                                System.out.println("GUESS " + guessX + " " + guessY);
+                                MapInfo.enemySlandererLocations.add(guessLocation, 300);
+                                guessX = Constants.ORDINAL_OFFSET_X[symmetry2] * 61;
+                                guessY = Constants.ORDINAL_OFFSET_Y[symmetry2] * 61;
+
+                                guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
+                                System.out.println("SECOND " + guessX + " " + guessY);
+                                // MapInfo.enemySlandererLocations.add(guessLocation, 300);
+                            }
+                            receivedInfoCount++;
+                        }
                     }
                 }
                 // update location
@@ -166,7 +207,7 @@ public class CentralCommunication {
             case 3: // [neutral ec]
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation().orElse(null);
                 break;
-            case 4: // [enemy slanderers]
+            case 4: // [locations of interest]
                 rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);
                 break;
         }

@@ -13,7 +13,7 @@ public class Constants {
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = true;
-    public static final boolean DEBUG_RESIGN = true;
+    public static final boolean DEBUG_RESIGN = false;
     public static final boolean DEBUG_PRINT = false;
 
     public static void init(RobotController rc) {
@@ -51,7 +51,7 @@ public class Constants {
             Direction.NORTHWEST,
     };
     public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2, -1};
-    public static final int[] ORDINAL_OFFSET_Y = {-1, -1, 0, 1, 1, 1, 0, -1, 2, 1, -1, -2, -2, -1, 1, 2};
+    public static final int[] ORDINAL_OFFSET_Y = {1, 1, 0, -1, -1, -1, 0, 1, 2, 1, -1, -2, -2, -1, 1, 2};
     /*public static final RobotType[] SPAWNABLE_ROBOTS = {
             RobotType.POLITICIAN,
             RobotType.SLANDERER,

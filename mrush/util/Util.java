@@ -8,6 +8,8 @@ import java.util.function.Predicate;
 public class Util {
     private static RobotController rc;
     private static boolean isCentral;
+    private static int buildDir = -1;
+    private static int adjDir = 1;
 
     public static void init(RobotController rc) {
         Util.rc = rc;
@@ -26,6 +28,7 @@ public class Util {
         } else {
             UnitCommunication.init(rc);
         }
+        
     }
 
     public static void move(Direction direction) {
@@ -34,6 +37,18 @@ public class Util {
 
     public static void loop() throws GameActionException {
         Cache.loop();
+        if (Cache.TURN_COUNT == 1) {
+            for (RobotInfo ri : Cache.ALLY_ROBOTS) {
+                if (ri.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    for (int i = 0; i < 8; i++) {
+                        if (Constants.ORDINAL_DIRECTIONS[i].equals(ri.location.directionTo(Cache.MY_LOCATION))) {
+                            buildDir = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         MapInfo.loop();
         if (isCentral) {
             CentralCommunication.loop();
@@ -201,13 +216,61 @@ public class Util {
     private static int exploreDir = -1;
     private static int prevExploreDir = -1;
 
+    public static int sign(int a) {
+        if (a > 0) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+
+    public static int findSymmetry(double dx, double dy) {
+        int bestIndex = -1;
+        double most = -5;
+        for (int i = 0; i < 8; i++) {
+            double x = Constants.ORDINAL_OFFSET_X[i];
+            double y = Constants.ORDINAL_OFFSET_Y[i];
+            double temp = (x * dx + y * dy) / Math.sqrt((x*x + y*y) * (dx*dx + dy*dy));
+            if (temp > most) {
+                most = temp;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    public static int findSymmetry2(double dx, double dy, int blacklist) {
+        int bestIndex = -1;
+        double most = -5;
+        for (int i = 0; i < 8; i++) {
+            if (i == blacklist) {
+                continue;
+            }
+            double x = Constants.ORDINAL_OFFSET_X[i];
+            double y = Constants.ORDINAL_OFFSET_Y[i];
+            double temp = (x * dx + y * dy) / Math.sqrt((x*x + y*y) * (dx*dx + dy*dy));
+            if (temp > most) {
+                most = temp;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    static boolean first = false;
+
     public static boolean smartExplore() throws GameActionException {
         // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
         while (exploreDir == -1) {
-            exploreDir = randBetween(0, 15);
-            if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
-                exploreDir = -1;
+            if (rc.getRoundNum() < 100 && !first) {
+                exploreDir = buildDir;
+                first = true;
+            } else {
+                exploreDir = randBetween(0, 15);
+                if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
+                    exploreDir = -1;
+                }
             }
         }
         if (reachedBorder(exploreDir)) {
@@ -216,28 +279,34 @@ public class Util {
             // TODO: Check Bytecodes Left
             return smartExplore();
         }
-        MapLocation target = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4);
+        MapLocation target = borderCut(new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4));
 
-        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && target.x > MapInfo.mapMaxX) {
-            target = new MapLocation(MapInfo.mapMaxX - 1, target.y);
-        } else if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && target.x < MapInfo.mapMinX) {
-            target = new MapLocation(MapInfo.mapMinX + 1, target.y);
-        }
-        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && target.y > MapInfo.mapMaxY) {
-            target = new MapLocation(target.x, MapInfo.mapMaxY - 1);
-        } else if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && target.y < MapInfo.mapMinY) {
-            target = new MapLocation(target.x, MapInfo.mapMinY + 1);
-        }
+        
         return Pathfinder.execute(target);
+    }
+
+    public static MapLocation borderCut(MapLocation target) {
+        MapLocation ret = new MapLocation(target.x, target.y);
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && ret.x > MapInfo.mapMaxX) {
+            ret = new MapLocation(MapInfo.mapMaxX - 1, ret.y);
+        } else if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && ret.x < MapInfo.mapMinX) {
+            ret = new MapLocation(MapInfo.mapMinX + 1, ret.y);
+        }
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && ret.y > MapInfo.mapMaxY) {
+            ret = new MapLocation(ret.x, MapInfo.mapMaxY - 1);
+        } else if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && ret.y < MapInfo.mapMinY) {
+            ret = new MapLocation(ret.x, MapInfo.mapMinY + 1);
+        }
+        return ret;
     }
 
     public static boolean reachedBorder(int dir) throws GameActionException {
         int tempX = Constants.ORDINAL_OFFSET_X[dir];
         int tempY = Constants.ORDINAL_OFFSET_Y[dir];
-        if (tempX > 1 || tempX < 1) {
+        if (tempX == 2 || tempX == -2) {
             tempX = tempX / 2;
         }
-        if (tempY > 1 || tempY < 1) {
+        if (tempY == 2 || tempY == -2) {
             tempY = tempY / 2;
         }
         MapLocation loc1 = Cache.MY_LOCATION.translate(tempX * 3, 0);
@@ -266,7 +335,9 @@ public class Util {
     }
 
     public static Direction randomAdjacentDirection() {
-        return random(Constants.ORDINAL_DIRECTIONS);
+        adjDir = (adjDir + 3) % 8;
+        return Constants.ORDINAL_DIRECTIONS[adjDir];
+        // return random(Constants.ORDINAL_DIRECTIONS);
     }
 
     public static RobotInfo getClosestRobot(RobotInfo[] robots, Predicate<RobotInfo> filter) {

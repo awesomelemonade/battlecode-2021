@@ -76,9 +76,11 @@ public strictfp class Muckraker implements RunnableBot {
     }
 
     public static boolean goToCommunicatedSlanderers() {
-        return MapInfo.enemySlandererLocations.getClosestLocation().map(enemy -> {
-            Pathfinder.execute(enemy);
-            return true;
+        return MapInfo.enemySlandererLocations.getClosestLocationCut().map(enemy -> {
+            if (enemy == null) {
+                return false;
+            }
+            return Pathfinder.execute(enemy);
         }).orElse(false);
     }
 

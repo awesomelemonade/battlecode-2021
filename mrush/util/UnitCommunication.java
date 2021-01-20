@@ -291,10 +291,12 @@ public class UnitCommunication {
                         case 4: // [enemy slanderers]
                             if (rc.getType() == RobotType.MUCKRAKER) {
                                 // Only muckrakers need this
+                                // System.out.println("PENIS LMAO PLS + " + rotationDx + " " + rotationDy);
                                 if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                         && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                    // System.out.println("FUCK ME");
                                     if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
-                                        MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT);
+                                        MapInfo.enemySlandererLocations.add(rotationLocation, 300);
                                     }
                                 }
                             }

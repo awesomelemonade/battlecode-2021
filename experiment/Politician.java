@@ -81,6 +81,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         preTurn();
+        System.out.println("HI 1");
         if (currentConviction_10 <= 0) { // useless; best thing to do is try to block an enemy ec
             if (campEnemyEC()) {
                 return;
@@ -88,10 +89,12 @@ public strictfp class Politician implements RunnableBot {
             Util.smartExplore();
             return;
         }
+        System.out.println("HI 2");
         if (currentConviction >= 50 && tryClaimEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
+        System.out.println("HI 3");
         if (currentConviction >= 50 && tryHealEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
             return;
@@ -138,6 +141,7 @@ public strictfp class Politician implements RunnableBot {
             // Check if empowering will take the ec
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             if (team == Team.NEUTRAL) {
+                System.out.println("WE KNOW IT'S NEUTRAL");
                 // TODO: we should only claim if there aren't that many enemy politicians nearby
                 if (distanceSquared <= 9) {
                     // empower range - see if we can take it ourselves
@@ -186,6 +190,8 @@ public strictfp class Politician implements RunnableBot {
                                 }
                             }
                         }
+                        System.out.println("convictionBalance = " + convictionBalance);
+                        System.out.println("ecConviction = " + ecConviction);
                         if (convictionBalance > 5) {
                             if ((!hasEnemy) && convictionBalance > ecConviction) {
                                 rc.empower(1);
@@ -196,6 +202,8 @@ public strictfp class Politician implements RunnableBot {
                                 return true;
                             }
                             RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
+                            System.out.println("numAllyRobots = " + allyRobots.length+1);
+                            System.out.println("numNeighborsOpen = " + numNeighborsOpen);
                             if ((allyRobots.length + 1) == numNeighborsOpen) {
                                 rc.empower(1);
                                 return true;
@@ -214,6 +222,7 @@ public strictfp class Politician implements RunnableBot {
                     }
                 }
             } else {
+                System.out.println("NOT NEUTRAL, WTF");
                 if (distanceSquared <= 16) {
                     if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
                         rc.empower(distanceSquared);
@@ -416,8 +425,8 @@ public strictfp class Politician implements RunnableBot {
                 return;
             }
         }
-        MapLocation enemyloc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(closestToAnEC).orElse(null);
-        MapLocation neutralloc = enemyloc = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(closestToAnEC).orElse(null);
+        MapLocation enemyloc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(closestToUs).orElse(null);
+        MapLocation neutralloc = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(closestToUs).orElse(null);
         if(enemyloc == null && neutralloc == null) {
             targetLoc = null;
             targetTeam = null;
@@ -429,7 +438,7 @@ public strictfp class Politician implements RunnableBot {
             targetLoc = enemyloc;
             targetTeam = Constants.ENEMY_TEAM;
         } else {
-            if(closestToAnEC.compare(enemyloc, neutralloc) < 0) {
+            if(closestToUs.compare(enemyloc, neutralloc) < 0) {
                 targetLoc = neutralloc;
                 targetTeam = Team.NEUTRAL;
             } else {

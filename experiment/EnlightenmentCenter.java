@@ -62,7 +62,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (!rc.isReady()) return;
         if (reactBuild()) return;
         int numUnits = slandererCount + politicianCount + muckrakerCount;
-        if (numUnits < 30) {
+        if (initialEC && numUnits < 30) {
             switch(numUnits%4) {
                 case 0:
                     tryBuildSlanderer(rc.getInfluence()-10);

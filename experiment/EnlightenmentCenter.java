@@ -1,14 +1,9 @@
 package experiment;
 
 import battlecode.common.*;
-import experiment.util.Cache;
-import experiment.util.CentralCommunication;
-import experiment.util.Constants;
-import experiment.util.LambdaUtil;
-import experiment.util.MapInfo;
-import experiment.util.SlandererBuild;
-import experiment.util.Util;
+import experiment.util.*;
 
+import java.nio.file.Path;
 import java.util.Comparator;
 
 public strictfp class EnlightenmentCenter implements RunnableBot {
@@ -21,6 +16,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int perTurnProfit = 0;
     private static int turnsSinceSelfEmpowerer = 0;
     private static boolean initialEC;
+    private static ECCaptureTracker ecTracker;
 
     private static MapLocation enemyDirection;
 
@@ -33,12 +29,16 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         enemyDirection = rc.getLocation();
         lastInfluence = rc.getInfluence();
         initialEC = rc.getRoundNum() == 1;
+        ecTracker = new ECCaptureTracker();
     }
 
     public void preTurn() {
         turnsSinceSelfEmpowerer++;
         perTurnProfit = rc.getInfluence() - lastInfluence;
-        Util.println("Profit = " + perTurnProfit);
+        if (CentralCommunication.nearestEnemy != null) {
+            Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
+            enemyDirection = enemyDirection.add(directionToNearestEnemy);
+        }
     }
 
     public void postTurn() {
@@ -48,97 +48,58 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     @Override
     public void turn() throws GameActionException {
         preTurn();
-        if (CentralCommunication.nearestEnemy != null) {
-            Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
-            enemyDirection = enemyDirection.add(directionToNearestEnemy);
-        }
-        int saveAmount = getSaveAmount();
-        Util.println("EC Turn: save=" + saveAmount + ", buff=" + rc.getEmpowerFactor(Constants.ALLY_TEAM, 0));
-        int influenceLeft = rc.getInfluence() - saveAmount - 1;
-        buildUnit(influenceLeft);
-        influenceLeft = rc.getInfluence() - saveAmount - 1;
-        bid(influenceLeft);
+        buildUnit();
+        bid();
         postTurn();
     }
 
-    public static void buildUnit(int influence) {
-        if (rc.isReady()) {
-            if (reactBuild(influence)) return;
-            boolean seesEnemyMuckrakerOrEC = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
-                    r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER);
-            int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
-            if (initialEC && unitsBuilt < 30) {
-                switch (unitsBuilt % 4) {
-                    case 0:
-                        if (seesEnemyMuckrakerOrEC) {
-                            buildCheapMuckraker();
-                        } else {
-                            buildSlanderer(influence - 10);
-                        }
-                        break;
-                    case 1:
-                        buildCheapMuckraker();
-                        break;
-                    case 2:
-                        buildCheapMuckraker();
-                        break;
-                    case 3:
-                        if (influence >= 300) {
-                            buildPolitician(influence - 100);
-                        } else {
-                            if(unitsBuilt != 11) {
-                                buildCheapPolitician();
-                            } else {
-                                buildMuckraker(Util.randBetween(10, 20));
-                            }
-                        }
-                        break;
-                }
-                return;
+    public static void buildUnit() {
+        if (!rc.isReady()) return;
+        if (reactBuild()) return;
+        int numUnits = slandererCount + politicianCount + muckrakerCount;
+        if (numUnits < 30) {
+            switch(numUnits%4) {
+                case 0:
+                    tryBuildSlanderer(rc.getInfluence()-10);
+                    break;
+                case 1:
+                    tryBuild(RobotType.MUCKRAKER, 1);
+                    break;
+                case 2:
+                    tryBuild(RobotType.MUCKRAKER, 1);
+                    break;
+                case 3:
+                    if(buildNeutralECClaimer()) return;
+                    tryBuild(RobotType.POLITICIAN, Util.randBetween(14, 20));
+                    break;
             }
-            if (rc.getEmpowerFactor(Constants.ALLY_TEAM, 15) >= 2 && turnsSinceSelfEmpowerer >= 11) {
-                int cost = influence / 2;
-                if (buildSelfEmpowerer(cost)) {
-                    return;
-                } else {
-                    if (buildCheapMuckraker()) return;
-                }
-            }
-            // no danger? build slanderers / big p
-            if (influence >= 150 && Math.random() < 0.2) {
-                // build politician w/ minimum 150
-                if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
-                    if (buildMuckraker(Math.max(influence - 50, 150))) {
-                        return;
-                    }
-                }
-                if (buildPolitician(Math.max(influence - 50, 150))) {
-                    return;
-                }
-            }
-            boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
-            double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && (!seesEnemyMuckrakerOrEC)) {
-                if (buildSlanderer(influence)) {
-                    return;
-                }
-            }
-            random = Math.random();
-            if (random < (foundEnemyEC ? 0.4 : 0.45)) {
-                if (buildCheapPolitician()) {
-                    return;
-                }
-            }
-            // otherwise, build 1 cost muckrakers
-            buildCheapMuckraker();
         }
+        if (buildNeutralECClaimer()) return;
+        if (buildSelfEmpowerer()) return;
+        double r = Math.random();
+        if(r < 0.3) {
+            if (tryBuildSlanderer(rc.getInfluence()-10)) return;
+        } else if(r < 0.7) {
+            if(rc.getInfluence() >= 200) {
+                if(tryBuild(RobotType.POLITICIAN, rc.getInfluence()-10)) return;
+            } else {
+                if(tryBuild(RobotType.POLITICIAN, Util.randBetween(14, 20))) return;
+            }
+        } else {
+            if(rc.getInfluence() >= 200 && Math.random() < 0.5) {
+                if (tryBuild(RobotType.MUCKRAKER, rc.getInfluence()-10)) return;
+            } else {
+                if (tryBuild(RobotType.MUCKRAKER, 1)) return;
+            }
+        }
+        if (tryBuild(RobotType.MUCKRAKER, 1)) return;
     }
 
-    public static void bid(int influence) throws GameActionException {
+    public static void bid() throws GameActionException {
         if (rc.getTeamVotes() == 751) {
             return;
         }
-        if (influence <= 100) {
+        if (rc.getInfluence() <= 100) {
             return;
         }
         double r = Math.random();
@@ -146,9 +107,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (r < 0.2) {
             amount = Math.max(Util.randBetween(1, 3), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
         } else if (r < 0.4) {
-            amount = (int) (0.01 * influence);
+            amount = (int) (0.01 * rc.getInfluence());
         } else {
-            amount = (int) (0.02 * influence);
+            amount = (int) (0.02 * rc.getInfluence());
         }
         rc.bid(amount);
     }
@@ -156,22 +117,68 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static int getSaveAmount() {
         // Save if we see enemy EC or enemy politician
         int res = LambdaUtil.arraysStreamSum(Cache.ALL_ROBOTS,
-                r -> r.getTeam() != Constants.ALLY_TEAM &&
+                r -> r.getTeam() == Constants.ENEMY_TEAM &&
                         (r.getType() == RobotType.ENLIGHTENMENT_CENTER || r.getType() == RobotType.POLITICIAN),
                 r -> Math.max(r.getConviction() - Constants.POLITICIAN_EMPOWER_PENALTY + 1, 0));
         //if(perTurnProfit >= 50) res = Math.max(res, 2 * perTurnProfit);
         return res;
     }
 
-    public static boolean reactBuild(int influence) {
+    public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) {
+        if (rc.canBuildRobot(type, direction, influence)) {
+            switch (type) {
+                case SLANDERER:
+                    slandererCount++;
+                    break;
+                case POLITICIAN:
+                    politicianCount++;
+                    break;
+                case MUCKRAKER:
+                    muckrakerCount++;
+                    break;
+            }
+            try {
+                rc.buildRobot(type, direction, influence);
+            } catch (GameActionException ex) {
+                throw new IllegalStateException(ex);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean tryBuildCardinal(RobotType type, int influence) {
+        for (Direction buildDirection : Constants.CARDINAL_DIRECTIONS) {
+            if (tryBuildRobot(type, buildDirection, influence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean tryBuildRobotTowards(RobotType type, Direction direction, int influence) {
+        for (Direction buildDirection : Constants.getAttemptOrder(direction)) {
+            if (tryBuildRobot(type, buildDirection, influence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // for when we don't specify a direction
+    public static boolean tryBuild(RobotType type, int influence) {
+        if (turnsSinceSelfEmpowerer <= 10 && Cache.TURN_COUNT > 10) return tryBuildCardinal(type, influence);
+        return tryBuildRobotTowards(type, Util.randomAdjacentDirection(), influence);
+    }
+
+    public static boolean reactBuild() {
         // If there are enemy slanderers in sensing radius, build muckrakers
         if (LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS, r -> r.getType() == RobotType.SLANDERER)) {
-            if (buildCheapMuckraker()) return true;
+            if (tryBuild(RobotType.MUCKRAKER, 1)) return true;
         }
-        // TODO: Loop through all communicated units to figure this out
         boolean muckrakerNear = CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER &&
-                (CentralCommunication.nearestEnemyDistanceSquared <= 64 ||
-                        CentralCommunication.nearestEnemyDistanceSquared <= 100 && Math.random() < 0.5);
+                CentralCommunication.nearestEnemyDistanceSquared <= 64;
         // ignore small politicians's unless they're really close
         boolean politicianNear = CentralCommunication.nearestEnemyType == RobotType.POLITICIAN &&
                 CentralCommunication.nearestEnemyDistanceSquared <= 25;
@@ -181,112 +188,62 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             cost = Math.min(cost, 3 * CentralCommunication.nearestEnemyConviction + 20);
             cost = Math.min(cost, 2 * CentralCommunication.nearestEnemyConviction + 30);
             cost = Math.min(cost, CentralCommunication.nearestEnemyConviction + 50);
-            if (influence >= cost) {
-                buildPolitician(cost);
+            if (rc.getInfluence() >= cost) {
+                if (tryBuild(RobotType.POLITICIAN, cost)) return true;
             } else {
                 // save for politician - build 1 cost muckraker
-                buildCheapMuckraker();
+                if (tryBuild(RobotType.MUCKRAKER, 1)) return true;
             }
-            return true;
         }
-        /*// find smallest neutral/enemy EC (in vision)
-        if (LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
-                r -> r.getTeam() != Constants.ALLY_TEAM && r.getType() == RobotType.ENLIGHTENMENT_CENTER,
-                r -> r.getConviction() + Constants.POLITICIAN_EMPOWER_PENALTY).map(cost -> {
-            if (influence >= cost) {
-                buildPolitician(cost);
-            } else {
-                buildCheapMuckraker();
-            }
-            return true;
-        }).orElse(false)) {
-            return false;
-        }
+        return false;
+    }
+
+    public static boolean buildNeutralECClaimer() {
         // find neutral EC communicated
         if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL)
-                .min(Comparator.comparingInt(x -> x.location.distanceSquaredTo(Cache.MY_LOCATION)))
+                .min(Comparator.comparingInt(x -> {
+                    int lastRoundSent = ecTracker.getRoundSent(x.location);
+                    int roundsSince = rc.getRoundNum() - lastRoundSent;
+                    System.out.println("Neutral EC at "+ x.location.x +","+x.location.y+": " + "lastRoundSent="+lastRoundSent+", roundsSince="+roundsSince);
+                    if(lastRoundSent != -1 && roundsSince <= 10 + 3*Pathfinder.moveDistance(x.location, Cache.MY_LOCATION)) return 100000;
+                    return x.lastKnownConviction == -1 ? 500 : x.lastKnownConviction;
+                }))
                 .map(x -> {
                     MapLocation location = x.location;
-                    int conviction = x.lastKnownConviction;
-                    int cost = conviction + Constants.POLITICIAN_EMPOWER_PENALTY;
-                    Util.println("Spawning Politician for Neutral EC: " + cost);
-                    if (influence >= cost) {
-                        buildPolitician(cost);
+                    int lastRoundSent = ecTracker.getRoundSent(location);
+                    int roundsSince = rc.getRoundNum() - lastRoundSent;
+                    if(lastRoundSent != -1 && roundsSince <= 10 + Pathfinder.moveDistance(x.location, Cache.MY_LOCATION)) return false;
+                    int conviction = x.lastKnownConviction == -1 ? 500 : x.lastKnownConviction;
+                    int cost = conviction + Constants.POLITICIAN_EMPOWER_PENALTY + 20;
+                    if(tryBuild(RobotType.POLITICIAN, cost)) {
+                        ecTracker.addOrUpdate(location, rc.getRoundNum());
+                        System.out.println("SENT POLI TO (" + location.x + "," + location.y + ")");
+                        return true;
                     } else {
-                        buildCheapMuckraker();
+                        return false;
                     }
-                    return true;
                 }).orElse(false)) {
             return true;
-        }*/
-        return false;
-    }
-
-    public static boolean buildCheapMuckraker() {
-        int influence = Math.max(1, (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
-        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), influence)) {
-            muckrakerCount++;
-            return true;
         }
         return false;
     }
 
-    public static boolean buildMuckraker(int influence) {
-        int cap = Math.max(1000, (int) (0.5 * rc.getInfluence() / (1500 - rc.getRoundNum())));
-        influence = Math.min(influence, cap);
-        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), influence)) {
-            muckrakerCount++;
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean buildSlanderer(int influence) {
-        // check if slanderer will provide negligible eco
-        if (rc.getConviction() >= 50000 || rc.getConviction() >= 300 * (1500 - rc.getRoundNum())) return false;
-        influence = Math.min(influence, 463);
-        Direction awayFromEnemies = enemyDirection.directionTo(Cache.MY_LOCATION);
-        if (awayFromEnemies == Direction.CENTER) {
-            awayFromEnemies = Util.randomAdjacentDirection();
-        }
-        int cost = SlandererBuild.getBuildInfluence(influence);
-        if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, awayFromEnemies, cost)) {
-            slandererCount++;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public static boolean buildCheapPolitician() {
-        int influence = Math.max(Util.randBetween(14, 20), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
-        if (influence % 10 == 6) influence++;
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
-            politicianCount++;
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean buildPolitician(int influence) {
-        int cap = Math.max(1000, (int) (0.5 * (rc.getInfluence() / (1500 - rc.getRoundNum()))));
-        influence = Math.min(influence, cap);
-        if (influence % 10 == 6) influence++;
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
-            politicianCount++;
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean buildSelfEmpowerer(int influence) {
-        influence = influence + 6 - (influence % 10);
-        if (influence <= 50) return false;
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
-            politicianCount++;
+    public static boolean buildSelfEmpowerer() {
+        if(turnsSinceSelfEmpowerer <= 10) return false;
+        if(rc.getEmpowerFactor(Constants.ALLY_TEAM, 11) < 1.5) return false;
+        int cost = rc.getInfluence()/2;
+        cost = cost + 6 - (cost % 10);
+        if (cost <= 50) return false;
+        if (tryBuildCardinal(RobotType.POLITICIAN, cost)) {
             turnsSinceSelfEmpowerer = 0;
             return true;
         }
         return false;
+    }
+
+    public static boolean tryBuildSlanderer(int cost) {
+        if(cost > 463) cost = 463;
+        cost = SlandererBuild.getBuildInfluence(cost);
+        return tryBuild(RobotType.SLANDERER, cost);
     }
 }

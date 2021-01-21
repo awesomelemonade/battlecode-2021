@@ -78,28 +78,6 @@ public class Util {
         }
     }
 
-    public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) {
-        if (rc.canBuildRobot(type, direction, influence)) {
-            try {
-                rc.buildRobot(type, direction, influence);
-            } catch (GameActionException ex) {
-                throw new IllegalStateException(ex);
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public static boolean tryBuildRobotTowards(RobotType type, Direction direction, int influence) {
-        for (Direction buildDirection : Constants.getAttemptOrder(direction)) {
-            if (tryBuildRobot(type, buildDirection, influence)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static boolean tryMove(Direction direction) {
         if (rc.canMove(direction)) {
             move(direction);

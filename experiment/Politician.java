@@ -438,7 +438,7 @@ public strictfp class Politician implements RunnableBot {
             targetLoc = enemyloc;
             targetTeam = Constants.ENEMY_TEAM;
         } else {
-            if(closestToUs.compare(enemyloc, neutralloc) < 0) {
+            if(closestToUs.compare(neutralloc, enemyloc) < 0) {
                 targetLoc = neutralloc;
                 targetTeam = Team.NEUTRAL;
             } else {

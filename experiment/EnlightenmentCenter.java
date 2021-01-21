@@ -15,8 +15,10 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
     private static int turnsSinceSelfEmpowerer = 0;
+    private static int turnsSinceDanger = 0;
     private static boolean initialEC;
     private static ECCaptureTracker ecTracker;
+    private static int perTurnRation;
 
     private static MapLocation enemyDirection;
 
@@ -34,11 +36,14 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     public void preTurn() {
         turnsSinceSelfEmpowerer++;
+        turnsSinceDanger++;
         perTurnProfit = rc.getInfluence() - lastInfluence;
         if (CentralCommunication.nearestEnemy != null) {
             Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
             enemyDirection = enemyDirection.add(directionToNearestEnemy);
+            if(CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER && CentralCommunication.nearestEnemyDistanceSquared <= 64) turnsSinceDanger = 0;
         }
+        perTurnRation = rc.getInfluence()/(1500 - rc.getRoundNum());
     }
 
     public void postTurn() {
@@ -76,21 +81,10 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         if (buildNeutralECClaimer()) return;
         if (buildSelfEmpowerer()) return;
-        double r = Math.random();
-        if(r < 0.3) {
-            if (tryBuildSlanderer(rc.getInfluence()-10)) return;
-        } else if(r < 0.7) {
-            if(rc.getInfluence() >= 200) {
-                if(tryBuild(RobotType.POLITICIAN, rc.getInfluence()-10)) return;
-            } else {
-                if(tryBuild(RobotType.POLITICIAN, Util.randBetween(14, 20))) return;
-            }
+        if (Cache.TURN_COUNT <= 30 || turnsSinceDanger <= 10 || rc.getInfluence() >= 50000) {
+            if(buildNonEco()) return;
         } else {
-            if(rc.getInfluence() >= 200 && Math.random() < 0.5) {
-                if (tryBuild(RobotType.MUCKRAKER, rc.getInfluence()-10)) return;
-            } else {
-                if (tryBuild(RobotType.MUCKRAKER, 1)) return;
-            }
+            if(buildEco()) return;
         }
         if (tryBuild(RobotType.MUCKRAKER, 1)) return;
     }
@@ -105,11 +99,11 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         double r = Math.random();
         int amount;
         if (r < 0.2) {
-            amount = Math.max(Util.randBetween(1, 3), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
+            amount = Math.max(Util.randBetween(1, 3), (int) (0.1 * perTurnRation));
         } else if (r < 0.4) {
-            amount = (int) (0.01 * rc.getInfluence());
+            amount = Math.min((int) (0.01 * rc.getInfluence()), Math.max(1000, (int) (0.2*perTurnRation)));
         } else {
-            amount = (int) (0.02 * rc.getInfluence());
+            amount = Math.min((int) (0.02 * rc.getInfluence()), Math.max(1000, (int)(0.3*perTurnRation)));
         }
         rc.bid(amount);
     }
@@ -224,6 +218,47 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     }
                 }).orElse(false)) {
             return true;
+        }
+        return false;
+    }
+
+    public static boolean buildEco() {
+        double r = Math.random();
+        if(r < 0.4) {
+            if (Math.random() < 0.8) {
+                if (tryBuildSlanderer(rc.getInfluence()-10)) return true;
+            }
+            if (tryBuild(RobotType.POLITICIAN, Util.randBetween(14, 20))) return true;
+        } else if(r < 0.8) {
+            if(rc.getInfluence() >= 200) {
+                if(tryBuild(RobotType.POLITICIAN, Math.min(rc.getInfluence()/2, Math.max(1000, (int)(0.5*perTurnRation))))) return true;
+            } else {
+                if(tryBuild(RobotType.POLITICIAN, Util.randBetween(14, 20))) return true;
+            }
+        } else {
+            if(rc.getInfluence() >= 200 && Math.random() < 0.5) {
+                if (tryBuild(RobotType.MUCKRAKER, Math.min(rc.getInfluence()/2, Math.max(1000, (int)(0.5*perTurnRation))))) return true;
+            } else {
+                if (tryBuild(RobotType.MUCKRAKER, 1)) return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean buildNonEco() {
+        double r = Math.random();
+        if(r < 0.5) {
+            if(rc.getInfluence() >= 200) {
+                if(tryBuild(RobotType.POLITICIAN, Math.min(rc.getInfluence()-10, Math.max(1000, (int)(0.5*perTurnRation))))) return true;
+            } else {
+                if(tryBuild(RobotType.POLITICIAN, Util.randBetween(14, 20))) return true;
+            }
+        } else {
+            if(rc.getInfluence() >= 200 && Math.random() < 0.5) {
+                if (tryBuild(RobotType.MUCKRAKER, Math.min(rc.getInfluence()-10, Math.max(1000, (int)(0.5*perTurnRation))))) return true;
+            } else {
+                if (tryBuild(RobotType.MUCKRAKER, 1)) return true;
+            }
         }
         return false;
     }

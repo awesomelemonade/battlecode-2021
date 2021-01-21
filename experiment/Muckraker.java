@@ -38,9 +38,9 @@ public strictfp class Muckraker implements RunnableBot {
                 Pathfinder.execute(enemy.getLocation());
                 return;
             }
-            if (goToCommunicatedSlanderers()) {
+            /*if (goToCommunicatedSlanderers()) {
                 return;
-            }
+            }*/
             if (targeted && Cache.TURN_COUNT > 100) {
                 if (target != null) {
                     // Invalidate bad targets that can be sensed

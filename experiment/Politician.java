@@ -377,48 +377,65 @@ public strictfp class Politician implements RunnableBot {
         return Util.tryMove(bestLoc);
     }
 
-    private static Comparator<MapLocation> tiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
-    private static Comparator<MapLocation> compareECs = Comparator.comparingInt((MapLocation loc) ->
-            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
-                    .getClosestLocationDistance(loc, 1024) +
-                    MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
-                            .getClosestLocationDistance(loc, 1024) / 3)
-            .thenComparing(tiebreaker);
-    private static Comparator<EnlightenmentCenterListNode> compareConvictions = Comparator.comparingInt((EnlightenmentCenterListNode node) -> {
+    private static Comparator<EnlightenmentCenterListNode> nodetiebreaker = Comparator.comparingInt((EnlightenmentCenterListNode node) -> 100000 * node.location.x + node.location.y);
+    private static Comparator<EnlightenmentCenterListNode> bestNeutralSoloClaimable = Comparator.comparingInt((EnlightenmentCenterListNode node) -> {
         MapLocation loc = node.location;
         int conviction = node.lastKnownConviction == -1 ? 500 : node.lastKnownConviction;
-        if (currentConviction_10 > conviction) {
-            return loc.distanceSquaredTo(Cache.MY_LOCATION);
-        }
-        return 100000+MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
-                .getClosestLocationDistance(loc, 1024) +
-                MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM)
-                        .getClosestLocationDistance(loc, 1024) / 3;
-    });
+        int distToUs = loc.distanceSquaredTo(Cache.MY_LOCATION);
+        if (currentConviction_10 > conviction) return distToUs;
+        return 100000;
+    }).thenComparing(nodetiebreaker);
+    private static Comparator<MapLocation> loctiebreaker = Comparator.comparingInt((MapLocation loc) -> 100000 * loc.x + loc.y);
+    private static Comparator<MapLocation> closestToUs = Comparator.comparingInt((MapLocation loc) -> {
+        return loc.distanceSquaredTo(Cache.MY_LOCATION);
+    }).thenComparing(loctiebreaker);
+    private static Comparator<MapLocation> closestToAnEC = Comparator.comparingInt((MapLocation loc) -> {
+        return MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocationDistance(loc, 1024);
+    }).thenComparing(loctiebreaker);
 
+    // 1. closest neutral we can claim solo
+    // 2. closest enemy ec, if we are near one
+    // 3. closest ec to one of our ecs
     public static void computeTarget() {
-        EnlightenmentCenterListNode bestNeutralNode = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareConvictions).orElse(null);
-        MapLocation bestNeutralEC = bestNeutralNode == null ? null : bestNeutralNode.location;
-        EnlightenmentCenterListNode bestEnemyNode = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).min(compareConvictions).orElse(null);
-        MapLocation bestEnemyEC = bestEnemyNode == null ? null : bestEnemyNode.location;
-        if (bestNeutralEC != null) {
-            System.out.println("BEST NEUTRAL: " + bestNeutralEC.x + " " + bestNeutralEC.y + " " + bestNeutralNode.lastKnownConviction);
+        EnlightenmentCenterListNode node = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(bestNeutralSoloClaimable).orElse(null);
+        if(node != null) {
+            MapLocation loc = node.location;
+            int conviction = node.lastKnownConviction == -1 ? 500 : node.lastKnownConviction;
+            if (currentConviction_10 > conviction) {
+                targetLoc = loc;
+                targetTeam = Team.NEUTRAL;
+                return;
+            }
         }
-        if (bestEnemyEC != null) {
-            System.out.println("BEST ENEMY: " + bestEnemyEC.x + " " + bestEnemyEC.y + " " + bestEnemyNode.lastKnownConviction);
+        MapLocation loc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(closestToUs).orElse(null);
+        if(loc != null) {
+            int dist = loc.distanceSquaredTo(Cache.MY_LOCATION);
+            if(dist <= 100) {
+                targetLoc = loc;
+                targetTeam = Constants.ENEMY_TEAM;
+                return;
+            }
         }
-        if (bestNeutralEC == null && bestEnemyEC == null) {
+        MapLocation enemyloc = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(closestToAnEC).orElse(null);
+        MapLocation neutralloc = enemyloc = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(closestToAnEC).orElse(null);
+        if(enemyloc == null && neutralloc == null) {
             targetLoc = null;
             targetTeam = null;
-        }
-        if (bestEnemyEC == null || (bestNeutralEC != null && compareECs.compare(bestNeutralEC, bestEnemyEC) < 0)) {
-            // go for neutral EC
-            targetLoc = bestNeutralEC;
+            return;
+        } else if(enemyloc == null) {
+            targetLoc = neutralloc;
             targetTeam = Team.NEUTRAL;
-        } else {
-            // go for enemy EC
-            targetLoc = bestEnemyEC;
+        } else if(neutralloc == null) {
+            targetLoc = enemyloc;
             targetTeam = Constants.ENEMY_TEAM;
+        } else {
+            if(closestToAnEC.compare(enemyloc, neutralloc) < 0) {
+                targetLoc = neutralloc;
+                targetTeam = Team.NEUTRAL;
+            } else {
+                targetLoc = enemyloc;
+                targetTeam = Constants.ENEMY_TEAM;
+            }
         }
     }
 

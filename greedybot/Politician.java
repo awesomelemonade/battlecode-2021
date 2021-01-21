@@ -185,17 +185,17 @@ public strictfp class Politician implements RunnableBot {
                             }
                         }
                         if ((!hasEnemy) && convictionBalance > ecConviction) {
-                            rc.empower(1);
+                            rc.empower(distanceSquared);
                             return true;
                         }
                         if (convictionBalance > ecConviction + 20) {
-                            rc.empower(1);
+                            rc.empower(distanceSquared);
                             return true;
                         }
-                        if (convictionBalance > 0) {
+                        if (distanceSquared <= 1 && convictionBalance > 0) {
                             RobotInfo[] allyRobots = rc.senseNearbyRobots(loc, 1, Constants.ALLY_TEAM);
                             if ((allyRobots.length + 1) == numNeighborsOpen) {
-                                rc.empower(1);
+                                rc.empower(distanceSquared);
                                 return true;
                             }
                         }
@@ -462,7 +462,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        if (numEnemies <= 1) {
+        if (ecKills == 0 && (mKills + pKills) <= 1 && totalDamageValue <= 30) {
             return Long.MIN_VALUE;
         }
         return ecKills * 1_000_000_000L + (mKills + pKills) * 10_000L + totalDamageValue * 1_000L - maxDistance;

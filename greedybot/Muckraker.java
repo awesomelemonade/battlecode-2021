@@ -56,7 +56,7 @@ public strictfp class Muckraker implements RunnableBot {
                                 r -> r.getLocation().distanceSquaredTo(Cache.MY_LOCATION))).map(r -> {
                     MapLocation rLocation = r.getLocation();
                     if (Cache.MY_LOCATION.isWithinDistanceSquared(rLocation, 5)) {
-                        Util.tryKiteFrom(r.getLocation());
+                        Util.tryKiteFrom(rLocation);
                         return true;
                     }
                     return false;

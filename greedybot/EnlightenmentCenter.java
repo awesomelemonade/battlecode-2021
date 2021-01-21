@@ -6,6 +6,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import greedybot.util.Cache;
+import greedybot.util.CentralUnitTracker;
 import greedybot.util.Constants;
 import greedybot.util.LambdaUtil;
 import greedybot.util.MapInfo;
@@ -92,7 +93,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         if (seesEnemyMuckrakerOrEC) {
                             buildCheapMuckraker();
                         } else {
-                            buildSlanderer(influence - 10);
+                            buildSlanderer(influence);
                         }
                         break;
                     case 1:
@@ -103,7 +104,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         break;
                     case 3:
                         if (influence >= 300) {
-                            buildPolitician(influence - 100);
+                            buildPolitician(influence);
                         } else {
                             buildCheapPolitician();
                         }
@@ -133,13 +134,13 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
             double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.4) && (!seesEnemyMuckrakerOrEC)) {
+            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.6) && (!seesEnemyMuckrakerOrEC)) {
                 if (buildSlanderer(influence)) {
                     return;
                 }
             }
             random = Math.random();
-            if (random < (foundEnemyEC ? 0.4 : 0.45)) {
+            if (random < (foundEnemyEC ? 0.2 : 0.25)) {
                 if (buildCheapPolitician()) {
                     return;
                 }
@@ -183,15 +184,13 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS, r -> r.getType() == RobotType.SLANDERER)) {
             if (buildCheapMuckraker()) return true;
         }
-        // TODO: Loop through all communicated units to figure this out
-        boolean muckrakerNear = nearestEnemyType == RobotType.MUCKRAKER &&
-                (nearestEnemyDistanceSquared <= 64 ||
-                        nearestEnemyDistanceSquared <= 100 && Math.random() < 0.5);
+        boolean needToDefendAgainstMuckraker =
+                CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numNearbySmallDefenders;
         // ignore small politicians's unless they're really close
-        boolean politicianNear = nearestEnemyType == RobotType.POLITICIAN &&
+        boolean needToDefendAgainstPolitician = nearestEnemyType == RobotType.POLITICIAN &&
                 nearestEnemyDistanceSquared <= 25;
         // do we have slanderers? is there danger (muckrakers)? build defender politicians
-        if ((slandererCount > 0 && muckrakerNear) || politicianNear) {
+        if ((slandererCount > 0 && needToDefendAgainstMuckraker) || needToDefendAgainstPolitician) {
             int cost = 5 * nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
             cost = Math.min(cost, 3 * nearestEnemyConviction + 20);
             cost = Math.min(cost, 2 * nearestEnemyConviction + 30);

@@ -14,16 +14,21 @@ public class CentralCommunication {
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
+        CentralUnitTracker.init(rc.getLocation());
     }
     private static BooleanArray registered;
     // Stored as singly linked list
     static class UnitListNode {
         MapLocation location;
         int id;
+        RobotType type;
+        int lastKnownConviction;
         UnitListNode next;
-        public UnitListNode(MapLocation location, int id, UnitListNode next) {
-            this.location = location;
-            this.id = id;
+        public UnitListNode(RobotInfo robot, UnitListNode next) {
+            this.location = robot.location;
+            this.id = robot.ID;
+            this.type = robot.type;
+            this.lastKnownConviction = robot.conviction;
             this.next = next;
         }
     }
@@ -40,6 +45,7 @@ public class CentralCommunication {
     // 10 bits: broadcast nearest known enemy to this EC
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes
+        CentralUnitTracker.loop();
         int start = Clock.getBytecodeNum();
         // read flags of each known robot (delete from list if not alive)
         UnitListNode prev = null;
@@ -71,18 +77,18 @@ public class CentralCommunication {
                             MapInfo.addKnownEnlightenmentCenter(ecTeam, specifiedLocation, conviction);
                         }
                     } else {
-                        int info = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
-                        int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(specifiedLocation);
-                        // TODO: Handle Enemy Unit
+                        int conviction = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
+                        // Handle Enemy Unit
+                        CentralUnitTracker.handleEnemyUnit(specifiedLocation, type, conviction);
                     }
                 }
                 // update location
                 Direction dir = Direction.values()[Math.min(8, flag >> UnitCommunication.CURRENT_DIRECTION_SHIFT)];
                 MapLocation unitLocation = prevUnitLocation.add(dir);
-
-                // TODO: Handle Ally Unit
-
                 current.location = unitLocation;
+                // Handle Ally Unit
+                CentralUnitTracker.handleAllyUnit(unitLocation, current.type, current.lastKnownConviction);
+                // continue to next item in linked list
                 prev = current; // prev is shifted one over
             } else {
                 if (prev == null) {
@@ -108,7 +114,7 @@ public class CentralCommunication {
                     int id = ally.getID();
                     if (!registered.getAndSetTrue(id - Constants.MIN_ROBOT_ID)) {
                         // register in singly linked list
-                        unitListHead = new UnitListNode(ally.getLocation(), id, unitListHead);
+                        unitListHead = new UnitListNode(ally, unitListHead);
                         unitListSize++;
                         if (unitListSize >= UNIT_LIST_MAX_SIZE) {
                             break;

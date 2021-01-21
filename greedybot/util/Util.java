@@ -134,6 +134,7 @@ public class Util {
     }
 
     public static boolean tryKiteFrom(MapLocation location) {
+        Util.setIndicatorLine(Cache.MY_LOCATION, location, 255, 128, 0); // orange
         return Util.tryMoveTowards(location.directionTo(rc.getLocation()));
     }
 

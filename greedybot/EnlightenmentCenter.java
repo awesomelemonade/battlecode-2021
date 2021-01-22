@@ -80,6 +80,18 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     public static void buildUnit(int influence) {
         if (rc.isReady()) {
+            // big p / big m
+            if (rc.getRoundNum() > 30 && influence >= 150 && Math.random() < 0.2) {
+                // build politician w/ minimum 150
+                if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
+                    if (buildMuckraker(Math.max(influence - 50, 150))) {
+                        return;
+                    }
+                }
+                if (buildPolitician(Math.max(influence - 50, 150))) {
+                    return;
+                }
+            }
             if (reactBuild(influence)) return;
             boolean seesEnemyMuckrakerOrEC = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
                     r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER);
@@ -109,18 +121,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
                 return;
             }
-            // no danger? build slanderers / big p
-            if (influence >= 150 && Math.random() < 0.2) {
-                // build politician w/ minimum 150
-                if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
-                    if (buildMuckraker(Math.max(influence - 50, 150))) {
-                        return;
-                    }
-                }
-                if (buildPolitician(Math.max(influence - 50, 150))) {
-                    return;
-                }
-            }
+            // no danger? build slanderers
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
             double random = Math.random();
             if (Cache.TURN_COUNT > 10 && (!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || random < 0.6)) {
@@ -174,9 +175,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             if (buildCheapMuckraker()) return true;
         }
         boolean needToDefendAgainstMuckraker =
-                CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numNearbySmallDefenders ||
-                        (CentralUnitTracker.numNearbyAllySlanderers <= 8 &&
-                                CentralUnitTracker.numNearbySmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);
+                CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numSmallDefenders ||
+                        (CentralUnitTracker.numSmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);
         // ignore small politicians's unless they're really close
         boolean needToDefendAgainstPolitician = nearestEnemyType == RobotType.POLITICIAN &&
                 nearestEnemyDistanceSquared <= 25;

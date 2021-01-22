@@ -12,7 +12,7 @@ public class CentralUnitTracker {
     private static int registryCounter = 0;
 
     public static final int NEARBY_DISTANCE_SQUARED = 100;
-    public static int numNearbySmallDefenders = 0;
+    public static int numSmallDefenders = 0;
     public static int numNearbySmallEnemyMuckrakers = 0;
     public static int numNearbyAllySlanderers = 0;
 
@@ -23,7 +23,7 @@ public class CentralUnitTracker {
     }
     public static void loop() {
         // Clear counters
-        numNearbySmallDefenders = 0;
+        numSmallDefenders = 0;
         numNearbySmallEnemyMuckrakers = 0;
         numNearbyAllySlanderers = 0;
         // Increment registry counter
@@ -43,9 +43,8 @@ public class CentralUnitTracker {
     public static void handleAllyUnit(MapLocation location, RobotType type, int conviction) {
         switch (type) {
             case POLITICIAN:
-                if (conviction <= 25 &&
-                        Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED)) {
-                    numNearbySmallDefenders++;
+                if (conviction <= 25) {
+                    numSmallDefenders++;
                     Util.setIndicatorDot(location, 60, 180, 75); // green
                 }
                 break;

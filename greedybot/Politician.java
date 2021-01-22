@@ -110,7 +110,7 @@ public strictfp class Politician implements RunnableBot {
         }).orElse(false);
     }
     // 1. closest neutral we can claim solo
-    // 2. closest enemy ec, if we are near one (distSquared <= 100)
+    // 2. closest enemy ec, if we are near one (distSquared <= 400)
     // 3. closest ec to one of our ecs
     // smaller value is better
     private static Comparator<EnlightenmentCenterListNode> compareECs =
@@ -129,7 +129,7 @@ public strictfp class Politician implements RunnableBot {
                     return Integer.MAX_VALUE;
                 }
                 int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec.location);
-                return distanceSquared <= 100 ? distanceSquared : Integer.MAX_VALUE;
+                return distanceSquared <= 400 ? distanceSquared : Integer.MAX_VALUE;
             }).thenComparingInt(ec -> {
                 return MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocationDistance(ec.location, 4096);
             }).thenComparingInt(ec -> {
@@ -479,8 +479,19 @@ public strictfp class Politician implements RunnableBot {
                 Comparator.comparingInt(r -> Cache.MY_LOCATION.distanceSquaredTo(r.getLocation())))
                 .map(r -> {
                     MapLocation rLocation = r.getLocation();
+                    // is it possible to just empower here and kill it?
+                    int currentDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(rLocation);
+                    int numNearbyRobots = rc.senseNearbyRobots(currentDistanceSquared).length;
+                    if (currentDamage / numNearbyRobots > r.getConviction()) {
+                        try {
+                            rc.empower(currentDistanceSquared);
+                            return true;
+                        } catch (GameActionException ex) {
+                            throw new IllegalStateException(ex);
+                        }
+                    }
+                    // let's go for isolation strategy
                     Util.setIndicatorLine(Cache.MY_LOCATION, rLocation, 255, 0, 0); // red
-                    // TODO: would empowering here kill the singular target?
                     int closestDistanceSquared = Integer.MAX_VALUE;
                     MapLocation closestLocation = null;
                     for (int i = Constants.FLOOD_OFFSET_X_9.length; --i >= 0;) {
@@ -504,7 +515,7 @@ public strictfp class Politician implements RunnableBot {
                     } else {
                         if (closestDistanceSquared == 0) {
                             try {
-                                rc.empower(Cache.MY_LOCATION.distanceSquaredTo(rLocation));
+                                rc.empower(currentDistanceSquared);
                             } catch (Exception ex) {
                                 throw new IllegalStateException(ex);
                             }

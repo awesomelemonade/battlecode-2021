@@ -118,6 +118,9 @@ public class EnlightenmentCenterList {
     public Optional<MapLocation> getClosestLocation(MapLocation location) {
         return min(Comparator.comparingInt(x -> x.location.distanceSquaredTo(location))).map(x -> x.location);
     }
+    public Optional<EnlightenmentCenterListNode> getClosest() {
+        return min(Comparator.comparingInt(ec -> ec.location.distanceSquaredTo(Cache.MY_LOCATION)));
+    }
     public Optional<EnlightenmentCenterListNode> min(Comparator<EnlightenmentCenterListNode> comparator) {
         if (size == 0) {
             return Optional.empty();

@@ -47,23 +47,6 @@ public strictfp class Muckraker implements RunnableBot {
                 Pathfinder.execute(enemy.getLocation());
                 return;
             }
-            // If we're near an ally enlightenment center, kite from all enemy muckrakers
-            if (MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
-                    .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) <= 100) {
-                // kite from closest muckraker
-                if (LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, r -> r.getType() == RobotType.MUCKRAKER,
-                        Comparator.comparingInt(
-                                r -> r.getLocation().distanceSquaredTo(Cache.MY_LOCATION))).map(r -> {
-                    MapLocation rLocation = r.getLocation();
-                    if (Cache.MY_LOCATION.isWithinDistanceSquared(rLocation, 5)) {
-                        Util.tryKiteFrom(rLocation);
-                        return true;
-                    }
-                    return false;
-                }).orElse(false)) {
-                    return;
-                }
-            }
             // If we're near a neutral enlightenment center, kite from ally big p
             if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL)
                     .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) <= 9) {

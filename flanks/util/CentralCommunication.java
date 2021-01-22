@@ -1,6 +1,8 @@
-package latticebot.util;
+package flanks.util;
 
 import battlecode.common.*;
+
+import flanks.EnlightenmentCenter;
 
 public class CentralCommunication {
     private static RobotController rc;
@@ -8,6 +10,12 @@ public class CentralCommunication {
     public static int nearestEnemyDistanceSquared = Integer.MAX_VALUE;
     public static RobotType nearestEnemyType;
     public static int nearestEnemyConviction = 0;
+    private static int receivedInfoCount = 0;
+    private static double guessX = 0;
+    private static double guessY = 0;
+    private static double centroidX = 0;
+    private static double centroidY = 0;
+    private static MapLocation enemyGuess;
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
@@ -26,7 +34,7 @@ public class CentralCommunication {
     }
     private static UnitListNode unitListHead = null;
     private static int unitListSize = 0;
-    private static final int UNIT_LIST_MAX_SIZE = 120;
+    private static final int UNIT_LIST_MAX_SIZE = 100;
 
     public static final int DO_NOTHING_FLAG = 0b0000000_0000000_10000_10000;
     // 14 bits: rotate between [minX, maxX], [minY, maxY], [friendly ec], [enemy ec], [neutral ec]
@@ -53,7 +61,10 @@ public class CentralCommunication {
         // read flags of each known robot (delete from list if not alive)
         UnitListNode prev = null;
         UnitListNode current = unitListHead;
+        System.out.println("LOOP 1 = " + Clock.getBytecodeNum());
+        int numIts = 0;
         while (current != null) {
+            numIts++;
             int id = current.id;
             if (rc.canGetFlag(id)) {
                 int flag = rc.getFlag(id) ^ UnitCommunication.DO_NOTHING_FLAG;
@@ -86,6 +97,39 @@ public class CentralCommunication {
                             nearestEnemyType = type;
                             nearestEnemyConviction = info;
                         }
+                        if (receivedInfoCount < 1 && EnlightenmentCenter.initialEC) {
+                            int tempDx = specifiedLocation.x - current.location.x;
+                            int tempDy = specifiedLocation.y - current.location.y;
+                            guessX += tempDx;
+                            guessY += tempDy;
+                            int tempDx2 = (current.location.x - Cache.MY_LOCATION.x);
+                            int tempDy2 = (current.location.y - Cache.MY_LOCATION.y);
+                            double mag = Math.sqrt(tempDx2 * tempDx2 + tempDy2 * tempDy2);
+                            double correctionX = tempDx2 / 3.0;
+                            double correctionY = tempDy2 / 3.0;
+                            guessX += correctionX;
+                            guessY += correctionY;
+                            System.out.println("VEC1: " + tempDx + " " + tempDy);
+                            System.out.println("VEC2: " + correctionX + " " + correctionY);
+                            System.out.println("GUESS VEC " + guessX + " " + guessY);
+                            if (receivedInfoCount == 0) {
+                                int symmetry = Util.findSymmetry(guessX, guessY);
+                                int symmetry2 = Util.findSymmetry2(guessX, guessY, symmetry);
+                                guessX = Constants.ORDINAL_OFFSET_X[symmetry] * 61;
+                                guessY = Constants.ORDINAL_OFFSET_Y[symmetry] * 61;
+
+                                MapLocation guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
+                                System.out.println("GUESS " + guessX + " " + guessY);
+                                MapInfo.enemySlandererLocations.add(guessLocation, 300);
+                                guessX = Constants.ORDINAL_OFFSET_X[symmetry2] * 61;
+                                guessY = Constants.ORDINAL_OFFSET_Y[symmetry2] * 61;
+
+                                guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
+                                System.out.println("SECOND " + guessX + " " + guessY);
+                                // MapInfo.enemySlandererLocations.add(guessLocation, 300);
+                            }
+                            receivedInfoCount++;
+                        }
                     }
                 }
                 // update location
@@ -104,6 +148,9 @@ public class CentralCommunication {
             }
             current = current.next;
         }
+        System.out.println("numIts = " + numIts);
+        System.out.println("LOOP 2 = " + Clock.getBytecodeNum());
+        System.out.println("unitListSize = " + unitListSize);
         // register any new ally robots (either though vision or building)
         if (unitListSize < UNIT_LIST_MAX_SIZE) {
             for (RobotInfo ally : Cache.ALLY_ROBOTS) {
@@ -160,7 +207,7 @@ public class CentralCommunication {
             case 3: // [neutral ec]
                 rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation().orElse(null);
                 break;
-            case 4: // [enemy slanderers]
+            case 4: // [locations of interest]
                 rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);
                 break;
         }

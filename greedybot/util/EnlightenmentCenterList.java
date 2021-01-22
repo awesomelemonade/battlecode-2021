@@ -161,6 +161,7 @@ public class EnlightenmentCenterList {
         public EnlightenmentCenterListNode(MapLocation location, int lastKnownConviction, Team team, EnlightenmentCenterListNode next) {
             this.location = location;
             this.lastKnownConviction = lastKnownConviction;
+            this.team = team;
             this.next = next;
         }
     }

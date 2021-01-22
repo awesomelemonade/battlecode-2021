@@ -9,6 +9,8 @@ import battlecode.common.RobotType;
 import battlecode.common.Team;
 
 import java.util.Comparator;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class UnitCommunication {
     private static RobotController rc;
@@ -21,7 +23,7 @@ public class UnitCommunication {
             switch (r.getType()) {
                 case ENLIGHTENMENT_CENTER:
                     if (r.getTeam() == Constants.ALLY_TEAM) {
-                        if(r.getLocation().distanceSquaredTo(Constants.SPAWN) <= 25) {
+                        if (r.getLocation().distanceSquaredTo(Constants.SPAWN) <= 25) {
                             return distanceSquared;
                         } else {
                             return distanceSquared - 40000;
@@ -92,16 +94,16 @@ public class UnitCommunication {
         // 5. enemy politicians
         // 6. other ally enlightenment centers
         if (Cache.ALLY_ROBOTS.length >= 15) {
-            LambdaUtil.or(LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
-                    importantRobotComparator), () ->
+            Optional<RobotInfo> closestAllyEC =
                     // Broadcast known ally center
                     MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocation()
                             .map(location ->
                                     Pathfinder.moveDistance(Cache.MY_LOCATION, location) <= 7 ?
                                             new RobotInfo(-1, Constants.ALLY_TEAM, RobotType.ENLIGHTENMENT_CENTER,
                                                     -1, -1, location) : null
-                            )
-            ).ifPresent(r -> {
+                            );
+            LambdaUtil.or(closestAllyEC, () -> LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS, importantRobotComparator)
+            ).ifPresent((RobotInfo r) -> {
                 Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
                 if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                     MapInfo.addKnownEnlightenmentCenter(r.getTeam(), r.getLocation(), r.getConviction());
@@ -112,17 +114,17 @@ public class UnitCommunication {
             LambdaUtil.arraysStreamMin(Cache.ALL_ROBOTS,
                     r -> r.getTeam() != Constants.ALLY_TEAM || r.getType() == RobotType.ENLIGHTENMENT_CENTER,
                     importantRobotComparator).ifPresent(r -> {
-                        Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
-                        if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                            MapInfo.addKnownEnlightenmentCenter(r.getTeam(), r.getLocation(), r.getConviction());
-                        }
-                        setFlag(r);
-                    });
+                Util.setIndicatorLine(Cache.MY_LOCATION, r.getLocation(), 255, 255, 0); // yellow
+                if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    MapInfo.addKnownEnlightenmentCenter(r.getTeam(), r.getLocation(), r.getConviction());
+                }
+                setFlag(r);
+            });
         }
 
         closestCommunicatedEnemyToKite = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
-        for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
+        for (int i = Cache.ALLY_ROBOTS.length; --i >= 0; ) {
             RobotInfo ally = Cache.ALLY_ROBOTS[i];
             RobotType type = ally.type;
             if (type == RobotType.ENLIGHTENMENT_CENTER) {
@@ -134,9 +136,9 @@ public class UnitCommunication {
                 // temporary (neutrals not broadcasting nearby enemies would mess this up)
                 if (type == RobotType.ENLIGHTENMENT_CENTER) {
                     int heartbeatTurn = getLastHeartbeatTurn(ally.ID);
-                    if(heartbeatTurn == -1) continue;
+                    if (heartbeatTurn == -1) continue;
                     int beatNum = (rc.getRoundNum() - heartbeatTurn) % 5;
-                    if(beatNum == 2 || beatNum == 3) continue; // it's broadcasting ec influence, not enemy loc
+                    if (beatNum == 2 || beatNum == 3) continue; // it's broadcasting ec influence, not enemy loc
                 }
                 processEnemiesFromNearbyUnits(ally);
             }
@@ -202,7 +204,7 @@ public class UnitCommunication {
     /**
      * if this is a slanderer and we see a muckraker, run away! if this is a
      * politician and we see a muckraker, run towards it!
-     * 
+     *
      * @param robot
      * @return a location of a muckraker retrieved from flag, otherwise null
      * @throws GameActionException

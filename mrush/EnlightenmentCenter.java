@@ -20,6 +20,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
     private static int turnsSinceSelfEmpowerer = 0;
+    private static int earlyCheapPMCounter = 0;
     public static boolean initialEC;
 
     private static MapLocation enemyDirection;
@@ -86,11 +87,12 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         if (influence >= 300) {
                             buildPolitician(influence - 100);
                         } else {
-                            if(Math.random() < 0.2) {
+                            if(earlyCheapPMCounter%4 == 3) {
                                 buildCheapPolitician();
                             } else {
-                                buildMuckraker(Util.randBetween(15, 20));
+                                buildMuckraker(16);
                             }
+                            earlyCheapPMCounter++;
                         }
                         break;
                 }

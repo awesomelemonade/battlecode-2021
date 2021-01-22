@@ -193,11 +193,11 @@ public strictfp class Politician implements RunnableBot {
                         System.out.println("convictionBalance = " + convictionBalance);
                         System.out.println("ecConviction = " + ecConviction);
                         if (convictionBalance > 5) {
-                            if ((!hasEnemy) && convictionBalance > ecConviction) {
+                            if ((!hasEnemy) && convictionBalance > ecConviction + 20) {
                                 rc.empower(1);
                                 return true;
                             }
-                            if (convictionBalance > ecConviction + 20) {
+                            if (convictionBalance > ecConviction + 100) {
                                 rc.empower(1);
                                 return true;
                             }

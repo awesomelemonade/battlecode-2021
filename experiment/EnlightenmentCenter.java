@@ -14,8 +14,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int politicianCount = 0;
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
-    private static int turnsSinceSelfEmpowerer = 0;
-    private static int turnsSinceDanger = 0;
+    private static int turnsSinceSelfEmpowerer = 9999;
+    private static int turnsSinceDanger = 9999;
     private static boolean initialEC;
     private static ECCaptureTracker ecTracker;
     private static int perTurnRation;
@@ -41,7 +41,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if (CentralCommunication.nearestEnemy != null) {
             Direction directionToNearestEnemy = Cache.MY_LOCATION.directionTo(CentralCommunication.nearestEnemy);
             enemyDirection = enemyDirection.add(directionToNearestEnemy);
-            if(CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER && CentralCommunication.nearestEnemyDistanceSquared <= 64) turnsSinceDanger = 0;
+            if(CentralCommunication.nearestEnemyType == RobotType.MUCKRAKER && CentralCommunication.nearestEnemyDistanceSquared <= 25) turnsSinceDanger = 0;
         }
         perTurnRation = rc.getInfluence()/(1500 - rc.getRoundNum());
     }
@@ -81,7 +81,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         if (buildNeutralECClaimer()) return;
         if (buildSelfEmpowerer()) return;
-        if (Cache.TURN_COUNT <= 30 || turnsSinceDanger <= 10 || rc.getInfluence() >= 50000) {
+        if (turnsSinceDanger <= 10 || rc.getInfluence() >= 50000) {
             if(buildNonEco()) return;
         } else {
             if(buildEco()) return;
@@ -162,7 +162,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     // for when we don't specify a direction
     public static boolean tryBuild(RobotType type, int influence) {
-        if (turnsSinceSelfEmpowerer <= 10 && Cache.TURN_COUNT > 10) return tryBuildCardinal(type, influence);
+        if (turnsSinceSelfEmpowerer <= 12) return tryBuildCardinal(type, influence);
         return tryBuildRobotTowards(type, Util.randomAdjacentDirection(), influence);
     }
 
@@ -208,7 +208,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     int roundsSince = rc.getRoundNum() - lastRoundSent;
                     if(lastRoundSent != -1 && roundsSince <= 10 + Pathfinder.moveDistance(x.location, Cache.MY_LOCATION)) return false;
                     int conviction = x.lastKnownConviction == -1 ? 500 : x.lastKnownConviction;
-                    int cost = conviction + Constants.POLITICIAN_EMPOWER_PENALTY + 20;
+                    int cost = conviction + Constants.POLITICIAN_EMPOWER_PENALTY + 30;
                     if(tryBuild(RobotType.POLITICIAN, cost)) {
                         ecTracker.addOrUpdate(location, rc.getRoundNum());
                         System.out.println("SENT POLI TO (" + location.x + "," + location.y + ")");

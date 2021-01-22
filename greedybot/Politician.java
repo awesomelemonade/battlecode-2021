@@ -295,21 +295,11 @@ public strictfp class Politician implements RunnableBot {
         if (Cache.ENEMY_ROBOTS.length + Cache.NEUTRAL_ROBOTS.length == 0) {
             return false;
         }
-        // should we go for a 1 vs 1?
-        System.out.println("Try Empower: " + Clock.getBytecodeNum());
-        try {
-            if (tryEmpowerSplash()) {
-                return true;
-            }
-        } finally {
-            System.out.println("Try Empower 2: " + Clock.getBytecodeNum());
+        if (tryEmpowerSplash()) {
+            return true;
         }
-        try {
-            if (tryEmpower1v1Enemy()) {
-                return true;
-            }
-        } finally {
-            System.out.println("Try Empower 3: " + Clock.getBytecodeNum());
+        if (tryEmpower1v1Enemy()) {
+            return true;
         }
         return false;
     }

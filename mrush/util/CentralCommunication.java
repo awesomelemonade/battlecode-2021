@@ -108,8 +108,8 @@ public class CentralCommunication {
                             int tempDx2 = (current.location.x - Cache.MY_LOCATION.x);
                             int tempDy2 = (current.location.y - Cache.MY_LOCATION.y);
                             double mag = Math.sqrt(tempDx2 * tempDx2 + tempDy2 * tempDy2);
-                            double correctionX = tempDx2 / 6.0;
-                            double correctionY = tempDy2 / 6.0;
+                            double correctionX = tempDx2 / 3.0;
+                            double correctionY = tempDy2 / 3.0;
                             guessX += correctionX;
                             guessY += correctionY;
                             System.out.println("VEC1: " + tempDx + " " + tempDy);

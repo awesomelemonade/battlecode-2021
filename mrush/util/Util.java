@@ -258,6 +258,7 @@ public class Util {
     }
 
     static boolean first = false;
+    public static MapLocation exploreLoc;
 
     public static boolean smartExplore() throws GameActionException {
         // TODO: optimize and implement 16 direction vectors instead of 8
@@ -265,9 +266,11 @@ public class Util {
         while (exploreDir == -1) {
             if (rc.getRoundNum() < 100 && !first) {
                 exploreDir = buildDir;
+                exploreLoc = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*62, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*62);
                 first = true;
             } else {
                 exploreDir = randBetween(0, 15);
+                exploreLoc = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*62, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*62);
                 if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
                     exploreDir = -1;
                 }
@@ -279,10 +282,8 @@ public class Util {
             // TODO: Check Bytecodes Left
             return smartExplore();
         }
-        MapLocation target = borderCut(new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4));
 
-        
-        return Pathfinder.execute(target);
+        return Pathfinder.execute(borderCut(exploreLoc));
     }
 
     public static MapLocation borderCut(MapLocation target) {

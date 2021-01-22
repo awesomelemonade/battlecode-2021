@@ -129,7 +129,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
             }
             random = Math.random();
-            if (random < (foundEnemyEC ? 0.2 : 0.25)) {
+            if (random < (foundEnemyEC ? 0.3 : 0.35)) {
                 if (buildCheapPolitician(influence)) {
                     return;
                 }
@@ -175,7 +175,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         boolean needToDefendAgainstMuckraker =
                 CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numNearbySmallDefenders ||
-                CentralUnitTracker.numNearbySmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2;
+                        (CentralUnitTracker.numNearbyAllySlanderers <= 8 &&
+                                CentralUnitTracker.numNearbySmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);
         // ignore small politicians's unless they're really close
         boolean needToDefendAgainstPolitician = nearestEnemyType == RobotType.POLITICIAN &&
                 nearestEnemyDistanceSquared <= 25;

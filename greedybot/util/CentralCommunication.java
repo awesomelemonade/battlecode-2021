@@ -139,7 +139,7 @@ public class CentralCommunication {
                 break;
             case 1: // [ally ec]
                 EnlightenmentCenterList.EnlightenmentCenterListNode allyEC =
-                        MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandom().orElse(null);
+                        MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getNext().orElse(null);
                 if (allyEC != null) {
                     rotationLocation = allyEC.location;
                     flag = Math.min(ROTATION_INFO_MASK, allyEC.lastKnownConviction);
@@ -147,7 +147,7 @@ public class CentralCommunication {
                 break;
             case 2: // [enemy ec]
                 EnlightenmentCenterList.EnlightenmentCenterListNode enemyEC =
-                        MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandom().orElse(null);
+                        MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getNext().orElse(null);
                 if (enemyEC != null) {
                     rotationLocation = enemyEC.location;
                     flag = Math.min(ROTATION_INFO_MASK, enemyEC.lastKnownConviction);
@@ -155,7 +155,7 @@ public class CentralCommunication {
                 break;
             case 3: // [neutral ec]
                 EnlightenmentCenterList.EnlightenmentCenterListNode neutralEC =
-                        MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandom().orElse(null);
+                        MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getNext().orElse(null);
                 if (neutralEC != null) {
                     rotationLocation = neutralEC.location;
                     flag = Math.min(ROTATION_INFO_MASK, neutralEC.lastKnownConviction);

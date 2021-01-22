@@ -6,7 +6,6 @@ import battlecode.common.Team;
 
 public class MapInfo {
     private static RobotController rc;
-    private static MapLocation origin;
     public static final int MAP_UNKNOWN_EDGE = Integer.MIN_VALUE;
     public static int mapMinX = MAP_UNKNOWN_EDGE; // not known
     public static int mapMaxX = MAP_UNKNOWN_EDGE; // not known
@@ -18,12 +17,12 @@ public class MapInfo {
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;
-        // ensures that our starting location is in the middle of the middle chunk
-        MapInfo.origin = rc.getLocation().translate(-67, -67);
-        enlightenmentCenterLocations = new EnlightenmentCenterList[Team.values().length];
-        for (int i = 0; i < enlightenmentCenterLocations.length; i++) {
-            enlightenmentCenterLocations[i] = new EnlightenmentCenterList();
-        }
+        enlightenmentCenterLocations = new EnlightenmentCenterList[3];
+        // unrolled loop
+        enlightenmentCenterLocations[0] = new EnlightenmentCenterList(Team.A);
+        enlightenmentCenterLocations[1] = new EnlightenmentCenterList(Team.B);
+        enlightenmentCenterLocations[2] = new EnlightenmentCenterList(Team.NEUTRAL);
+        // slanderer queue
         enemySlandererLocations = new SlandererQueue(50);
     }
     public static void loop() {

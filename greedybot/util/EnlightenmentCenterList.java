@@ -1,6 +1,7 @@
 package greedybot.util;
 
 import battlecode.common.MapLocation;
+import battlecode.common.Team;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -11,6 +12,11 @@ import java.util.function.Predicate;
 public class EnlightenmentCenterList {
     private EnlightenmentCenterListNode head = null;
     private int size;
+    private Team team;
+    private EnlightenmentCenterListNode currentPointer = null;
+    public EnlightenmentCenterList(Team team) {
+        this.team = team;
+    }
     public void addOrUpdate(MapLocation location, int conviction) {
         EnlightenmentCenterListNode current = head;
         while (current != null) {
@@ -21,8 +27,23 @@ public class EnlightenmentCenterList {
             current = current.next;
         }
         // doesn't contain
-        head = new EnlightenmentCenterListNode(location, conviction, head);
+        head = new EnlightenmentCenterListNode(location, conviction, team, head);
         size++;
+    }
+    public Optional<EnlightenmentCenterListNode> getNext() {
+        if (size == 0) {
+            return Optional.empty();
+        }
+        if (currentPointer == null) {
+            currentPointer = head;
+            return Optional.of(currentPointer);
+        } else {
+            currentPointer = currentPointer.next;
+            if (currentPointer == null) {
+                currentPointer = head;
+            }
+            return Optional.of(currentPointer);
+        }
     }
     public Optional<EnlightenmentCenterListNode> getRandom() {
         if (size == 0) {
@@ -71,7 +92,14 @@ public class EnlightenmentCenterList {
             current = current.next;
         }
     }
-    public void forEach(Consumer<MapLocation> consumer) {
+    public void forEach(Consumer<EnlightenmentCenterListNode> consumer) {
+        EnlightenmentCenterListNode current = head;
+        while (current != null) {
+            consumer.accept(current);
+            current = current.next;
+        }
+    }
+    public void forEachLocation(Consumer<MapLocation> consumer) {
         EnlightenmentCenterListNode current = head;
         while (current != null) {
             consumer.accept(current.location);
@@ -125,8 +153,9 @@ public class EnlightenmentCenterList {
     public static class EnlightenmentCenterListNode {
         public MapLocation location;
         public int lastKnownConviction;
+        public Team team;
         private EnlightenmentCenterListNode next;
-        public EnlightenmentCenterListNode(MapLocation location, int lastKnownConviction, EnlightenmentCenterListNode next) {
+        public EnlightenmentCenterListNode(MapLocation location, int lastKnownConviction, Team team, EnlightenmentCenterListNode next) {
             this.location = location;
             this.lastKnownConviction = lastKnownConviction;
             this.next = next;

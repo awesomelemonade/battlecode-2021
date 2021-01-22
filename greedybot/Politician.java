@@ -1,6 +1,5 @@
 package greedybot;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -10,6 +9,7 @@ import battlecode.common.RobotType;
 import battlecode.common.Team;
 import greedybot.util.Cache;
 import greedybot.util.Constants;
+import greedybot.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
 import greedybot.util.LambdaUtil;
 import greedybot.util.MapInfo;
 import greedybot.util.Pathfinder;
@@ -63,10 +63,6 @@ public strictfp class Politician implements RunnableBot {
                 Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
                 return;
             }
-            if (goToEC()) {
-                Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
-                return;
-            }
         }
         if (Cache.ALLY_ROBOTS.length > 12) {
             // TODO: go towards enemy (or at least somewhere open)
@@ -112,41 +108,48 @@ public strictfp class Politician implements RunnableBot {
             return true;
         }).orElse(false);
     }
+    // 1. closest neutral we can claim solo
+    // 2. closest enemy ec, if we are near one
+    // 3. closest ec to one of our ecs
+    // smaller value is better
+    private static Comparator<EnlightenmentCenterListNode> compareECs =
+            Comparator.<EnlightenmentCenterListNode>comparingInt(ec -> {
+                if (ec.team != Team.NEUTRAL) {
+                    return Integer.MIN_VALUE;
+                }
+                // Closest neutral if we can claim solo
+                int conviction = ec.lastKnownConviction;
+                if (conviction == -1) {
+                    conviction = 500;
+                }
+                return currentDamage > conviction ? Cache.MY_LOCATION.distanceSquaredTo(ec.location) : Integer.MAX_VALUE;
+            }).thenComparingInt(ec -> {
+                if (ec.team != Constants.ENEMY_TEAM) {
+                    return Integer.MIN_VALUE;
+                }
+                int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec.location);
+                return distanceSquared <= 100 ? distanceSquared : Integer.MAX_VALUE;
+            }).thenComparingInt(ec -> {
+                return MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocationDistance(ec.location, 4096);
+            }).thenComparingInt(ec -> {
+                MapLocation location = ec.location;
+                return location.x * 100000 + location.y;
+            });
 
     public static boolean tryClaimEC() throws GameActionException {
-        // if we see enemy/neutral ec, try to move closer to it
-        // if can't move any closer, explode
-        MapLocation bestLoc = null;
-        int bestDist = Integer.MAX_VALUE;
-        Team bestTeam = null;
-
-        for (int i = Cache.ENEMY_ROBOTS.length; --i >= 0; ) {
-            RobotInfo robot = Cache.ENEMY_ROBOTS[i];
-            if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapLocation location = robot.getLocation();
-                int distance = location.distanceSquaredTo(Cache.MY_LOCATION);
-                if (distance < bestDist) {
-                    bestDist = distance;
-                    bestLoc = location;
-                    bestTeam = Constants.ENEMY_TEAM;
-                }
-            }
-        }
-        for (int i = Cache.NEUTRAL_ROBOTS.length; --i >= 0; ) {
-            RobotInfo robot = Cache.NEUTRAL_ROBOTS[i];
-            if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                MapLocation location = robot.getLocation();
-                int distance = location.distanceSquaredTo(Cache.MY_LOCATION);
-                if (distance < bestDist) {
-                    bestDist = distance;
-                    bestLoc = location;
-                    bestTeam = Team.NEUTRAL;
-                }
-            }
-        }
-        if (bestLoc == null)
+        EnlightenmentCenterListNode bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareECs).orElse(null);
+        EnlightenmentCenterListNode bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).min(compareECs).orElse(null);
+        EnlightenmentCenterListNode bestEC = null;
+        if (bestNeutralEC == null && bestEnemyEC == null) {
             return false;
-        return tryEmpowerAtEC(bestLoc, bestTeam);
+        } else if (bestEnemyEC == null) {
+            bestEC = bestNeutralEC;
+        } else if (bestNeutralEC == null){
+            bestEC = bestEnemyEC;
+        } else {
+            bestEC = compareECs.compare(bestNeutralEC, bestEnemyEC) < 0 ? bestNeutralEC : bestEnemyEC;
+        }
+        return tryEmpowerAtEC(bestEC.location, bestEC.team);
     }
 
     public static boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
@@ -261,27 +264,6 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         Pathfinder.execute(loc);
-        return true;
-    }
-
-    private static Comparator<MapLocation> compareECs = Comparator.comparingInt(loc -> Cache.MY_LOCATION.distanceSquaredTo(loc));
-
-    public static boolean goToEC() {
-        MapLocation bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).minLocation(compareECs).orElse(null);
-        MapLocation bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).minLocation(compareECs).orElse(null);
-        if (bestNeutralEC == null && bestEnemyEC == null) {
-            return false;
-        }
-        if (bestEnemyEC == null || (bestNeutralEC != null && compareECs.compare(bestNeutralEC, bestEnemyEC) < 0)) {
-            // go for neutral EC
-            Pathfinder.execute(bestNeutralEC);
-        } else {
-            // go for enemy EC
-            if (!shouldAttack(bestEnemyEC)) {
-                return false;
-            }
-            Pathfinder.execute(bestEnemyEC);
-        }
         return true;
     }
 
@@ -483,7 +465,7 @@ public strictfp class Politician implements RunnableBot {
         // Find the closest target "worth" to 1v1 trade
         //  - find the closest square that isolates
         //  - pathfind/empower
-        return LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS,
+        return LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
                 r -> worthToKill(r),
                 Comparator.comparingInt(r -> Cache.MY_LOCATION.distanceSquaredTo(r.getLocation())))
                 .map(r -> {
@@ -528,6 +510,9 @@ public strictfp class Politician implements RunnableBot {
     public static boolean worthToKill(RobotInfo enemy) {
         if (MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
                 .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) > 100) {
+            return false;
+        }
+        if (enemy.getType() == RobotType.ENLIGHTENMENT_CENTER && enemy.getTeam() == Team.NEUTRAL && currentDamage <= enemy.getConviction()) {
             return false;
         }
         return 10 * getDamageValue(currentDamage, enemy) >=

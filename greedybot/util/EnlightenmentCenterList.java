@@ -4,6 +4,7 @@ import battlecode.common.MapLocation;
 
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -22,6 +23,16 @@ public class EnlightenmentCenterList {
         // doesn't contain
         head = new EnlightenmentCenterListNode(location, conviction, head);
         size++;
+    }
+    public Optional<EnlightenmentCenterListNode> getRandom() {
+        if (size == 0) {
+            return Optional.empty();
+        }
+        EnlightenmentCenterListNode current = head;
+        for (int i = (int) (size * Math.random()); --i >= 0;) {
+            current = current.next;
+        }
+        return Optional.of(current);
     }
     public Optional<MapLocation> getRandomLocation() {
         if (size == 0) {

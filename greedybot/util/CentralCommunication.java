@@ -34,15 +34,15 @@ public class CentralCommunication {
     }
     private static UnitListNode unitListHead = null;
     private static int unitListSize = 0;
-    private static final int UNIT_LIST_MAX_SIZE = 80;
+    private static final int UNIT_LIST_MAX_SIZE = 60;
 
     public static final int DO_NOTHING_FLAG = 0b0000000_0000000_10000_10000;
-    // 14 bits: rotate between [minX, maxX], [minY, maxY], [friendly ec], [enemy ec], [neutral ec]
+    // rotate between [heartbeat - self], [friendly ec], [enemy ec], [neutral ec]
     public static final int ROTATION_SHIFT_X = 17;
     public static final int ROTATION_SHIFT_Y = 10;
     public static final int ROTATION_MASK = 0b0111_1111;
     public static final int ROTATION_OFFSET = 64;
-    // 10 bits: broadcast nearest known enemy to this EC
+    public static final int ROTATION_INFO_MASK = 0b0011_1111_1111; // 10 bits
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes
         CentralUnitTracker.loop();
@@ -126,36 +126,40 @@ public class CentralCommunication {
         end = Clock.getBytecodeNum();
         System.out.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
     }
-    public static final int NEAREST_ENEMY_OFFSET = 16;
-    public static final int NEAREST_ENEMY_X_SHIFT = 5;
-    public static final int NEAREST_ENEMY_MASK = 0b1_1111;
     public static void postLoop() throws GameActionException {
         // set flag
         int flag = 0;
-        // TODO: Unused 10 bits
-        int dx = NEAREST_ENEMY_OFFSET;
-        int dy = NEAREST_ENEMY_OFFSET;
-        if (dx < 0 || dx > NEAREST_ENEMY_MASK || dy < 0 || dy > NEAREST_ENEMY_MASK) {
-            // underflow/overflow: set to current location to mark no enemy nearby
-            dx = NEAREST_ENEMY_OFFSET;
-            dy = NEAREST_ENEMY_OFFSET;
-            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
-        }
-        flag = flag | (dx << NEAREST_ENEMY_X_SHIFT) | dy;
-        // 7 bits on relative x location and relative y location
+        // 7 bits each on relative x location and relative y location,
+        // 10 bits for info (ex: conviction)
         MapLocation rotationLocation = null;
         switch (Cache.TURN_COUNT % 5) {
             case 0: // heartbeat
                 rotationLocation = Cache.MY_LOCATION;
+                flag = Math.min(ROTATION_INFO_MASK, rc.getConviction());
                 break;
             case 1: // [ally ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandomLocation().orElse(null);
+                EnlightenmentCenterList.EnlightenmentCenterListNode allyEC =
+                        MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getRandom().orElse(null);
+                if (allyEC != null) {
+                    rotationLocation = allyEC.location;
+                    flag = Math.min(ROTATION_INFO_MASK, allyEC.lastKnownConviction);
+                }
                 break;
             case 2: // [enemy ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandomLocation().orElse(null);
+                EnlightenmentCenterList.EnlightenmentCenterListNode enemyEC =
+                        MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getRandom().orElse(null);
+                if (enemyEC != null) {
+                    rotationLocation = enemyEC.location;
+                    flag = Math.min(ROTATION_INFO_MASK, enemyEC.lastKnownConviction);
+                }
                 break;
             case 3: // [neutral ec]
-                rotationLocation = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandomLocation().orElse(null);
+                EnlightenmentCenterList.EnlightenmentCenterListNode neutralEC =
+                        MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getRandom().orElse(null);
+                if (neutralEC != null) {
+                    rotationLocation = neutralEC.location;
+                    flag = Math.min(ROTATION_INFO_MASK, neutralEC.lastKnownConviction);
+                }
                 break;
             case 4: // [enemy slanderers]
                 rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);

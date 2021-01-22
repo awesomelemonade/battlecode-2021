@@ -247,19 +247,10 @@ public class UnitCommunication {
             if (rc.canGetFlag(id)) {
                 int flag = rc.getFlag(id) ^ CentralCommunication.DO_NOTHING_FLAG;
                 MapLocation ecLocation = current.location;
-                int dx = ((flag >> CentralCommunication.NEAREST_ENEMY_X_SHIFT)
-                        & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
-                int dy = (flag & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
-                if (dx == 0 && dy == 0) {
-                    current.nearestEnemy = null;
-                } else {
-                    MapLocation nearestEnemy = ecLocation.translate(dx, dy);
-                    current.nearestEnemy = nearestEnemy;
-                    checkCloseEnemy(nearestEnemy);
-                }
                 int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
                 int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK)
                         - CentralCommunication.ROTATION_OFFSET;
+                int rotationInfo = flag & CentralCommunication.ROTATION_INFO_MASK;
                 if (rotationDx == 0 && rotationDy == 0) {
                     current.lastHeartbeatTurn = rc.getRoundNum();
                 }
@@ -268,24 +259,24 @@ public class UnitCommunication {
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
-                            MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, -1);
+                            MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, -1);
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
                             }
                             break;
                         case 2: // [enemy ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, -1);
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, rotationInfo);
                             }
                             break;
                         case 3: // [neutral ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, -1);
+                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, rotationInfo);
                             }
                             break;
                         case 4: // [enemy slanderers]

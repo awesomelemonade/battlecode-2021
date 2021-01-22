@@ -1,5 +1,6 @@
 package greedybot;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -109,13 +110,13 @@ public strictfp class Politician implements RunnableBot {
         }).orElse(false);
     }
     // 1. closest neutral we can claim solo
-    // 2. closest enemy ec, if we are near one
+    // 2. closest enemy ec, if we are near one (distSquared <= 100)
     // 3. closest ec to one of our ecs
     // smaller value is better
     private static Comparator<EnlightenmentCenterListNode> compareECs =
             Comparator.<EnlightenmentCenterListNode>comparingInt(ec -> {
                 if (ec.team != Team.NEUTRAL) {
-                    return Integer.MIN_VALUE;
+                    return Integer.MAX_VALUE;
                 }
                 // Closest neutral if we can claim solo
                 int conviction = ec.lastKnownConviction;
@@ -125,7 +126,7 @@ public strictfp class Politician implements RunnableBot {
                 return currentDamage > conviction ? Cache.MY_LOCATION.distanceSquaredTo(ec.location) : Integer.MAX_VALUE;
             }).thenComparingInt(ec -> {
                 if (ec.team != Constants.ENEMY_TEAM) {
-                    return Integer.MIN_VALUE;
+                    return Integer.MAX_VALUE;
                 }
                 int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(ec.location);
                 return distanceSquared <= 100 ? distanceSquared : Integer.MAX_VALUE;
@@ -139,17 +140,15 @@ public strictfp class Politician implements RunnableBot {
     public static boolean tryClaimEC() throws GameActionException {
         EnlightenmentCenterListNode bestNeutralEC = MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).min(compareECs).orElse(null);
         EnlightenmentCenterListNode bestEnemyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).min(compareECs).orElse(null);
-        EnlightenmentCenterListNode bestEC = null;
-        if (bestNeutralEC == null && bestEnemyEC == null) {
-            return false;
-        } else if (bestEnemyEC == null) {
-            bestEC = bestNeutralEC;
-        } else if (bestNeutralEC == null){
+        EnlightenmentCenterListNode bestEC = bestNeutralEC;
+        if (bestEnemyEC != null && (bestEC == null || compareECs.compare(bestEnemyEC, bestEC) < 0)) {
             bestEC = bestEnemyEC;
-        } else {
-            bestEC = compareECs.compare(bestNeutralEC, bestEnemyEC) < 0 ? bestNeutralEC : bestEnemyEC;
         }
-        return tryEmpowerAtEC(bestEC.location, bestEC.team);
+        if (bestEC == null) {
+            return false;
+        } else {
+            return tryEmpowerAtEC(bestEC.location, bestEC.team);
+        }
     }
 
     public static boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
@@ -231,7 +230,8 @@ public strictfp class Politician implements RunnableBot {
                 }
             } else {
                 if (distanceSquared <= 16) {
-                    if (distanceSquared <= 1 || distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
+                    if ((team == Constants.ENEMY_TEAM && distanceSquared <= 1) ||
+                            distanceSquared <= 9 && rc.senseNearbyRobots(distanceSquared).length == 1) {
                         rc.empower(distanceSquared);
                         return true;
                     }
@@ -251,7 +251,7 @@ public strictfp class Politician implements RunnableBot {
                         }
                     }
                     if (closestCardinalAdjacentSquare == null) {
-                        if (distanceSquared <= 2) {
+                        if (distanceSquared <= 2 && team == Constants.ENEMY_TEAM) {
                             rc.empower(distanceSquared);
                         } else {
                             Pathfinder.execute(loc);
@@ -277,11 +277,20 @@ public strictfp class Politician implements RunnableBot {
         if (Cache.ENEMY_ROBOTS.length + Cache.NEUTRAL_ROBOTS.length == 0) {
             return false;
         }
-        if (tryEmpowerSplash()) {
-            return true;
+        System.out.println("Try Empower 1: " + Clock.getBytecodeNum());
+        try {
+            if (tryEmpowerSplash()) {
+                return true;
+            }
+        } finally {
+            System.out.println("Try Empower 2: " + Clock.getBytecodeNum());
         }
-        if (tryEmpower1v1Enemy()) {
-            return true;
+        try {
+            if (tryEmpower1v1Enemy()) {
+                return true;
+            }
+        } finally {
+            System.out.println("Try Empower 3: " + Clock.getBytecodeNum());
         }
         return false;
     }

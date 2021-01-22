@@ -123,7 +123,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
             double random = Math.random();
-            if ((rc.getRoundNum() <= 2 || rc.getRoundNum() >= 30) && (slandererCount == 0 || random < 0.6) && (!seesEnemyMuckrakerOrEC)) {
+            if (Cache.TURN_COUNT > 10 && (!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || random < 0.6)) {
                 if (buildSlanderer(influence)) {
                     return;
                 }

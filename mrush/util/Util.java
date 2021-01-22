@@ -115,6 +115,20 @@ public class Util {
         return false;
     }
 
+    public static boolean tryBuildRobotTowardsRandomDirection(RobotType type, int influence) {
+        Direction direction;
+        if (type != RobotType.SLANDERER && type != RobotType.POLITICIAN) {
+            adjDir = (adjDir + 3) % 8;
+        }
+        direction = Constants.ORDINAL_DIRECTIONS[adjDir];
+        for (Direction buildDirection : Constants.getAttemptOrder(direction)) {
+            if (tryBuildRobot(type, buildDirection, influence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean tryMove(Direction direction) {
         if (rc.canMove(direction)) {
             move(direction);

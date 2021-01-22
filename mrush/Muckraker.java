@@ -20,7 +20,7 @@ public strictfp class Muckraker implements RunnableBot {
     @Override
     public void init() throws GameActionException {
         targeted = rc.getConviction() > 5;
-        if (Math.random() < 0.2) {
+        if (Math.random() < 0.2 && rc.getConviction() == 1) {
             explore = true;
         } else {
             explore = false;
@@ -90,26 +90,27 @@ public strictfp class Muckraker implements RunnableBot {
     private static int memoryIdx = 0;
 
     public static boolean findSlanderer(MapLocation suggestion) {
-
         int dx = suggestion.x - Cache.MY_LOCATION.x;
         int dy = suggestion.y - Cache.MY_LOCATION.y;
         double mag = Math.sqrt(dx * dx + dy * dy);
         if (!memoryContains(-1)) {
             memoryID[memoryIdx] = -1;
-            memoryX[memoryIdx] = ((double)dx / mag * 3);
-            memoryY[memoryIdx] = ((double)dy / mag * 3);
+            memoryX[memoryIdx] = ((double)dx / mag * 4);
+            memoryY[memoryIdx] = ((double)dy / mag * 4);
             memoryIdx = (memoryIdx + 1) % 10;
         } else {
             for (int i = 0; i < 10; i++) {
                 if (memoryID[i] == -1) {
-                    memoryX[i] = ((double)dx / mag * 3);
-                    memoryY[i] = ((double)dy / mag * 3);
+                    memoryX[i] = ((double)dx / mag * 4);
+                    memoryY[i] = ((double)dy / mag * 4);
                 }
             }
         }
         updateMemory();
         if (!suggestion.equals(MapInfo.enemySlandererLocations.firstLocation)) {
-            return Pathfinder.execute(suggestion);
+            if (Cache.MY_LOCATION.distanceSquaredTo(suggestion) > 9) {
+                return Pathfinder.execute(suggestion);
+            }
         }
         if (MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).orElse(null) != null) {
             return false;

@@ -77,17 +77,18 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                             buildSlanderer(influence - 10);
                         }
                         break;
-                    case 1:
-                        buildCheapMuckraker();
-                        break;
                     case 2:
-                        buildCheapMuckraker();
+                        // buildCheapMuckraker();
+                        buildMuckraker(1);
                         break;
                     case 3:
+                        buildMuckraker(1);
+                        break;
+                    case 1:
                         if (influence >= 300) {
                             buildPolitician(influence - 100);
                         } else {
-                            if(earlyCheapPMCounter%4 == 3) {
+                            if(earlyCheapPMCounter % 4 == 1 || (politicianCount < 3)) {
                                 buildCheapPolitician();
                             } else {
                                 buildMuckraker(16);
@@ -226,7 +227,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     public static boolean buildCheapMuckraker() {
         int influence = Math.max(1, (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
-        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), influence)) {
+        if (Util.tryBuildRobotTowardsRandomDirection(RobotType.MUCKRAKER, influence)) {
             muckrakerCount++;
             return true;
         }
@@ -236,7 +237,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static boolean buildMuckraker(int influence) {
         int cap = Math.max(1000, (int) (0.5 * rc.getInfluence() / (1500 - rc.getRoundNum())));
         influence = Math.min(influence, cap);
-        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, Util.randomAdjacentDirection(), influence)) {
+        if (Util.tryBuildRobotTowardsRandomDirection(RobotType.MUCKRAKER, influence)) {
             muckrakerCount++;
             return true;
         }
@@ -263,7 +264,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static boolean buildCheapPolitician() {
         int influence = Math.max(Util.randBetween(14, 20), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
         if (influence % 10 == 6) influence++;
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
+        if (Util.tryBuildRobotTowardsRandomDirection(RobotType.POLITICIAN, influence)) {
             politicianCount++;
             return true;
         }
@@ -274,7 +275,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         int cap = Math.max(1000, (int) (0.5 * (rc.getInfluence() / (1500 - rc.getRoundNum()))));
         influence = Math.min(influence, cap);
         if (influence % 10 == 6) influence++;
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
+        if (Util.tryBuildRobotTowardsRandomDirection(RobotType.POLITICIAN, influence)) {
             politicianCount++;
             return true;
         }
@@ -284,7 +285,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static boolean buildSelfEmpowerer(int influence) {
         influence = influence + 6 - (influence % 10);
         if (influence <= 50) return false;
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, Util.randomAdjacentDirection(), influence)) {
+        if (Util.tryBuildRobotTowardsRandomDirection(RobotType.POLITICIAN, influence)) {
             politicianCount++;
             turnsSinceSelfEmpowerer = 0;
             return true;

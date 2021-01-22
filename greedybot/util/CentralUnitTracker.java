@@ -25,6 +25,7 @@ public class CentralUnitTracker {
         // Clear counters
         numNearbySmallDefenders = 0;
         numNearbySmallEnemyMuckrakers = 0;
+        numNearbyAllySlanderers = 0;
         // Increment registry counter
         registryCounter++;
         // Handle enemies in vision range

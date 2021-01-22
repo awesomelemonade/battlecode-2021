@@ -39,7 +39,7 @@ public strictfp class RobotPlayer {
             try {
                 while (true) {
                     currentTurn = rc.getRoundNum();
-                    if (Constants.DEBUG_RESIGN && (currentTurn >= 500 || currentTurn >= 350 && rc.getRobotCount() < 10)) {
+                    if (Constants.DEBUG_RESIGN && (currentTurn >= 500 || currentTurn >= 150 && rc.getRobotCount() < 10)) {
                         rc.resign();
                     }
                     Util.loop();

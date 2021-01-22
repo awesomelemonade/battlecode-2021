@@ -48,7 +48,14 @@ public strictfp class Politician implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        if (tryEmpower()) {
+        if (currentDamage <= 0) {
+            if (campEnemyEC()) {
+                return;
+            }
+            Util.smartExplore();
+            return;
+        }
+        if (tryEmpowerEnemy()) {
             return;
         }
         if (currentDamage >= 50) {
@@ -61,7 +68,6 @@ public strictfp class Politician implements RunnableBot {
                 return;
             }
         }
-
         if (Cache.ALLY_ROBOTS.length > 12) {
             // TODO: go towards enemy (or at least somewhere open)
             Util.smartExplore();
@@ -96,6 +102,15 @@ public strictfp class Politician implements RunnableBot {
         if (Util.smartExplore()) {
             return;
         }
+    }
+
+    public static boolean campEnemyEC() {
+        return MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation().map(loc -> {
+            if (!Cache.MY_LOCATION.isAdjacentTo(loc)) {
+                Pathfinder.execute(loc);
+            }
+            return true;
+        }).orElse(false);
     }
 
     public static boolean tryClaimEC() throws GameActionException {
@@ -276,7 +291,7 @@ public strictfp class Politician implements RunnableBot {
         return loc.distanceSquaredTo(Cache.MY_LOCATION) >= 121;
     }
 
-    public static boolean tryEmpower() throws GameActionException {
+    public static boolean tryEmpowerEnemy() throws GameActionException {
         if (Cache.ENEMY_ROBOTS.length + Cache.NEUTRAL_ROBOTS.length == 0) {
             return false;
         }
@@ -303,8 +318,6 @@ public strictfp class Politician implements RunnableBot {
         if (Cache.ENEMY_ROBOTS.length <= 1) {
             return false;
         }
-        MapLocation enemyCentroid = getSensedEnemiesCentroid();
-        Direction directionToCentroid = Cache.MY_LOCATION.directionTo(enemyCentroid);
         Direction bestDirection = Direction.CENTER;
         long bestScore = Long.MIN_VALUE;
         int bestEmpowerDistanceSquared = -1;
@@ -343,50 +356,54 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         // Scoring for direction towards centroid
-        if (directionToCentroid != Direction.CENTER) {
-            for (Direction direction : Constants.getAttemptOrder(directionToCentroid)) {
-                if (rc.canMove(direction)) {
-                    MapLocation location = Cache.MY_LOCATION.add(direction);
-                    // is empowering here the best?
-                    // we can empower [1, 2, 4, 5, 8, 9]
-                    // unrolled loop
-                    long score1 = getMultiEmpowerScore(location, 1);
-                    if (score1 > bestScore) {
-                        bestScore = score1;
-                        bestDirection = direction;
-                        bestEmpowerDistanceSquared = 1;
+        if (bestScore >= 100_000L) {
+            MapLocation enemyCentroid = getSensedEnemiesCentroid();
+            Direction directionToCentroid = Cache.MY_LOCATION.directionTo(enemyCentroid);
+            if (directionToCentroid != Direction.CENTER) {
+                for (Direction direction : Constants.getAttemptOrder(directionToCentroid)) {
+                    if (rc.canMove(direction)) {
+                        MapLocation location = Cache.MY_LOCATION.add(direction);
+                        // is empowering here the best?
+                        // we can empower [1, 2, 4, 5, 8, 9]
+                        // unrolled loop
+                        long score1 = getMultiEmpowerScore(location, 1);
+                        if (score1 > bestScore) {
+                            bestScore = score1;
+                            bestDirection = direction;
+                            bestEmpowerDistanceSquared = 1;
+                        }
+                        long score2 = getMultiEmpowerScore(location, 2);
+                        if (score2 > bestScore) {
+                            bestScore = score2;
+                            bestDirection = direction;
+                            bestEmpowerDistanceSquared = 2;
+                        }
+                        long score4 = getMultiEmpowerScore(location, 4);
+                        if (score4 > bestScore) {
+                            bestScore = score4;
+                            bestDirection = direction;
+                            bestEmpowerDistanceSquared = 4;
+                        }
+                        long score5 = getMultiEmpowerScore(location, 5);
+                        if (score5 > bestScore) {
+                            bestScore = score5;
+                            bestDirection = direction;
+                            bestEmpowerDistanceSquared = 5;
+                        }
+                        long score8 = getMultiEmpowerScore(location, 8);
+                        if (score8 > bestScore) {
+                            bestScore = score8;
+                            bestDirection = direction;
+                            bestEmpowerDistanceSquared = 8;
+                        }
+                        long score9 = getMultiEmpowerScore(location, 9);
+                        if (score9 > bestScore) {
+                            bestScore = score9;
+                            bestDirection = direction;
+                            bestEmpowerDistanceSquared = 9;
+                        }
+                        break;
                     }
-                    long score2 = getMultiEmpowerScore(location, 2);
-                    if (score2 > bestScore) {
-                        bestScore = score2;
-                        bestDirection = direction;
-                        bestEmpowerDistanceSquared = 2;
-                    }
-                    long score4 = getMultiEmpowerScore(location, 4);
-                    if (score4 > bestScore) {
-                        bestScore = score4;
-                        bestDirection = direction;
-                        bestEmpowerDistanceSquared = 4;
-                    }
-                    long score5 = getMultiEmpowerScore(location, 5);
-                    if (score5 > bestScore) {
-                        bestScore = score5;
-                        bestDirection = direction;
-                        bestEmpowerDistanceSquared = 5;
-                    }
-                    long score8 = getMultiEmpowerScore(location, 8);
-                    if (score8 > bestScore) {
-                        bestScore = score8;
-                        bestDirection = direction;
-                        bestEmpowerDistanceSquared = 8;
-                    }
-                    long score9 = getMultiEmpowerScore(location, 9);
-                    if (score9 > bestScore) {
-                        bestScore = score9;
-                        bestDirection = direction;
-                        bestEmpowerDistanceSquared = 9;
-                    }
-                    break;
                 }
             }
         }
@@ -465,7 +482,11 @@ public strictfp class Politician implements RunnableBot {
         if (ecKills == 0 && (mKills + pKills) <= 1 && totalDamageValue <= 30) {
             return Long.MIN_VALUE;
         }
-        return ecKills * 1_000_000_000L + (mKills + pKills) * 10_000L + totalDamageValue * 1_000L - maxDistance;
+        // totalDamageValue / currentDamage <= 0.3
+        if (totalDamageValue * 10 <= 3 * currentDamage) {
+            return Long.MIN_VALUE;
+        }
+        return ecKills * 1_000_000_000L + (mKills + pKills) * 50_000L + totalDamageValue * 1_000L - maxDistance;
     }
 
     public static boolean tryEmpower1v1Enemy() throws GameActionException {
@@ -532,7 +553,7 @@ public strictfp class Politician implements RunnableBot {
         double bestScore = Double.MAX_VALUE;
         Direction bestDirection = null;
         for (Direction direction : Direction.values()) {
-            if (rc.canMove(direction)) {
+            if (direction == Direction.CENTER || rc.canMove(direction)) {
                 MapLocation location = Cache.MY_LOCATION.add(direction);
                 int sDistSquared = getDistanceSquaredToClosestSensedSlanderer(location);
                 if (sDistSquared != Integer.MAX_VALUE) {

@@ -12,6 +12,8 @@ public strictfp class Muckraker implements RunnableBot {
     private static boolean explore;
     private static boolean targeted;
     private static MapLocation target;
+    private static int guessX = 0;
+    private static int guessY = 0;
 
     public Muckraker(RobotController rc) {
         Muckraker.rc = rc;
@@ -85,8 +87,8 @@ public strictfp class Muckraker implements RunnableBot {
     }
 
     private static int[] memoryID = new int[10];
-    private static double[] memoryX = new double[10];
-    private static double[] memoryY = new double[10];
+    private static int[] memoryX = new int[10];
+    private static int[] memoryY = new int[10];
     private static int memoryIdx = 0;
 
     public static boolean findSlanderer(MapLocation suggestion) {
@@ -96,34 +98,35 @@ public strictfp class Muckraker implements RunnableBot {
         double mag = Math.sqrt(dx * dx + dy * dy);
         if (!memoryContains(-1)) {
             memoryID[memoryIdx] = -1;
-            memoryX[memoryIdx] = ((double)dx / mag * 3);
-            memoryY[memoryIdx] = ((double)dy / mag * 3);
+            memoryX[memoryIdx] = (int)((double)dx / mag * 3);
+            memoryY[memoryIdx] = (int)((double)dy / mag * 3);
             memoryIdx = (memoryIdx + 1) % 10;
         } else {
             for (int i = 0; i < 10; i++) {
                 if (memoryID[i] == -1) {
-                    memoryX[i] = ((double)dx / mag * 3);
-                    memoryY[i] = ((double)dy / mag * 3);
+                    memoryX[i] = (int)((double)dx / mag * 3);
+                    memoryY[i] = (int)((double)dy / mag * 3);
                 }
             }
         }
         updateMemory();
+
         if (!suggestion.equals(MapInfo.enemySlandererLocations.firstLocation)) {
             return Pathfinder.execute(suggestion);
         }
         if (MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).orElse(null) != null) {
             return false;
         }
-
-        double guessX = 0;
-        double guessY = 0;
+        
+        guessX = 0;
+        guessY = 0;
         for (int i = 0; i < 10; i++) {
             guessX += memoryX[i];
             guessY += memoryY[i];
         }
         mag = Math.sqrt(guessX * guessX + guessY * guessY);
-        int moveX = (int)(guessX / mag * 4);
-        int moveY = (int)(guessY / mag * 4);
+        int moveX = (int)((double)guessX / mag * 4);
+        int moveY = (int)((double)guessY / mag * 4);
         // System.out.println("Dense: " + guessX + " " + guessY);
         return Pathfinder.execute(Cache.MY_LOCATION.translate(moveX, moveY));
     }

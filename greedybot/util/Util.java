@@ -51,13 +51,13 @@ public class Util {
 
     public static void postLoop() throws GameActionException {
         if (Constants.DEBUG_DRAW) {
-            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).forEachLocation(x -> {
                 Util.setIndicatorDot(x, 255, 255, 255);
             });
-            MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEachLocation(x -> {
                 Util.setIndicatorDot(x, 128, 128, 128);
             });
-            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).forEachLocation(x -> {
                 Util.setIndicatorDot(x, 0, 0, 0);
             });
             MapInfo.enemySlandererLocations.forEach(x -> {

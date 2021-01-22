@@ -43,6 +43,11 @@ public class CentralCommunication {
     public static final int ROTATION_MASK = 0b0111_1111;
     public static final int ROTATION_OFFSET = 64;
     public static final int ROTATION_INFO_MASK = 0b0011_1111_1111; // 10 bits
+
+    // Communicate an enemy that has no units for some distance squared
+    // 14 bits for position, 6 bits for distance^2
+
+
     public static void loop() throws GameActionException {
         rc.setFlag(0); // in case we run out of bytecodes
         CentralUnitTracker.loop();

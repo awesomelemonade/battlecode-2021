@@ -34,24 +34,34 @@ public class CentralUnitTracker {
             handleEnemyUnit(enemy.location, enemy.type, enemy.conviction);
         }
     }
+    public static void calculateBroadcastedEnemy() {
+        // broadcast the enemy muckraker scored on the following
+        // distance to this ec
+        // distance to nearest defender
+        // maximize score = distance to nearest defender - distance to this ec
+    }
     public static void handleAllyUnit(MapLocation location, RobotType type, int conviction) {
-        int indexX = location.x - originX;
-        int indexY = location.y - originY;
-        if (indexX < 0 || indexY < 0 || indexX >= SIZE || indexY >= SIZE) {
-            // out of bounds
-            return;
-        }
-        if (type == RobotType.POLITICIAN && conviction <= 25 &&
-                Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED)) {
-            numNearbySmallDefenders++;
-            Util.setIndicatorDot(location, 60, 180, 75); // green
-        }
-        if (type == RobotType.SLANDERER &&
-                Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED)) {
-            numNearbyAllySlanderers++;
+        switch (type) {
+            case POLITICIAN:
+                if (conviction <= 25 &&
+                        Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED)) {
+                    numNearbySmallDefenders++;
+                    Util.setIndicatorDot(location, 60, 180, 75); // green
+                }
+                break;
+            case SLANDERER:
+                if (Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED)) {
+                    numNearbyAllySlanderers++;
+                }
+                break;
         }
     }
     public static void handleEnemyUnit(MapLocation location, RobotType type, int conviction) {
+        // we don't realllly care unless it fits this description
+        if (!(type == RobotType.MUCKRAKER && conviction <= 10 &&
+                Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED))) {
+            return;
+        }
         int indexX = location.x - originX;
         int indexY = location.y - originY;
         if (indexX < 0 || indexY < 0 || indexX >= SIZE || indexY >= SIZE) {
@@ -63,11 +73,7 @@ public class CentralUnitTracker {
             return;
         }
         registry[indexX][indexY] = registryCounter;
-        // handle enemy unit
-        if (type == RobotType.MUCKRAKER && conviction <= 10 &&
-                Cache.MY_LOCATION.isWithinDistanceSquared(location, NEARBY_DISTANCE_SQUARED)) {
-            numNearbySmallEnemyMuckrakers++;
-            Util.setIndicatorDot(location, 230, 25, 75); // red
-        }
+        numNearbySmallEnemyMuckrakers++;
+        Util.setIndicatorDot(location, 230, 25, 75); // red
     }
 }

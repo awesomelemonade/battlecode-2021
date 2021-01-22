@@ -22,8 +22,14 @@ public class UnitCommunication {
                 case ENLIGHTENMENT_CENTER:
                     if (r.getTeam() == Constants.ALLY_TEAM) {
                         return distanceSquared;
-                    } else {
+                    } else if (r.getTeam() == Constants.ENEMY_TEAM) {
                         return distanceSquared - 40000;
+                    } else {
+                        if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).contains(r.getLocation())) {
+                            return distanceSquared;
+                        } else {
+                            return distanceSquared - 40000;
+                        }
                     }
                 case POLITICIAN:
                     return distanceSquared - 10000;

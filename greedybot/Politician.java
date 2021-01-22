@@ -65,7 +65,7 @@ public strictfp class Politician implements RunnableBot {
                 return;
             }
         }
-        if (Cache.ALLY_ROBOTS.length > 12) {
+        if (Cache.ALLY_ROBOTS.length > 18) {
             // TODO: go towards enemy (or at least somewhere open)
             Util.smartExplore();
             return;
@@ -530,51 +530,42 @@ public strictfp class Politician implements RunnableBot {
 
     // Does not handle empowering or chasing after muckrakers/other enemies
     public static boolean tryFortifyNearSlanderers() throws GameActionException {
-        // let's try to find some slanderers to protect
-        // Chooses a fortify direction based on:
-        //      1. furthest from the nearest politician (<= 5 dist ^ 2)
-        //      2. within 10 or so distance squared from the nearest slanderer
-        double bestScore = Double.MAX_VALUE;
-        Direction bestDirection = null;
-        for (Direction direction : Direction.values()) {
-            if (direction == Direction.CENTER || rc.canMove(direction)) {
-                MapLocation location = Cache.MY_LOCATION.add(direction);
-                int sDistSquared = getDistanceSquaredToClosestSensedSlanderer(location);
-                if (sDistSquared != Integer.MAX_VALUE) {
-                    double sDistFactor = (Math.sqrt(sDistSquared) - (earlyGame ? 3 : 4));
-                    int pDistSquared = getDistanceSquaredToClosestSensedPolitician(location, earlyGame ? 5 : 8);
-                    // goal: minimize score
-                    double score = sDistFactor * sDistFactor - pDistSquared;
-                    if (score < bestScore) {
-                        bestDirection = direction;
-                        bestScore = score;
-                    }
-                }
+        double x = Cache.MY_LOCATION.x;
+        double y = Cache.MY_LOCATION.y;
+        for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
+            RobotInfo ally = Cache.ALLY_ROBOTS[i];
+            MapLocation allyLocation = ally.getLocation();
+            // force vectors
+            if (ally.getType() == RobotType.POLITICIAN && ally.getConviction() <= 20) {
+                double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
+                double distance = Math.sqrt(distanceSquared);
+                double distanceCubed = distance * distanceSquared;
+                // repel force
+                // (1 / d^2) * (vec / d) = (c * vec / d^3)
+                x -= 2.25 * (allyLocation.x - Cache.MY_LOCATION.x) / distanceCubed;
+                y -= 2.25 * (allyLocation.y - Cache.MY_LOCATION.y) / distanceCubed;
+            }
+            if (UnitCommunication.isPotentialSlanderer(ally)) {
+                double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
+                double distance = Math.sqrt(distanceSquared);
+                // force based on distance
+                double forceLocationX = allyLocation.x + (Cache.MY_LOCATION.x - allyLocation.x) / distance * 3.0;
+                double forceLocationY = allyLocation.y + (Cache.MY_LOCATION.y - allyLocation.y) / distance * 3.0;
+                Util.setIndicatorLine(allyLocation, new MapLocation((int) Math.round(forceLocationX), (int) Math.round(forceLocationY)), 255, 255, 255);
+                double forceLocationDx = forceLocationX - Cache.MY_LOCATION.x;
+                double forceLocationDy = forceLocationY - Cache.MY_LOCATION.y;
+                double forceDistanceSquared = forceLocationDx * forceLocationDx + forceLocationDy * forceLocationDy;
+                double forceDistanceCubed = forceDistanceSquared * Math.sqrt(forceDistanceSquared);
+                x += 0.75 * forceLocationDx / forceDistanceCubed;
+                y += 0.75 * forceLocationDy / forceDistanceCubed;
             }
         }
-
-        if (bestDirection == null) {
-            // we can't find any slanderer
-            if (hasFortified) {
-                doNotFortify = true;
-            }
-            return false;
-        } else {
-            hasFortified = true;
-            Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
-            Util.move(bestDirection);
-            return true;
+        Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
+        MapLocation targetLocation = new MapLocation((int) Math.round(x), (int) Math.round(y));
+        if (!targetLocation.equals(Cache.MY_LOCATION)) {
+            Pathfinder.execute(targetLocation);
         }
-    }
-    public static int getDistanceSquaredToClosestSensedPolitician(MapLocation location, int upperBound) {
-        return LambdaUtil.arraysStreamMin(Cache.ALLY_ROBOTS,
-                r -> r.getType() == RobotType.POLITICIAN,
-                r -> r.getLocation().distanceSquaredTo(location), upperBound);
-    }
-    public static int getDistanceSquaredToClosestSensedSlanderer(MapLocation location) {
-        return LambdaUtil.arraysStreamMin(Cache.ALLY_ROBOTS,
-                r -> UnitCommunication.isPotentialSlanderer(r),
-                r -> r.getLocation().distanceSquaredTo(location), Integer.MAX_VALUE);
+        return true;
     }
     // value of damaging a politician w/ a specified conviction and influence
     public static int getDamageValue(int damage, RobotInfo enemy) {

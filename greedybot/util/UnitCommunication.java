@@ -59,15 +59,24 @@ public class UnitCommunication {
     private static int currentFlag = DO_NOTHING_FLAG;
     public static MapLocation closestCommunicatedEnemyToKite; // Currently used to by slanderers
     public static int closestCommunicatedEnemyDistanceSquared;
+    public static int closestCommunicatedEnemyConviction;
 
-    // Currently we should only call this if rc.getType() is a slanderer
-    // closestCommunicatedEnemyToKite is only used by Slanderer
-    private static void checkCloseEnemy(MapLocation enemy) {
-        if (rc.getType() == RobotType.SLANDERER && enemy != null) {
+    private static void checkCloseEnemySlanderer(MapLocation enemy) {
+        int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
+        if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
+            closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
+            closestCommunicatedEnemyToKite = enemy;
+        }
+    }
+
+    private static void checkCloseEnemyPolitician(MapLocation enemy, int conviction) {
+        int currentDamage = rc.getConviction() - 10;
+        if (currentDamage > conviction && conviction * 10 > 3 * currentDamage) {
             int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
             if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
                 closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
                 closestCommunicatedEnemyToKite = enemy;
+                closestCommunicatedEnemyConviction = conviction;
             }
         }
     }
@@ -123,6 +132,7 @@ public class UnitCommunication {
 
         closestCommunicatedEnemyToKite = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
+        closestCommunicatedEnemyConviction = Integer.MAX_VALUE;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
             RobotInfo ally = Cache.ALLY_ROBOTS[i];
             RobotType type = ally.getType();
@@ -229,17 +239,25 @@ public class UnitCommunication {
                 int conviction = (flag & CURRENT_EC_CONVICTION_MASK) * 2;
                 Team team = Team.values()[teamOrdinal];
                 if (team == Constants.ENEMY_TEAM) {
-                    checkCloseEnemy(specifiedLocation);
+                    if (rc.getType() == RobotType.SLANDERER) {
+                        checkCloseEnemySlanderer(specifiedLocation);
+                    }
                 }
                 if (rc.getType() != RobotType.SLANDERER) {
                     // Conserve bytecodes for slanderers
                     MapInfo.addKnownEnlightenmentCenter(team, specifiedLocation, conviction);
                 }
             } else {
+                int conviction = flag & CURRENT_UNIT_INFO_MASK;
                 // we see type at specifiedLocation
                 if (type == RobotType.MUCKRAKER) {
                     // we see enemy!!
-                    checkCloseEnemy(specifiedLocation);
+                    if (rc.getType() == RobotType.SLANDERER) {
+                        checkCloseEnemySlanderer(specifiedLocation);
+                    }
+                    if (rc.getType() == RobotType.POLITICIAN) {
+                        checkCloseEnemyPolitician(specifiedLocation, conviction);
+                    }
                 }
             }
         }

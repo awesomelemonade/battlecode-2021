@@ -57,6 +57,11 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (tryEmpowerEnemy()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
+            return;
+        }
+        if (defendCommunicatedEnemies()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
         if (currentDamage >= 50) {
@@ -99,6 +104,18 @@ public strictfp class Politician implements RunnableBot {
         if (Util.smartExplore()) {
             return;
         }
+    }
+
+    public static boolean defendCommunicatedEnemies() {
+        MapLocation enemy = UnitCommunication.closestCommunicatedEnemyToKite;
+        if (enemy != null) {
+            // TODO: see if any valid ally politicians are within the half
+            // going towards the muckraker?
+            Pathfinder.execute(enemy);
+            return true;
+        }
+        // TODO: Create EC comms?
+        return false;
     }
 
     public static boolean campEnemyEC() {
@@ -277,20 +294,11 @@ public strictfp class Politician implements RunnableBot {
         if (Cache.ENEMY_ROBOTS.length + Cache.NEUTRAL_ROBOTS.length == 0) {
             return false;
         }
-        System.out.println("Try Empower 1: " + Clock.getBytecodeNum());
-        try {
-            if (tryEmpowerSplash()) {
-                return true;
-            }
-        } finally {
-            System.out.println("Try Empower 2: " + Clock.getBytecodeNum());
+        if (tryEmpowerSplash()) {
+            return true;
         }
-        try {
-            if (tryEmpower1v1Enemy()) {
-                return true;
-            }
-        } finally {
-            System.out.println("Try Empower 3: " + Clock.getBytecodeNum());
+        if (tryEmpower1v1Enemy()) {
+            return true;
         }
         return false;
     }
@@ -481,13 +489,15 @@ public strictfp class Politician implements RunnableBot {
                     MapLocation rLocation = r.getLocation();
                     // is it possible to just empower here and kill it?
                     int currentDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(rLocation);
-                    int numNearbyRobots = rc.senseNearbyRobots(currentDistanceSquared).length;
-                    if (currentDamage / numNearbyRobots > r.getConviction()) {
-                        try {
-                            rc.empower(currentDistanceSquared);
-                            return true;
-                        } catch (GameActionException ex) {
-                            throw new IllegalStateException(ex);
+                    if (currentDistanceSquared <= 9) {
+                        int numNearbyRobots = rc.senseNearbyRobots(currentDistanceSquared).length;
+                        if (currentDamage / numNearbyRobots > r.getConviction()) {
+                            try {
+                                rc.empower(currentDistanceSquared);
+                                return true;
+                            } catch (GameActionException ex) {
+                                throw new IllegalStateException(ex);
+                            }
                         }
                     }
                     // let's go for isolation strategy

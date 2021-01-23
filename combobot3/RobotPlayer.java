@@ -1,12 +1,12 @@
-package experiment2;
+package combobot3;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import experiment2.util.Cache;
-import experiment2.util.Constants;
-import experiment2.util.Util;
+import combobot3.util.Cache;
+import combobot3.util.Constants;
+import combobot3.util.Util;
 
 public strictfp class RobotPlayer {
     public static int currentTurn;

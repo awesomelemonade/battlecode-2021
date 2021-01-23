@@ -29,6 +29,9 @@ public class SlandererQueue {
         }
     }
     public boolean contains(MapLocation location) {
+        if (location.equals(firstLocation)) {
+            return true;
+        }
         for (int i = size; --i >= 0;) {
             if (location.equals(locations[(index + i) % capacity])) {
                 return true;

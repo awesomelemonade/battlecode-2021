@@ -13,7 +13,7 @@ public class MapInfo {
     public static int mapMaxY = MAP_UNKNOWN_EDGE; // not known
     public static EnlightenmentCenterList[] enlightenmentCenterLocations; // indexed by Team.ordinal()
     public static SlandererQueue enemySlandererLocations;
-    public static final int ENEMY_SLANDERER_RETENTION = 20;
+    public static final int ENEMY_SLANDERER_RETENTION = 50;
 
     public static void init(RobotController rc) {
         MapInfo.rc = rc;

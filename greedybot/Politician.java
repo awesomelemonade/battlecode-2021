@@ -569,6 +569,13 @@ public strictfp class Politician implements RunnableBot {
             if (UnitCommunication.isPotentialSlanderer(ally)) {
                 double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
                 double distance = Math.sqrt(distanceSquared);
+                double distanceCubed = distance * distanceSquared;
+                // repel force
+                // (1 / d^2) * (vec / d) = (c * vec / d^3)
+                x -= 2.25 * (allyLocation.x - Cache.MY_LOCATION.x) / distanceCubed;
+                y -= 2.25 * (allyLocation.y - Cache.MY_LOCATION.y) / distanceCubed;
+                /*double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
+                double distance = Math.sqrt(distanceSquared);
                 // force based on distance
                 double forceLocationX = allyLocation.x + (Cache.MY_LOCATION.x - allyLocation.x) / distance * 3.0;
                 double forceLocationY = allyLocation.y + (Cache.MY_LOCATION.y - allyLocation.y) / distance * 3.0;
@@ -578,8 +585,48 @@ public strictfp class Politician implements RunnableBot {
                 double forceDistanceSquared = forceLocationDx * forceLocationDx + forceLocationDy * forceLocationDy;
                 double forceDistanceCubed = forceDistanceSquared * Math.sqrt(forceDistanceSquared);
                 x += 0.75 * forceLocationDx / forceDistanceCubed;
-                y += 0.75 * forceLocationDy / forceDistanceCubed;
+                y += 0.75 * forceLocationDy / forceDistanceCubed;*/
             }
+        }
+        if(MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE) {
+            MapLocation loc = new MapLocation(MapInfo.mapMinX, Cache.MY_LOCATION.y);
+            double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
+            double distance = Math.sqrt(distanceSquared);
+            double distanceCubed = distance * distanceSquared;
+            // repel force
+            // (1 / d^2) * (vec / d) = (c * vec / d^3)
+            x -= 2.25 * (loc.x - Cache.MY_LOCATION.x) / distanceCubed;
+            y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
+        }
+        if(MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE) {
+            MapLocation loc = new MapLocation(MapInfo.mapMaxX, Cache.MY_LOCATION.y);
+            double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
+            double distance = Math.sqrt(distanceSquared);
+            double distanceCubed = distance * distanceSquared;
+            // repel force
+            // (1 / d^2) * (vec / d) = (c * vec / d^3)
+            x -= 2.25 * (loc.x - Cache.MY_LOCATION.x) / distanceCubed;
+            y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
+        }
+        if(MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE) {
+            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMinY);
+            double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
+            double distance = Math.sqrt(distanceSquared);
+            double distanceCubed = distance * distanceSquared;
+            // repel force
+            // (1 / d^2) * (vec / d) = (c * vec / d^3)
+            x -= 2.25 * (loc.x - Cache.MY_LOCATION.x) / distanceCubed;
+            y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
+        }
+        if(MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE) {
+            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMaxY);
+            double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
+            double distance = Math.sqrt(distanceSquared);
+            double distanceCubed = distance * distanceSquared;
+            // repel force
+            // (1 / d^2) * (vec / d) = (c * vec / d^3)
+            x -= 2.25 * (loc.x - Cache.MY_LOCATION.x) / distanceCubed;
+            y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
         MapLocation targetLocation = new MapLocation((int) Math.round(x), (int) Math.round(y));

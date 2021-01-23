@@ -1,4 +1,4 @@
-package greedybot;
+package pdefense2;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -6,13 +6,13 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import greedybot.util.Cache;
-import greedybot.util.Constants;
-import greedybot.util.LatticeUtil;
-import greedybot.util.MapInfo;
-import greedybot.util.Pathfinder;
-import greedybot.util.UnitCommunication;
-import greedybot.util.Util;
+import pdefense2.util.Cache;
+import pdefense2.util.Constants;
+import pdefense2.util.LatticeUtil;
+import pdefense2.util.MapInfo;
+import pdefense2.util.Pathfinder;
+import pdefense2.util.UnitCommunication;
+import pdefense2.util.Util;
 
 public strictfp class Slanderer implements RunnableBot {
     private RobotController rc;

@@ -34,6 +34,9 @@ public class Util {
         } else {
             UnitCommunication.init(rc);
         }
+        for(int i = 0; i < 16; i++) {
+            exploreDirs[i] = i;
+        }
     }
 
     public static void move(Direction direction) {

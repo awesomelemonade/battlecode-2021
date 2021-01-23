@@ -34,12 +34,6 @@ public class Util {
         } else {
             UnitCommunication.init(rc);
         }
-        MapLocation currentLocation = rc.getLocation();
-        for (RobotInfo ally : Cache.ALLY_ROBOTS) {
-            if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                directionAwayFromSpawnEC = ally.getLocation().directionTo(currentLocation);
-            }
-        }
     }
 
     public static void move(Direction direction) {
@@ -53,6 +47,13 @@ public class Util {
             CentralCommunication.loop();
         } else {
             UnitCommunication.loop();
+        }
+        if (Cache.TURN_COUNT == 1 && rc.getType() != RobotType.ENLIGHTENMENT_CENTER) {
+            for (RobotInfo ally : Cache.ALLY_ROBOTS) {
+                if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    directionAwayFromSpawnEC = ally.getLocation().directionTo(Cache.MY_LOCATION);
+                }
+            }
         }
     }
 
@@ -260,7 +261,8 @@ public class Util {
         if (exploreDir == -1 || reachedBorder(exploreDir) || goingTowardsEC(exploreDir)) {
             if (rc.getRoundNum() < 100 && !hasExplored) {
                 exploreDir = directionAwayFromSpawnEC.ordinal();
-                exploreLoc = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir] * 62, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir] * 62);
+                exploreLoc = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir] * 62,
+                        Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir] * 62);
                 hasExplored = true;
             } else {
                 // shuffle directions
@@ -288,7 +290,7 @@ public class Util {
                 }
             }
         }
-        if(exploreDir == -1) return randomExplore();
+        if (exploreDir == -1) return randomExplore();
         return Pathfinder.execute(borderCut(exploreLoc));
     }
 

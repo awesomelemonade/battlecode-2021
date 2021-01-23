@@ -66,7 +66,6 @@ public strictfp class Politician implements RunnableBot {
         if (!rc.isReady()) {
             return;
         }
-        System.out.println("STAGE 1");
         if (currentConviction_10 <= 0) {
             if (campEnemyEC()) {
                 return;
@@ -74,38 +73,29 @@ public strictfp class Politician implements RunnableBot {
             Util.smartExplore();
             return;
         }
-        System.out.println("STAGE 2");
         if (tryEmpowerLatticebot()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
-        System.out.println("STAGE 3");
         if (tryEmpowerEnemy()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
             return;
         }
-        System.out.println("STAGE 4");
         if (defendCommunicatedEnemies()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        System.out.println("STAGE 5");
         if (currentConviction_10 >= 50) {
             if (tryClaimEC()) {
                 Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
                 return;
             }
         }
-        System.out.println("STAGE 6");
         if (Cache.ALLY_ROBOTS.length > 18) {
             // TODO: go towards enemy (or at least somewhere open)
             Util.smartExplore();
             return;
         }
-        System.out.println("STAGE 7");
-
-        // Some initial analysis
-
         if (isSmallPolitician) {
             // this is a small politician
             if (!doNotFortify) {
@@ -114,7 +104,6 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        System.out.println("STAGE 8");
 
         // Is this a big politician? Small politician?
         // Are there slanderers to protect?
@@ -133,7 +122,6 @@ public strictfp class Politician implements RunnableBot {
         if (Util.smartExplore()) {
             return;
         }
-        System.out.println("STAGE 9");
     }
 
     public static boolean defendCommunicatedEnemies() {

@@ -80,19 +80,32 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     public static void buildUnit(int influence) {
         if (rc.isReady()) {
+            // If there are enemy slanderers in sensing radius, build muckrakers
+            if (LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS, r -> r.getType() == RobotType.SLANDERER)) {
+                if (buildCheapMuckraker()) {
+                    Util.println("Attack Sensed Slanderers");
+                    return;
+                }
+            }
             // big p / big m
             if (rc.getRoundNum() > 30 && influence >= 150 && Math.random() < 0.2) {
                 // build politician w/ minimum 150
                 if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
                     if (buildMuckraker(Math.max(influence - 50, 150))) {
+                        Util.println("Big Muckraker");
+                        return;
+                    }
+                } else {
+                    if (buildPolitician(Math.max(influence - 50, 150))) {
+                        Util.println("Big Politician");
                         return;
                     }
                 }
-                if (buildPolitician(Math.max(influence - 50, 150))) {
-                    return;
-                }
             }
-            if (reactBuild(influence)) return;
+            if (reactDefense(influence)) {
+                Util.println("React Defense");
+                return;
+            }
             boolean seesEnemyMuckrakerOrEC = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
                     r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER);
             int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
@@ -123,20 +136,21 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             // no danger? build slanderers
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
-            double random = Math.random();
-            if (Cache.TURN_COUNT > 10 && (!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || random < 0.6)) {
+            if ((!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || Math.random() < 0.6)) {
                 if (buildSlanderer(influence)) {
+                    Util.println("Slanderer");
                     return;
                 }
             }
-            random = Math.random();
-            if (random < (foundEnemyEC ? 0.3 : 0.35)) {
+            if (politicianCount == 0 || Math.random() < (foundEnemyEC ? 0.3 : 0.35)) {
                 if (buildCheapPolitician(influence)) {
+                    Util.println("Cheap Politician");
                     return;
                 }
             }
             // otherwise, build cheap muckrakers
             buildCheapMuckraker();
+            Util.println("Cheap Muckraker");
         }
     }
 
@@ -169,11 +183,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         return res;
     }
 
-    public static boolean reactBuild(int influence) {
-        // If there are enemy slanderers in sensing radius, build muckrakers
-        if (LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS, r -> r.getType() == RobotType.SLANDERER)) {
-            if (buildCheapMuckraker()) return true;
-        }
+    public static boolean reactDefense(int influence) {
         boolean needToDefendAgainstMuckraker =
                 CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numSmallDefenders ||
                         (CentralUnitTracker.numSmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);

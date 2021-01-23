@@ -24,7 +24,7 @@ public class Constants {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
         SPAWN = rc.getLocation();
-        switch(rc.getType()) {
+        switch (rc.getType()) {
             case ENLIGHTENMENT_CENTER:
                 SENSE_BOX_RADIUS = 6;
                 break;

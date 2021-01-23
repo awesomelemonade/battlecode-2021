@@ -1,6 +1,5 @@
 package greedybot;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -483,7 +482,7 @@ public strictfp class Politician implements RunnableBot {
         //  - find the closest square that isolates
         //  - pathfind/empower
         return LambdaUtil.arraysStreamMin(Cache.ENEMY_ROBOTS, Cache.NEUTRAL_ROBOTS,
-                r -> worthToKill(r),
+                r -> worthToKill1v1(r),
                 Comparator.comparingInt(r -> Cache.MY_LOCATION.distanceSquaredTo(r.getLocation())))
                 .map(r -> {
                     MapLocation rLocation = r.getLocation();
@@ -537,16 +536,33 @@ public strictfp class Politician implements RunnableBot {
                 }).orElse(false);
     }
 
-    public static boolean worthToKill(RobotInfo enemy) {
-        if (MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
-                .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) > 100) {
-            return false;
+    public static boolean worthToKill1v1(RobotInfo enemy) {
+        switch (enemy.getType()) {
+            case POLITICIAN:
+                // it's never worth to make a 1v1 politician trade as the attacker
+                return false;
+            case ENLIGHTENMENT_CENTER:
+                if (enemy.getTeam() == Team.NEUTRAL) {
+                    // neutral ec
+                    return currentDamage > enemy.getConviction();
+                } else {
+                    // enemy ec
+                    return !isSmallPolitician; // small politicians aren't worth to empower at enemy ec's
+                }
+            case MUCKRAKER:
+                boolean isCloseToAllyEC = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                        .getClosestLocationDistance(enemy.getLocation(), Integer.MAX_VALUE) <= 100;
+                if (isCloseToAllyEC) {
+                    return 10 * getDamageValue(currentDamage, enemy) >=
+                            (isSmallPolitician ? 2 : 5) * currentDamage;
+                } else {
+                    return 10 * getDamageValue(currentDamage, enemy) >=
+                            (isSmallPolitician ? 2 : 75) * currentDamage;
+                }
+            default:
+                // should never happen (slanderers are not detected by politicians)
+                throw new IllegalStateException();
         }
-        if (enemy.getType() == RobotType.ENLIGHTENMENT_CENTER && enemy.getTeam() == Team.NEUTRAL && currentDamage <= enemy.getConviction()) {
-            return false;
-        }
-        return 10 * getDamageValue(currentDamage, enemy) >=
-                (enemy.getType() == RobotType.MUCKRAKER ? (isSmallPolitician ? 2 : 5) : 9) * currentDamage;
     }
 
     // Does not handle empowering or chasing after muckrakers/other enemies

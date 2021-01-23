@@ -113,7 +113,8 @@ public class CentralCommunication {
         // register any new ally robots (either though vision or building)
         start = Clock.getBytecodeNum();
         if (unitListSize < UNIT_LIST_MAX_SIZE) {
-            for (RobotInfo ally : Cache.ALLY_ROBOTS) {
+            for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
+                RobotInfo ally = Cache.ALLY_ROBOTS[i];
                 // some sort of set - allocate in chunks of 4096?
                 if (ally.getType() != RobotType.ENLIGHTENMENT_CENTER) {
                     int id = ally.getID();

@@ -1,15 +1,20 @@
-package flanks.util;
+package combobot2.util;
 
-import battlecode.common.*;
-import flanks.RobotPlayer;
+import battlecode.common.Clock;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import battlecode.common.Team;
+import combobot2.RobotPlayer;
 
 import java.util.function.Predicate;
 
 public class Util {
     private static RobotController rc;
     private static boolean isCentral;
-    private static int buildDir = -1;
-    private static int adjDir = 1;
 
     public static void init(RobotController rc) {
         Util.rc = rc;
@@ -28,7 +33,6 @@ public class Util {
         } else {
             UnitCommunication.init(rc);
         }
-        for(int i = 0; i < 16; i++) exploreDirs[i] = i;
     }
 
     public static void move(Direction direction) {
@@ -37,18 +41,6 @@ public class Util {
 
     public static void loop() throws GameActionException {
         Cache.loop();
-        if (Cache.TURN_COUNT == 1) {
-            for (RobotInfo ri : Cache.ALLY_ROBOTS) {
-                if (ri.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                    for (int i = 0; i < 8; i++) {
-                        if (Constants.ORDINAL_DIRECTIONS[i].equals(ri.location.directionTo(Cache.MY_LOCATION))) {
-                            buildDir = i;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
         MapInfo.loop();
         if (isCentral) {
             CentralCommunication.loop();
@@ -59,13 +51,13 @@ public class Util {
 
     public static void postLoop() throws GameActionException {
         if (Constants.DEBUG_DRAW) {
-            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).forEachLocation(x -> {
                 Util.setIndicatorDot(x, 255, 255, 255);
             });
-            MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).forEachLocation(x -> {
                 Util.setIndicatorDot(x, 128, 128, 128);
             });
-            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).forEach(x -> {
+            MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).forEachLocation(x -> {
                 Util.setIndicatorDot(x, 0, 0, 0);
             });
             MapInfo.enemySlandererLocations.forEach(x -> {
@@ -115,20 +107,6 @@ public class Util {
         return false;
     }
 
-    public static boolean tryBuildRobotTowardsRandomDirection(RobotType type, int influence) {
-        Direction direction;
-        if (type != RobotType.SLANDERER && type != RobotType.POLITICIAN) {
-            adjDir = (adjDir + 3) % 8;
-        }
-        direction = Constants.ORDINAL_DIRECTIONS[adjDir];
-        for (Direction buildDirection : Constants.getAttemptOrder(direction)) {
-            if (tryBuildRobot(type, buildDirection, influence)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static boolean tryMove(Direction direction) {
         if (rc.canMove(direction)) {
             move(direction);
@@ -153,6 +131,11 @@ public class Util {
 
     public static boolean tryRandomMove() {
         return tryMove(randomAdjacentDirection());
+    }
+
+    public static boolean tryKiteFrom(MapLocation location) {
+        Util.setIndicatorLine(Cache.MY_LOCATION, location, 255, 128, 0); // orange
+        return Util.tryMoveTowards(location.directionTo(rc.getLocation()));
     }
 
     public static boolean hasAdjacentAllyRobot(MapLocation location) {
@@ -230,118 +213,43 @@ public class Util {
     private static int exploreDir = -1;
     private static int prevExploreDir = -1;
 
-    public static int sign(int a) {
-        if (a > 0) {
-            return 1;
-        } else {
-            return -1;
-        }
-    }
-
-    public static int findSymmetry(double dx, double dy) {
-        int bestIndex = -1;
-        double most = -5;
-        for (int i = 0; i < 8; i++) {
-            double x = Constants.ORDINAL_OFFSET_X[i];
-            double y = Constants.ORDINAL_OFFSET_Y[i];
-            double temp = (x * dx + y * dy) / Math.sqrt((x*x + y*y) * (dx*dx + dy*dy));
-            if (temp > most) {
-                most = temp;
-                bestIndex = i;
-            }
-        }
-        return bestIndex;
-    }
-
-    public static int findSymmetry2(double dx, double dy, int blacklist) {
-        int bestIndex = -1;
-        double most = -5;
-        for (int i = 0; i < 8; i++) {
-            if (i == blacklist) {
-                continue;
-            }
-            double x = Constants.ORDINAL_OFFSET_X[i];
-            double y = Constants.ORDINAL_OFFSET_Y[i];
-            double temp = (x * dx + y * dy) / Math.sqrt((x*x + y*y) * (dx*dx + dy*dy));
-            if (temp > most) {
-                most = temp;
-                bestIndex = i;
-            }
-        }
-        return bestIndex;
-    }
-
-    static boolean first = false;
-    public static MapLocation exploreLoc;
-    public static int[] exploreDirs = new int[16];
-
     public static boolean smartExplore() throws GameActionException {
         // TODO: optimize and implement 16 direction vectors instead of 8
         Util.setIndicatorDot(Cache.MY_LOCATION, 255, 128, 0); // orange
-        if(exploreDir == -1 || reachedBorder(exploreDir) || goingTowardsEC(exploreDir)) {
-            if (rc.getRoundNum() < 100 && !first) {
-                exploreDir = buildDir;
-                exploreLoc = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir] * 62, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir] * 62);
-                first = true;
-            } else {
-                // shuffle directions
-                for (int i = 0; i < 15; i++) {
-                    int idx = randBetween(i + 1, 15);
-                    int tmp = exploreDirs[idx];
-                    exploreDirs[idx] = exploreDirs[i];
-                    exploreDirs[i] = tmp;
-                }
-                for (int i = 0; i < 16; i++) {
-                    int potentialDir = exploreDirs[i];
-                    MapLocation potentialLoc = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[potentialDir] * 62, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[potentialDir] * 62);
-                    if (exploreDir != -1 && (potentialDir == exploreDir || (Constants.ORDINAL_OFFSET_X[potentialDir] + Constants.ORDINAL_OFFSET_X[exploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[potentialDir] + Constants.ORDINAL_OFFSET_Y[exploreDir] == 0))) {
-                        continue;
-                    }
-                    if (reachedBorder(potentialDir) || goingTowardsEC(potentialDir)) continue;
-                    exploreDir = potentialDir;
-                    exploreLoc = potentialLoc;
-                    break;
-                }
+        while (exploreDir == -1) {
+            exploreDir = randBetween(0, 15);
+            if (prevExploreDir != -1 && (exploreDir == prevExploreDir || (Constants.ORDINAL_OFFSET_X[exploreDir] + Constants.ORDINAL_OFFSET_X[prevExploreDir] == 0 && Constants.ORDINAL_OFFSET_Y[exploreDir] + Constants.ORDINAL_OFFSET_Y[prevExploreDir] == 0))) {
+                exploreDir = -1;
             }
         }
-        if(exploreDir == -1) return randomExplore();
-        return Pathfinder.execute(borderCut(exploreLoc));
-    }
+        if (reachedBorder(exploreDir)) {
+            prevExploreDir = exploreDir;
+            exploreDir = -1;
+            // TODO: Check Bytecodes Left
+            return smartExplore();
+        }
+        MapLocation target = new MapLocation(Cache.MY_LOCATION.x + Constants.ORDINAL_OFFSET_X[exploreDir]*4, Cache.MY_LOCATION.y + Constants.ORDINAL_OFFSET_Y[exploreDir]*4);
 
-    public static MapLocation borderCut(MapLocation target) {
-        MapLocation ret = new MapLocation(target.x, target.y);
-        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && ret.x > MapInfo.mapMaxX) {
-            ret = new MapLocation(MapInfo.mapMaxX - 1, ret.y);
-        } else if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && ret.x < MapInfo.mapMinX) {
-            ret = new MapLocation(MapInfo.mapMinX + 1, ret.y);
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && target.x > MapInfo.mapMaxX) {
+            target = new MapLocation(MapInfo.mapMaxX - 1, target.y);
+        } else if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && target.x < MapInfo.mapMinX) {
+            target = new MapLocation(MapInfo.mapMinX + 1, target.y);
         }
-        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && ret.y > MapInfo.mapMaxY) {
-            ret = new MapLocation(ret.x, MapInfo.mapMaxY - 1);
-        } else if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && ret.y < MapInfo.mapMinY) {
-            ret = new MapLocation(ret.x, MapInfo.mapMinY + 1);
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && target.y > MapInfo.mapMaxY) {
+            target = new MapLocation(target.x, MapInfo.mapMaxY - 1);
+        } else if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && target.y < MapInfo.mapMinY) {
+            target = new MapLocation(target.x, MapInfo.mapMinY + 1);
         }
-        return ret;
-    }
-
-    public static boolean goingTowardsEC(int dir) throws GameActionException {
-        int tempX = Constants.ORDINAL_OFFSET_X[dir];
-        int tempY = Constants.ORDINAL_OFFSET_Y[dir];
-        MapLocation loc = Cache.MY_LOCATION.translate(tempX, tempY);
-        int futureDist = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocationDistance(loc, 1024);
-        int curDist = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getClosestLocationDistance(Cache.MY_LOCATION, 1024);
-        if(futureDist <= curDist && futureDist <= 25) {
-            return true;
-        }
-        return false;
+        return Pathfinder.execute(target);
     }
 
     public static boolean reachedBorder(int dir) throws GameActionException {
         int tempX = Constants.ORDINAL_OFFSET_X[dir];
         int tempY = Constants.ORDINAL_OFFSET_Y[dir];
-        if (tempX == 2 || tempX == -2) {
+        if (tempX > 1 || tempX < 1) {
             tempX = tempX / 2;
         }
-        if (tempY == 2 || tempY == -2) {
+        if (tempY > 1 || tempY < 1) {
             tempY = tempY / 2;
         }
         MapLocation loc1 = Cache.MY_LOCATION.translate(tempX * 3, 0);
@@ -361,7 +269,7 @@ public class Util {
 
     /**
      * Usage: Util.random(Constants.CARDINAL_DIRECTIONS)
-     * 
+     *
      * @param directions
      * @return
      */
@@ -370,9 +278,7 @@ public class Util {
     }
 
     public static Direction randomAdjacentDirection() {
-        adjDir = (adjDir + 3) % 8;
-        return Constants.ORDINAL_DIRECTIONS[adjDir];
-        // return random(Constants.ORDINAL_DIRECTIONS);
+        return random(Constants.ORDINAL_DIRECTIONS);
     }
 
     public static RobotInfo getClosestRobot(RobotInfo[] robots, Predicate<RobotInfo> filter) {

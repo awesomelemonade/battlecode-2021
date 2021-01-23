@@ -1,10 +1,11 @@
-package combobot.util;
+package combobot2.util;
 
 import battlecode.common.MapLocation;
 import battlecode.common.Team;
 
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -124,7 +125,7 @@ public class EnlightenmentCenterList {
         int totx = 0;
         int toty = 0;
         int tot = 0;
-        EnlightenmentCenterListNode current = head;
+        EnlightenmentCenterList.EnlightenmentCenterListNode current = head;
         while (current != null) {
             totx += current.location.x;
             toty += current.location.y;

@@ -19,7 +19,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int politicianCount = 0;
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
-    private static int turnsSinceSelfEmpowerer = 0;
     private static boolean initialEC;
 
     private static MapLocation enemyDirection;
@@ -36,7 +35,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public void preTurn() {
-        turnsSinceSelfEmpowerer++;
         perTurnProfit = rc.getInfluence() - lastInfluence;
         Util.println("Profit = " + perTurnProfit);
     }
@@ -91,14 +89,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         break;
                 }
                 return;
-            }
-            if (rc.getEmpowerFactor(Constants.ALLY_TEAM, 15) >= 2 && turnsSinceSelfEmpowerer >= 11) {
-                int cost = influence / 2;
-                if (buildSelfEmpowerer(cost)) {
-                    return;
-                } else {
-                    if (buildCheapMuckraker()) return;
-                }
             }
             // no danger? build slanderers / big p
             if (influence >= 150 && Math.random() < 0.2) {
@@ -270,16 +260,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         return false;
     }
 
-    public static boolean buildSelfEmpowerer(int influence) {
-        influence = influence + 6 - (influence % 10);
-        if (influence <= 50) return false;
-        if (tryBuild(RobotType.POLITICIAN, influence)) {
-            turnsSinceSelfEmpowerer = 0;
-            return true;
-        }
-        return false;
-    }
-
     public static boolean tryBuildRobot(RobotType type, Direction direction, int influence) {
         if (rc.canBuildRobot(type, direction, influence)) {
             switch (type) {
@@ -324,7 +304,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     // for when we don't specify a direction
     public static boolean tryBuild(RobotType type, int influence) {
-        if (turnsSinceSelfEmpowerer <= 12) return tryBuildCardinal(type, influence);
         return tryBuildRobotTowards(type, experiment.util.Util.randomAdjacentDirection(), influence);
     }
 }

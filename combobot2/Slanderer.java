@@ -1,0 +1,94 @@
+package combobot2;
+
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import combobot2.util.Cache;
+import combobot2.util.Constants;
+import combobot2.util.LatticeUtil;
+import combobot2.util.MapInfo;
+import combobot2.util.Pathfinder;
+import combobot2.util.UnitCommunication;
+import combobot2.util.Util;
+
+public strictfp class Slanderer implements RunnableBot {
+    private RobotController rc;
+    private Politician politician;
+
+    public Slanderer(RobotController rc) {
+        this.rc = rc;
+    }
+
+    @Override
+    public void init() throws GameActionException {
+
+    }
+
+    @Override
+    public void turn() throws GameActionException {
+        if (!rc.isReady() || Cache.TURN_COUNT <= 3) {
+            return;
+        }
+        if (rc.getType() == RobotType.SLANDERER) {
+            RobotInfo closestEnemy = Util.getClosestEnemyRobot(r -> r.getType() == RobotType.MUCKRAKER ||
+                    r.getType() == RobotType.ENLIGHTENMENT_CENTER);
+            MapLocation closestEnemyLocation = closestEnemy == null ? null : closestEnemy.getLocation();
+            if (closestEnemyLocation == null) {
+                closestEnemyLocation = UnitCommunication.closestCommunicatedEnemyToKite;
+            }
+            if (closestEnemyLocation != null && rc.getRoundNum() <= 150 &&
+                    Cache.MY_LOCATION.distanceSquaredTo(closestEnemyLocation) <= 144) {
+                Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
+                Util.tryKiteFrom(closestEnemyLocation);
+            }
+            if (closestEnemyLocation == null || Cache.MY_LOCATION.distanceSquaredTo(closestEnemyLocation) >= 144) {
+                Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255);
+                if(hide()) {
+                    return;
+                }
+                if(Util.smartExplore()) return;
+            } else {
+                Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
+                Util.tryKiteFrom(closestEnemyLocation);
+            }
+        } else {
+            // Camouflage
+            if (politician == null) {
+                politician = new Politician(rc);
+                politician.init();
+            }
+            politician.turn();
+        }
+    }
+
+    private int hidingScore(MapLocation loc) {
+        int dist = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                .getClosestLocationDistance(loc, 1024);
+        if (dist <= 4) return 9999 - dist;
+        if(!LatticeUtil.isLatticeLocation(loc)) return 9999 - dist;
+        return dist;
+    }
+
+    public boolean hide() throws GameActionException {
+        int bestScore = 9999;
+        Direction bestdir = null;
+        for(Direction d: Constants.ORDINAL_DIRECTIONS) if(rc.canMove(d)) {
+            MapLocation loc = Cache.MY_LOCATION.add(d);
+            int score = hidingScore(loc);
+            if(score < bestScore) {
+                bestScore = score;
+                bestdir = d;
+            }
+        }
+        if(bestScore >= hidingScore(Cache.MY_LOCATION)) {
+            return true;
+        }
+        if(bestdir != null) {
+            return Util.tryMove(bestdir);
+        }
+        return false;
+    }
+}

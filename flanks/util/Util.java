@@ -51,9 +51,7 @@ public class Util {
         }
         MapInfo.loop();
         if (isCentral) {
-            System.out.println("BEFORE = " + Clock.getBytecodeNum());
             CentralCommunication.loop();
-            System.out.println("AFTER = " + Clock.getBytecodeNum());
         } else {
             UnitCommunication.loop();
         }

@@ -61,7 +61,6 @@ public class CentralCommunication {
         // read flags of each known robot (delete from list if not alive)
         UnitListNode prev = null;
         UnitListNode current = unitListHead;
-        System.out.println("LOOP 1 = " + Clock.getBytecodeNum());
         int numIts = 0;
         while (current != null) {
             numIts++;
@@ -109,9 +108,6 @@ public class CentralCommunication {
                             double correctionY = tempDy2 / 3.0;
                             guessX += correctionX;
                             guessY += correctionY;
-                            System.out.println("VEC1: " + tempDx + " " + tempDy);
-                            System.out.println("VEC2: " + correctionX + " " + correctionY);
-                            System.out.println("GUESS VEC " + guessX + " " + guessY);
                             if (receivedInfoCount == 0) {
                                 int symmetry = Util.findSymmetry(guessX, guessY);
                                 int symmetry2 = Util.findSymmetry2(guessX, guessY, symmetry);
@@ -119,13 +115,11 @@ public class CentralCommunication {
                                 guessY = Constants.ORDINAL_OFFSET_Y[symmetry] * 61;
 
                                 MapLocation guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
-                                System.out.println("GUESS " + guessX + " " + guessY);
                                 MapInfo.enemySlandererLocations.add(guessLocation, 300);
                                 guessX = Constants.ORDINAL_OFFSET_X[symmetry2] * 61;
                                 guessY = Constants.ORDINAL_OFFSET_Y[symmetry2] * 61;
 
                                 guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
-                                System.out.println("SECOND " + guessX + " " + guessY);
                                 // MapInfo.enemySlandererLocations.add(guessLocation, 300);
                             }
                             receivedInfoCount++;
@@ -148,9 +142,6 @@ public class CentralCommunication {
             }
             current = current.next;
         }
-        System.out.println("numIts = " + numIts);
-        System.out.println("LOOP 2 = " + Clock.getBytecodeNum());
-        System.out.println("unitListSize = " + unitListSize);
         // register any new ally robots (either though vision or building)
         if (unitListSize < UNIT_LIST_MAX_SIZE) {
             for (RobotInfo ally : Cache.ALLY_ROBOTS) {
@@ -209,6 +200,9 @@ public class CentralCommunication {
                 break;
             case 4: // [locations of interest]
                 rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);
+                if(rotationLocation != null) {
+                    System.out.println("COMMED SLANDERER AT " + rotationLocation.x + ", " + rotationLocation.y);
+                }
                 break;
         }
         if (rotationLocation != null) {

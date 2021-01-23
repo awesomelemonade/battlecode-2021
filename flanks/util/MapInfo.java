@@ -148,16 +148,21 @@ public class MapInfo {
     public static boolean getExplored(MapLocation loc) {
         if(Math.abs(loc.x-Constants.SPAWN.x) > 63) return true;
         if(Math.abs(loc.y-Constants.SPAWN.y) > 63) return true;
-        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
-            return true;
-        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
-            return true;
-        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
-            return true;
-        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
-            return true;
+        if(!potentiallyInBounds(loc)) return true;
         int x = locationToExploreIndexX(loc.x);
         int y = locationToExploreIndexY(loc.y);
         return (explored[x] & (1 << y)) != 0;
+    }
+
+    public static boolean potentiallyInBounds(MapLocation loc) {
+        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
+            return false;
+        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
+            return false;
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
+            return false;
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
+            return false;
+        return true;
     }
 }

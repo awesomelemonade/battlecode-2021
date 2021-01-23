@@ -37,15 +37,18 @@ public strictfp class Muckraker implements RunnableBot {
     public void turn() throws GameActionException {
         if (rc.isReady()) {
             if (tryExpose()) {
+                Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
                 return;
             }
             RobotInfo enemy = Util.getClosestEnemyRobot(r -> r.getType().canBeExposed());
             if (enemy != null) {
+                Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
                 Pathfinder.execute(enemy.getLocation());
                 return;
             }
             if(directAttacker) {
                 if (goToCommunicatedSlanderers()) {
+                    Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
                     return;
                 }
             }
@@ -74,11 +77,13 @@ public strictfp class Muckraker implements RunnableBot {
                     return;
                 }
             }
+            System.out.println("HI1");
             if (!explore && directAttacker) {
                 if (tryECSpiral()) {
                     return;
                 }
             }
+            System.out.println("HI2");
             Util.smartExplore();
         }
     }

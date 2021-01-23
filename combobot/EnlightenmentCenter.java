@@ -220,11 +220,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
 
     public static boolean buildCheapMuckraker() {
         int influence = Math.max(1, (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
-        Direction directionToEnemies = Cache.MY_LOCATION.directionTo(enemyDirection);
-        if (directionToEnemies == Direction.CENTER) {
-            directionToEnemies = Util.randomAdjacentDirection();
-        }
-        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, directionToEnemies, influence)) {
+        Direction buildDirection = getDistributedDirection();
+        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, buildDirection, influence)) {
             muckrakerCount++;
             return true;
         }
@@ -234,11 +231,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static boolean buildMuckraker(int influence) {
         int cap = Math.max(1000, (int) (0.5 * rc.getInfluence() / (1500 - rc.getRoundNum())));
         influence = Math.min(influence, cap);
-        Direction directionToEnemies = Cache.MY_LOCATION.directionTo(enemyDirection);
-        if (directionToEnemies == Direction.CENTER) {
-            directionToEnemies = Util.randomAdjacentDirection();
-        }
-        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, directionToEnemies, influence)) {
+        Direction buildDirection = getDistributedDirection();
+        if (Util.tryBuildRobotTowards(RobotType.MUCKRAKER, buildDirection, influence)) {
             muckrakerCount++;
             return true;
         }
@@ -249,12 +243,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         // check if slanderer will provide negligible eco
         if (rc.getConviction() >= 50000 || rc.getConviction() >= 300 * (1500 - rc.getRoundNum())) return false;
         influence = Math.min(influence, 463);
-        Direction awayFromEnemies = enemyDirection.directionTo(Cache.MY_LOCATION);
-        if (awayFromEnemies == Direction.CENTER) {
-            awayFromEnemies = Util.randomAdjacentDirection();
-        }
+        Direction buildDirection = getBuildDirectionAwayFromEnemy();
         int cost = SlandererBuild.getBuildInfluence(influence);
-        if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, awayFromEnemies, cost)) {
+        if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, buildDirection, cost)) {
             slandererCount++;
             return true;
         } else {
@@ -274,14 +265,34 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         }
         int cap = Math.max(1000, (int) (0.5 * (rc.getInfluence() / (1500 - rc.getRoundNum()))));
         influence = Math.min(influence, cap);
-        Direction directionToEnemies = Cache.MY_LOCATION.directionTo(enemyDirection);
-        if (directionToEnemies == Direction.CENTER) {
-            directionToEnemies = Util.randomAdjacentDirection();
-        }
-        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, directionToEnemies, influence)) {
+        Direction buildDirection = Math.random() < 0.75 ? getBuildDirectionTowardsEnemy() : Util.randomAdjacentDirection();
+        if (Util.tryBuildRobotTowards(RobotType.POLITICIAN, buildDirection, influence)) {
             politicianCount++;
             return true;
         }
         return false;
+    }
+
+    public static Direction getBuildDirectionTowardsEnemy() {
+        Direction ret = Cache.MY_LOCATION.directionTo(enemyDirection);
+        if (ret == Direction.CENTER) {
+            ret = Util.randomAdjacentDirection();
+        }
+        return ret;
+    }
+
+    public static Direction getBuildDirectionAwayFromEnemy() {
+        Direction ret = enemyDirection.directionTo(Cache.MY_LOCATION);
+        if (ret == Direction.CENTER) {
+            ret = Util.randomAdjacentDirection();
+        }
+        return ret;
+    }
+
+    private static int distributedDirection = 0;
+    public static Direction getDistributedDirection() {
+        Direction ret = Constants.ORDINAL_DIRECTIONS[distributedDirection];
+        distributedDirection = (distributedDirection + 3) % 8;
+        return ret;
     }
 }

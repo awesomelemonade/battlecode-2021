@@ -46,19 +46,19 @@ public strictfp class Muckraker implements RunnableBot {
                 return;
             }
             // If we're near a neutral enlightenment center, kite from ally big p
-            // if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL)
-            //         .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) <= 9) {
-            //     // kite from closest big p
-            //     if (LambdaUtil.arraysStreamMin(Cache.ALLY_ROBOTS,
-            //             r -> r.getType() == RobotType.POLITICIAN && r.getConviction() >= 50,
-            //             Comparator.comparingInt(
-            //                     r -> r.getLocation().distanceSquaredTo(Cache.MY_LOCATION))).map(r -> {
-            //         Util.tryKiteFrom(r.getLocation());
-            //         return true;
-            //     }).orElse(false)) {
-            //         return;
-            //     }
-            // }
+            if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL)
+                    .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) <= 9) {
+                // kite from closest big p
+                if (LambdaUtil.arraysStreamMin(Cache.ALLY_ROBOTS,
+                        r -> r.getType() == RobotType.POLITICIAN && r.getConviction() >= 50,
+                        Comparator.comparingInt(
+                                r -> r.getLocation().distanceSquaredTo(Cache.MY_LOCATION))).map(r -> {
+                    Util.tryKiteFrom(r.getLocation());
+                    return true;
+                }).orElse(false)) {
+                    return;
+                }
+            }
             if (directAttacker) {
                 if (goToCommunicatedSlanderers()) {
                     return;
@@ -149,14 +149,14 @@ public strictfp class Muckraker implements RunnableBot {
         int moveY = (int)(guessY / mag * 4);
         // System.out.println("Dense: " + guessX + " " + guessY);
         MapLocation target = Cache.MY_LOCATION.translate(moveX, moveY);
-        // try {
-        //     if (rc.canDetectLocation(target) && !rc.onTheMap(target)) {
-        //         MapInfo.enemySlandererLocations.ignoreFirst = true;
-        //         return false;
-        //     }
-        // } catch (GameActionException ex) {
-        //     throw new IllegalStateException(ex);
-        // }
+        try {
+            if (rc.canDetectLocation(target) && !rc.onTheMap(target)) {
+                MapInfo.enemySlandererLocations.ignoreFirst = true;
+                return false;
+            }
+        } catch (GameActionException ex) {
+            throw new IllegalStateException(ex);
+        }
         return Pathfinder.execute(target);
     }
 

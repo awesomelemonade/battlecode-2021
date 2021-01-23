@@ -24,7 +24,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int lastInfluence = 0;
     private static int perTurnProfit = 0;
     private static int earlyCheapPMCounter = 0;
-    private static boolean initialEC;
+    public static boolean initialEC;
 
     private static MapLocation enemyDirection;
     private static MapLocation nearestEnemy;

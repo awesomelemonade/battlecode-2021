@@ -21,6 +21,7 @@ public strictfp class Muckraker implements RunnableBot {
     private static boolean explore;
     private static boolean targeted;
     private static MapLocation target;
+    private static boolean directAttacker;
 
     public Muckraker(RobotController rc) {
         Muckraker.rc = rc;
@@ -29,11 +30,8 @@ public strictfp class Muckraker implements RunnableBot {
     @Override
     public void init() throws GameActionException {
         targeted = rc.getConviction() > 5;
-        if (Math.random() < 0.2) {
-            explore = true;
-        } else {
-            explore = false;
-        }
+        explore = rc.getConviction() == 1 && Math.random() < 0.2;
+        directAttacker = rc.getRoundNum() <= 50 || Math.random() < 0.3;
     }
 
     @Override
@@ -61,9 +59,10 @@ public strictfp class Muckraker implements RunnableBot {
                     return;
                 }
             }
-
-            if (goToCommunicatedSlanderers()) {
-                return;
+            if (directAttacker) {
+                if (goToCommunicatedSlanderers()) {
+                    return;
+                }
             }
             if (targeted && Cache.TURN_COUNT > 100) {
                 if (target != null) {
@@ -90,7 +89,7 @@ public strictfp class Muckraker implements RunnableBot {
                     return;
                 }
             }
-            if (!explore) {
+            if (!explore && directAttacker) {
                 if (tryECSpiral()) {
                     return;
                 }
@@ -101,9 +100,85 @@ public strictfp class Muckraker implements RunnableBot {
 
     public static boolean goToCommunicatedSlanderers() {
         return MapInfo.enemySlandererLocations.getClosestLocation().map(enemy -> {
-            Pathfinder.execute(enemy);
-            return true;
+            return findSlanderer(enemy);
         }).orElse(false);
+    }
+
+    private static int[] memoryID = new int[10];
+    private static double[] memoryX = new double[10];
+    private static double[] memoryY = new double[10];
+    private static int memoryIdx = 0;
+
+    public static boolean findSlanderer(MapLocation suggestion) {
+        int dx = suggestion.x - Cache.MY_LOCATION.x;
+        int dy = suggestion.y - Cache.MY_LOCATION.y;
+        double mag = Math.sqrt(dx * dx + dy * dy);
+        if (!memoryContains(-1)) {
+            memoryID[memoryIdx] = -1;
+            memoryX[memoryIdx] = ((double)dx / mag * 4);
+            memoryY[memoryIdx] = ((double)dy / mag * 4);
+            memoryIdx = (memoryIdx + 1) % 10;
+        } else {
+            for (int i = 0; i < 10; i++) {
+                if (memoryID[i] == -1) {
+                    memoryX[i] = ((double)dx / mag * 4);
+                    memoryY[i] = ((double)dy / mag * 4);
+                }
+            }
+        }
+        updateMemory();
+        if (!suggestion.equals(MapInfo.enemySlandererLocations.firstLocation)) {
+            if (Cache.MY_LOCATION.distanceSquaredTo(suggestion) > 9) {
+                return Pathfinder.execute(suggestion);
+            } else {
+                // TODO: remove slanderer from queue
+            }
+        }
+        if (MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).orElse(null) != null) {
+            return false;
+        }
+
+        double guessX = 0;
+        double guessY = 0;
+        for (int i = 0; i < 10; i++) {
+            guessX += memoryX[i];
+            guessY += memoryY[i];
+        }
+        mag = Math.sqrt(guessX * guessX + guessY * guessY);
+        int moveX = (int)(guessX / mag * 4);
+        int moveY = (int)(guessY / mag * 4);
+        // System.out.println("Dense: " + guessX + " " + guessY);
+        MapLocation target = Cache.MY_LOCATION.translate(moveX, moveY);
+        try {
+            if (rc.canDetectLocation(target) && !rc.onTheMap(target)) {
+                MapInfo.enemySlandererLocations.ignoreFirst = true;
+                return false;
+            }
+        } catch (GameActionException ex) {
+            throw new IllegalStateException(ex);
+        }
+        return Pathfinder.execute(target);
+    }
+
+    public static void updateMemory() {
+        for (RobotInfo ri : Cache.ENEMY_ROBOTS) {
+            if (!memoryContains(ri.getID())) {
+                MapLocation loc = ri.getLocation();
+                memoryX[memoryIdx] = loc.x - Cache.MY_LOCATION.x;
+                memoryY[memoryIdx] = loc.y - Cache.MY_LOCATION.y;
+                memoryID[memoryIdx] = ri.getID();
+                memoryIdx = (memoryIdx + 1) % 10;
+            }
+        }
+    }
+
+    public static boolean memoryContains(int id) {
+        for (int i = 0; i < 10; i++) {
+            if (memoryID[i] == id) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static MapLocation lastECVisited = null;

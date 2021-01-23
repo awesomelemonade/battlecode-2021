@@ -217,6 +217,39 @@ public class Util {
         return false;
     }
 
+    public static int findSymmetry(double dx, double dy) {
+        int bestIndex = -1;
+        double most = -5;
+        for (int i = 0; i < 8; i++) {
+            double x = Constants.ORDINAL_OFFSET_X[i];
+            double y = Constants.ORDINAL_OFFSET_Y[i];
+            double temp = (x * dx + y * dy) / Math.sqrt((x*x + y*y) * (dx*dx + dy*dy));
+            if (temp > most) {
+                most = temp;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    public static int findSymmetry2(double dx, double dy, int blacklist) {
+        int bestIndex = -1;
+        double most = -5;
+        for (int i = 0; i < 8; i++) {
+            if (i == blacklist) {
+                continue;
+            }
+            double x = Constants.ORDINAL_OFFSET_X[i];
+            double y = Constants.ORDINAL_OFFSET_Y[i];
+            double temp = (x * dx + y * dy) / Math.sqrt((x*x + y*y) * (dx*dx + dy*dy));
+            if (temp > most) {
+                most = temp;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
     private static int exploreDir = -1;
     private static boolean hasExplored = false;
     public static MapLocation exploreLoc;
@@ -297,10 +330,10 @@ public class Util {
         }
         MapLocation loc1 = Cache.MY_LOCATION.translate(tempX * 3, 0);
         MapLocation loc2 = Cache.MY_LOCATION.translate(0, tempY * 3);
-        if (tempX != 0 && rc.canDetectLocation(loc1) && rc.onTheMap(loc1)) {
+        if (tempX != 0 && rc.canSenseLocation(loc1) && rc.onTheMap(loc1)) {
             return false;
         }
-        if (tempY != 0 && rc.canDetectLocation(loc2) && rc.onTheMap(loc2)) {
+        if (tempY != 0 && rc.canSenseLocation(loc2) && rc.onTheMap(loc2)) {
             return false;
         }
         return true;

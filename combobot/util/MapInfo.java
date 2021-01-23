@@ -76,6 +76,17 @@ public class MapInfo {
             }
         }
     }
+    public static boolean potentiallyInBounds(MapLocation loc) {
+        if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)
+            return false;
+        if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)
+            return false;
+        if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX)
+            return false;
+        if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY)
+            return false;
+        return true;
+    }
     public static void addKnownEnlightenmentCenter(Team ecTeam, MapLocation ecLocation, int conviction) {
         // loop unrolling
         switch (ecTeam.ordinal()) {

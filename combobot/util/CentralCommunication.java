@@ -8,9 +8,16 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
+import combobot.EnlightenmentCenter;
 
 public class CentralCommunication {
     private static RobotController rc;
+    private static int receivedInfoCount = 0;
+    private static double guessX = 0;
+    private static double guessY = 0;
+    private static double centroidX = 0;
+    private static double centroidY = 0;
+    private static MapLocation enemyGuess;
     public static void init(RobotController rc) {
         CentralCommunication.rc = rc;
         registered = new BooleanArray();
@@ -85,6 +92,35 @@ public class CentralCommunication {
                         int conviction = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
                         // Handle Enemy Unit
                         CentralUnitTracker.handleEnemyUnit(specifiedLocation, type, conviction);
+                        // Enemy Prediction
+                        if (receivedInfoCount < 1 && EnlightenmentCenter.initialEC) {
+                            int tempDx = specifiedLocation.x - current.location.x;
+                            int tempDy = specifiedLocation.y - current.location.y;
+                            guessX += tempDx;
+                            guessY += tempDy;
+                            int tempDx2 = (current.location.x - Cache.MY_LOCATION.x);
+                            int tempDy2 = (current.location.y - Cache.MY_LOCATION.y);
+                            double mag = Math.sqrt(tempDx2 * tempDx2 + tempDy2 * tempDy2);
+                            double correctionX = tempDx2 / 3.0;
+                            double correctionY = tempDy2 / 3.0;
+                            guessX += correctionX;
+                            guessY += correctionY;
+                            if (receivedInfoCount == 0) {
+                                int symmetry = Util.findSymmetry(guessX, guessY);
+                                int symmetry2 = Util.findSymmetry2(guessX, guessY, symmetry);
+                                guessX = Constants.ORDINAL_OFFSET_X[symmetry] * 61;
+                                guessY = Constants.ORDINAL_OFFSET_Y[symmetry] * 61;
+
+                                MapLocation guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
+                                MapInfo.enemySlandererLocations.add(guessLocation, 300);
+                                guessX = Constants.ORDINAL_OFFSET_X[symmetry2] * 61;
+                                guessY = Constants.ORDINAL_OFFSET_Y[symmetry2] * 61;
+
+                                guessLocation = new MapLocation((int)(Cache.MY_LOCATION.x + guessX), (int)(Cache.MY_LOCATION.y + guessY));
+                                // MapInfo.enemySlandererLocations.add(guessLocation, 300);
+                            }
+                            receivedInfoCount++;
+                        }
                     }
                 }
                 // update location

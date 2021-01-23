@@ -449,7 +449,9 @@ public strictfp class Politician implements RunnableBot {
                 switch (robot.getType()) {
                     case POLITICIAN:
                         int enemyConviction = robot.getConviction();
-                        if (enemyConviction > 10 && damagePerUnit >= enemyConviction - 10) {
+                        if ((enemyConviction > 10 || MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM)
+                                .getClosestLocationDistance(Integer.MAX_VALUE) <= 2) &&
+                                damagePerUnit >= enemyConviction - 10) {
                             // putting a politician at 10 influence or under renders them useless
                             pKills++;
                         }

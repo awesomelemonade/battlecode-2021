@@ -188,8 +188,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numSmallDefenders ||
                         (CentralUnitTracker.numSmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);
         // ignore small politicians's unless they're really close
-        boolean needToDefendAgainstPolitician = nearestEnemyType == RobotType.POLITICIAN &&
-                nearestEnemyDistanceSquared <= 25;
+        boolean needToDefendAgainstPolitician = nearestEnemy != null && nearestEnemyType == RobotType.POLITICIAN &&
+                nearestEnemyDistanceSquared <= 25 && nearestEnemyConviction > 10;
         // do we have slanderers? is there danger (muckrakers)? build defender politicians
         if ((slandererCount > 0 && needToDefendAgainstMuckraker) || needToDefendAgainstPolitician) {
             if (nearestEnemy == null) {

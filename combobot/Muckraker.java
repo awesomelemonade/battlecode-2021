@@ -31,7 +31,7 @@ public strictfp class Muckraker implements RunnableBot {
     public void init() throws GameActionException {
         targeted = rc.getConviction() > 5;
         explore = rc.getConviction() == 1 && Math.random() < 0.2;
-        directAttacker = rc.getRoundNum() <= 50 || Math.random() < 0.3;
+        directAttacker = rc.getRoundNum() <= 80 || Math.random() < 0.3;
     }
 
     @Override

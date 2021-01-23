@@ -108,8 +108,11 @@ public strictfp class Muckraker implements RunnableBot {
         }
         updateMemory();
         if (!suggestion.equals(MapInfo.enemySlandererLocations.firstLocation)) {
+            // System.out.println("GOGOGO " + suggestion);
             if (Cache.MY_LOCATION.distanceSquaredTo(suggestion) > 9) {
                 return Pathfinder.execute(suggestion);
+            } else {
+                // TODO: remove slanderer from queue
             }
         }
         if (MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).orElse(null) != null) {
@@ -126,7 +129,16 @@ public strictfp class Muckraker implements RunnableBot {
         int moveX = (int)(guessX / mag * 4);
         int moveY = (int)(guessY / mag * 4);
         // System.out.println("Dense: " + guessX + " " + guessY);
-        return Pathfinder.execute(Cache.MY_LOCATION.translate(moveX, moveY));
+        MapLocation target = Cache.MY_LOCATION.translate(moveX, moveY);
+        try {
+            if (rc.canDetectLocation(target) && !rc.onTheMap(target)) {
+                MapInfo.enemySlandererLocations.ignoreFirst = true;
+                return false;
+            }
+        } catch (GameActionException ex) {
+            throw new IllegalStateException(ex);
+        }
+        return Pathfinder.execute(target);
     }
 
     public static void updateMemory() {

@@ -14,6 +14,7 @@ public class SlandererQueue {
     private int nextLoc = 0;
     public MapLocation firstLocation;
     private boolean first = true;
+    public boolean ignoreFirst = false;
     public SlandererQueue(int maxCapacity) {
         this.locations = new MapLocation[maxCapacity];
         this.turnNumbers = new int[maxCapacity];
@@ -53,7 +54,7 @@ public class SlandererQueue {
     }
     public Optional<MapLocation> getRandomLocation() {
         if (size == 0) {
-            if (firstLocation != null) {
+            if (firstLocation != null && !ignoreFirst) {
                 return Optional.of(firstLocation);
             }
             return Optional.empty();
@@ -63,14 +64,17 @@ public class SlandererQueue {
         return Optional.of(locations[(index + randomIndex) % capacity]);
     }
     public Optional<MapLocation> getClosestLocation() {
-        if (first && firstLocation != null) {
+        if (first && firstLocation != null && !ignoreFirst) {
             return Optional.of(firstLocation);
         }
         MapLocation closestLocation = null;
         int closestDistanceSquared = Integer.MAX_VALUE;
         for (int i = size; --i >= 0;) {
             MapLocation location = locations[(index + i) % capacity];
-            if (size > 1 && location.equals(firstLocation)) {
+            if (firstLocation != null && location.equals(firstLocation)) {
+                continue;
+            }
+            if (!Util.checkBounds(location)) {
                 continue;
             }
             int distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(location);

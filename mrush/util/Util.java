@@ -315,6 +315,15 @@ public class Util {
         return ret;
     }
 
+    public static boolean checkBounds(MapLocation loc) {
+        if ((MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE && loc.x > MapInfo.mapMaxX) || (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE && loc.x < MapInfo.mapMinX)) {
+            if ((MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE && loc.y > MapInfo.mapMaxY) || (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE && loc.y < MapInfo.mapMinY)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean reachedBorder(int dir) throws GameActionException {
         int tempX = Constants.ORDINAL_OFFSET_X[dir];
         int tempY = Constants.ORDINAL_OFFSET_Y[dir];

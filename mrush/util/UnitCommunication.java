@@ -295,6 +295,7 @@ public class UnitCommunication {
                                 if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                         && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
                                     // System.out.println("FUCK ME");
+                                    System.out.println("ROTATION " + rotationLocation);
                                     if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
                                         MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT + 50);
                                     }

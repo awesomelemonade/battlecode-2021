@@ -14,7 +14,7 @@ import combobot.util.MapInfo;
 import combobot.util.Pathfinder;
 import combobot.util.UnitCommunication;
 import combobot.util.Util;
-import greedybot.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
+import combobot.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
 
 import java.util.Comparator;
 

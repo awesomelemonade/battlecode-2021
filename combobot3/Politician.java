@@ -3,6 +3,7 @@ package combobot3;
 import battlecode.common.*;
 import combobot3.util.Cache;
 import combobot3.util.Constants;
+import combobot3.util.LambdaUtil;
 import combobot3.util.MapInfo;
 import combobot3.util.Pathfinder;
 import combobot3.util.UnitCommunication;
@@ -76,6 +77,9 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         preTurn();
+        if (currentConviction < 50 && kiteBigPNearNeutral()) {
+            return;
+        }
         if (currentConviction_10 <= 0) { // useless; best thing to do is chase enemy big ps to absorb damage
             if (chaseBigPs()) {
                 return;
@@ -110,6 +114,22 @@ public strictfp class Politician implements RunnableBot {
         if (Util.smartExplore()) {
             return;
         }
+    }
+
+    public static boolean kiteBigPNearNeutral() {
+        // If we're near a neutral enlightenment center, kite from ally big p
+        if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL)
+                .getClosestLocationDistance(Cache.MY_LOCATION, Integer.MAX_VALUE) <= 9) {
+            // kite from closest big p
+            return LambdaUtil.arraysStreamMin(Cache.ALLY_ROBOTS,
+                    r -> r.getType() == RobotType.POLITICIAN && r.getConviction() >= 50,
+                    Comparator.comparingInt(
+                            r -> r.getLocation().distanceSquaredTo(Cache.MY_LOCATION))).map(r -> {
+                Util.tryKiteFrom(r.getLocation());
+                return true;
+            }).orElse(false);
+        }
+        return false;
     }
 
     public static boolean shouldAttackTargetEC() {

@@ -295,34 +295,6 @@ public strictfp class Politician implements RunnableBot {
         return false;
     }
 
-    // Lower defense score better
-    public static int getDefenseScore(MapLocation loc) {
-        if (loc.x % 3 != 0 || loc.y % 3 != 0) {
-            return Integer.MAX_VALUE;
-        }
-        if (nearestAllyEC == null) {
-            return Integer.MAX_VALUE;
-        }
-        int dist = nearestAllyEC.distanceSquaredTo(loc);
-        if (dist <= 16)
-            return Integer.MAX_VALUE;
-        // TODO: Unroll loop?
-        for (Direction d : Constants.ORDINAL_DIRECTIONS) {
-            MapLocation adj = loc.add(d);
-            if (rc.canSenseLocation(adj)) {
-                try {
-                    RobotInfo robot = rc.senseRobotAtLocation(adj);
-                    if (robot != null && UnitCommunication.isPotentialSlanderer(robot)) {
-                        return Integer.MAX_VALUE;
-                    }
-                } catch (GameActionException ex) {
-                    throw new IllegalStateException(ex);
-                }
-            }
-        }
-        return nearestEnemyEC == null ? 5000 * dist : 5000 * dist + nearestEnemyEC.distanceSquaredTo(loc);
-    }
-
     // Does not handle empowering or chasing after muckrakers/other enemies
     public static boolean tryDefend() throws GameActionException {
         double x = Cache.MY_LOCATION.x;
@@ -348,22 +320,19 @@ public strictfp class Politician implements RunnableBot {
                 // (1 / d^2) * (vec / d) = (c * vec / d^3)
                 x -= 2.25 * (allyLocation.x - Cache.MY_LOCATION.x) / distanceCubed;
                 y -= 2.25 * (allyLocation.y - Cache.MY_LOCATION.y) / distanceCubed;
-                /*double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
+            }
+            if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
                 double distance = Math.sqrt(distanceSquared);
-                // force based on distance
-                double forceLocationX = allyLocation.x + (Cache.MY_LOCATION.x - allyLocation.x) / distance * 3.0;
-                double forceLocationY = allyLocation.y + (Cache.MY_LOCATION.y - allyLocation.y) / distance * 3.0;
-                Util.setIndicatorLine(allyLocation, new MapLocation((int) Math.round(forceLocationX), (int) Math.round(forceLocationY)), 255, 255, 255);
-                double forceLocationDx = forceLocationX - Cache.MY_LOCATION.x;
-                double forceLocationDy = forceLocationY - Cache.MY_LOCATION.y;
-                double forceDistanceSquared = forceLocationDx * forceLocationDx + forceLocationDy * forceLocationDy;
-                double forceDistanceCubed = forceDistanceSquared * Math.sqrt(forceDistanceSquared);
-                x += 0.75 * forceLocationDx / forceDistanceCubed;
-                y += 0.75 * forceLocationDy / forceDistanceCubed;*/
+                double distanceCubed = distance * distanceSquared;
+                // repel force
+                // (1 / d^2) * (vec / d) = (c * vec / d^3)
+                x -= 2.25 * (allyLocation.x - Cache.MY_LOCATION.x) / distanceCubed;
+                y -= 2.25 * (allyLocation.y - Cache.MY_LOCATION.y) / distanceCubed;
             }
         }
         if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(MapInfo.mapMinX, Cache.MY_LOCATION.y);
+            MapLocation loc = new MapLocation(MapInfo.mapMinX-1, Cache.MY_LOCATION.y);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -373,7 +342,7 @@ public strictfp class Politician implements RunnableBot {
             y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(MapInfo.mapMaxX, Cache.MY_LOCATION.y);
+            MapLocation loc = new MapLocation(MapInfo.mapMaxX+1, Cache.MY_LOCATION.y);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -383,7 +352,7 @@ public strictfp class Politician implements RunnableBot {
             y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMinY);
+            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMinY-1);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -393,7 +362,7 @@ public strictfp class Politician implements RunnableBot {
             y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMaxY);
+            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMaxY+1);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;

@@ -57,7 +57,7 @@ public class UnitCommunication {
     public static final int DO_NOTHING_FLAG = 0b1000_0111_0111_0000_0000_0000;
     public static final int CLEAR_FLAG = 0b0000_0111_0111_0000_0000_0000;
     private static int currentFlag = DO_NOTHING_FLAG;
-    public static MapLocation closestCommunicatedEnemyToKite; // Currently used to by slanderers
+    public static MapLocation closestCommunicatedEnemyToKite;
     public static int closestCommunicatedEnemyDistanceSquared;
     public static int closestCommunicatedEnemyConviction;
 

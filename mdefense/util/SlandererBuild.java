@@ -1,4 +1,4 @@
-package spiral.util;
+package mdefense.util;
 
 public class SlandererBuild {
     public static int getBuildInfluence(int influence) {

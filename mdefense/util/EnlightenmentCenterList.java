@@ -1,6 +1,7 @@
-package spiral.util;
+package mdefense.util;
 
 import battlecode.common.MapLocation;
+import battlecode.common.Team;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -10,6 +11,11 @@ import java.util.function.Predicate;
 public class EnlightenmentCenterList {
     private EnlightenmentCenterListNode head = null;
     private int size;
+    private Team team;
+    private EnlightenmentCenterListNode currentPointer = null;
+    public EnlightenmentCenterList(Team team) {
+        this.team = team;
+    }
     public void addOrUpdate(MapLocation location, int conviction) {
         EnlightenmentCenterListNode current = head;
         while (current != null) {
@@ -20,8 +26,33 @@ public class EnlightenmentCenterList {
             current = current.next;
         }
         // doesn't contain
-        head = new EnlightenmentCenterListNode(location, conviction, head);
+        head = new EnlightenmentCenterListNode(location, conviction, team, head);
         size++;
+    }
+    public Optional<EnlightenmentCenterListNode> getNext() {
+        if (size == 0) {
+            return Optional.empty();
+        }
+        if (currentPointer == null) {
+            currentPointer = head;
+            return Optional.of(currentPointer);
+        } else {
+            currentPointer = currentPointer.next;
+            if (currentPointer == null) {
+                currentPointer = head;
+            }
+            return Optional.of(currentPointer);
+        }
+    }
+    public Optional<EnlightenmentCenterListNode> getRandom() {
+        if (size == 0) {
+            return Optional.empty();
+        }
+        EnlightenmentCenterListNode current = head;
+        for (int i = (int) (size * Math.random()); --i >= 0;) {
+            current = current.next;
+        }
+        return Optional.of(current);
     }
     public Optional<MapLocation> getRandomLocation() {
         if (size == 0) {
@@ -60,7 +91,14 @@ public class EnlightenmentCenterList {
             current = current.next;
         }
     }
-    public void forEach(Consumer<MapLocation> consumer) {
+    public void forEach(Consumer<EnlightenmentCenterListNode> consumer) {
+        EnlightenmentCenterListNode current = head;
+        while (current != null) {
+            consumer.accept(current);
+            current = current.next;
+        }
+    }
+    public void forEachLocation(Consumer<MapLocation> consumer) {
         EnlightenmentCenterListNode current = head;
         while (current != null) {
             consumer.accept(current.location);
@@ -78,6 +116,23 @@ public class EnlightenmentCenterList {
     }
     public Optional<MapLocation> getClosestLocation(MapLocation location) {
         return min(Comparator.comparingInt(x -> x.location.distanceSquaredTo(location))).map(x -> x.location);
+    }
+    public Optional<EnlightenmentCenterListNode> getClosest() {
+        return min(Comparator.comparingInt(ec -> ec.location.distanceSquaredTo(Cache.MY_LOCATION)));
+    }
+    public MapLocation getCentroid() {
+        int totx = 0;
+        int toty = 0;
+        int tot = 0;
+        EnlightenmentCenterListNode current = head;
+        while (current != null) {
+            totx += current.location.x;
+            toty += current.location.y;
+            tot++;
+            current = current.next;
+        }
+        if(tot == 0) return Cache.MY_LOCATION;
+        return new MapLocation(totx/tot, toty/tot);
     }
     public Optional<EnlightenmentCenterListNode> min(Comparator<EnlightenmentCenterListNode> comparator) {
         if (size == 0) {
@@ -114,10 +169,12 @@ public class EnlightenmentCenterList {
     public static class EnlightenmentCenterListNode {
         public MapLocation location;
         public int lastKnownConviction;
+        public Team team;
         private EnlightenmentCenterListNode next;
-        public EnlightenmentCenterListNode(MapLocation location, int lastKnownConviction, EnlightenmentCenterListNode next) {
+        public EnlightenmentCenterListNode(MapLocation location, int lastKnownConviction, Team team, EnlightenmentCenterListNode next) {
             this.location = location;
             this.lastKnownConviction = lastKnownConviction;
+            this.team = team;
             this.next = next;
         }
     }

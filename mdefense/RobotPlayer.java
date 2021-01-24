@@ -1,12 +1,12 @@
-package spiral;
+package mdefense;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import spiral.util.Cache;
-import spiral.util.Constants;
-import spiral.util.Util;
+import mdefense.util.Cache;
+import mdefense.util.Constants;
+import mdefense.util.Util;
 
 public strictfp class RobotPlayer {
     public static int currentTurn;
@@ -39,7 +39,7 @@ public strictfp class RobotPlayer {
             try {
                 while (true) {
                     currentTurn = rc.getRoundNum();
-                    if (Constants.DEBUG_RESIGN && (currentTurn >= 800 || currentTurn >= 350 && rc.getRobotCount() < 10)) {
+                    if (Constants.DEBUG_RESIGN && (currentTurn >= 500 || currentTurn >= 150 && rc.getRobotCount() < 10)) {
                         rc.resign();
                     }
                     Util.loop();

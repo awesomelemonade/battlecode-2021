@@ -1,17 +1,13 @@
-package combobot3;
+package mdefense;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
-import combobot3.util.Cache;
-import combobot3.util.CentralUnitTracker;
-import combobot3.util.Constants;
-import combobot3.util.LambdaUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.SlandererBuild;
-import combobot3.util.Util;
+import battlecode.common.*;
+import mdefense.util.Cache;
+import mdefense.util.CentralUnitTracker;
+import mdefense.util.Constants;
+import mdefense.util.LambdaUtil;
+import mdefense.util.MapInfo;
+import mdefense.util.SlandererBuild;
+import mdefense.util.Util;
 
 import java.util.Comparator;
 
@@ -188,6 +184,28 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public static boolean reactDefense(int influence) {
+        // if big p is coming, put mucks in cardinal directions
+        MapLocation closestBigP = null;
+        int closestDist = 9999;
+        for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
+            if (robot.getType() == RobotType.POLITICIAN) {
+                if (2*(robot.getConviction()-10) >= rc.getConviction() || robot.getConviction() >= 50) {
+                    MapLocation loc = robot.location;
+                    int dist = loc.distanceSquaredTo(Cache.MY_LOCATION);
+                    if(dist < closestDist) {
+                        closestDist = dist;
+                        closestBigP = loc;
+                    }
+                }
+            }
+        }
+        if(closestBigP != null) {
+            Util.setIndicatorLine(Cache.MY_LOCATION, closestBigP, 255, 0, 0);
+            if(Util.tryBuildRobotTowardsCardinal(RobotType.MUCKRAKER, Cache.MY_LOCATION.directionTo(closestBigP), 1)) {
+                muckrakerCount++;
+                return true;
+            }
+        }
         boolean needToDefendAgainstMuckraker =
                 CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numSmallDefenders ||
                         (CentralUnitTracker.numSmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);
@@ -242,6 +260,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static boolean buildSlanderer(int influence) {
         // check if slanderer will provide negligible eco
         if (rc.getConviction() >= 50000 || rc.getConviction() >= 300 * (1500 - rc.getRoundNum())) return false;
+        influence = Math.min(influence, 463);
         Direction buildDirection = getBuildDirectionAwayFromEnemy();
         int cost = SlandererBuild.getBuildInfluence(influence);
         if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, buildDirection, cost)) {

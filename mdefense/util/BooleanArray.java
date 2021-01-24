@@ -1,4 +1,4 @@
-package spiral.util;
+package mdefense.util;
 
 public class BooleanArray {
     private long[][] array;

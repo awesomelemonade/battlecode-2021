@@ -1,4 +1,4 @@
-package spiral.util;
+package mdefense.util;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;

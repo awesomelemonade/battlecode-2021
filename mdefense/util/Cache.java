@@ -1,6 +1,10 @@
-package spiral.util;
+package mdefense.util;
 
-import battlecode.common.*;
+import battlecode.common.Direction;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.Team;
 
 public class Cache { // Cache variables that are constant throughout a turn
     private static RobotController rc;

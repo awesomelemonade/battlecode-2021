@@ -1,7 +1,18 @@
-package spiral;
+package mdefense;
 
-import battlecode.common.*;
-import spiral.util.*;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import mdefense.util.Cache;
+import mdefense.util.Constants;
+import mdefense.util.LatticeUtil;
+import mdefense.util.MapInfo;
+import mdefense.util.Pathfinder;
+import mdefense.util.UnitCommunication;
+import mdefense.util.Util;
 
 public strictfp class Slanderer implements RunnableBot {
     private RobotController rc;
@@ -31,7 +42,7 @@ public strictfp class Slanderer implements RunnableBot {
             if (closestEnemyLocation != null && rc.getRoundNum() <= 150 &&
                     Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) <= 10) {
                 Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
-                tryKiteFrom(closestEnemyLocation);
+                Util.tryKiteFrom(closestEnemyLocation);
             }
             if (closestEnemyLocation == null || Pathfinder.moveDistance(Cache.MY_LOCATION, closestEnemyLocation) >= 7) {
                 Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255);
@@ -41,7 +52,7 @@ public strictfp class Slanderer implements RunnableBot {
                 if(Util.smartExplore()) return;
             } else {
                 Util.setIndicatorDot(closestEnemyLocation, 0, 255, 0);
-                tryKiteFrom(closestEnemyLocation);
+                Util.tryKiteFrom(closestEnemyLocation);
             }
         } else {
             // Camouflage
@@ -51,11 +62,6 @@ public strictfp class Slanderer implements RunnableBot {
             }
             politician.turn();
         }
-    }
-
-    public boolean tryKiteFrom(MapLocation location) throws GameActionException {
-        // TODO: Use passability
-        return Util.tryMoveTowards(location.directionTo(rc.getLocation()));
     }
 
     private int hidingScore(MapLocation loc) {

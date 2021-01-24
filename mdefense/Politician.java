@@ -1,14 +1,14 @@
-package combobot3;
+package mdefense;
 
 import battlecode.common.*;
-import combobot3.util.Cache;
-import combobot3.util.Constants;
-import combobot3.util.LatticeUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.Pathfinder;
-import combobot3.util.UnitCommunication;
-import combobot3.util.Util;
-import combobot3.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
+import mdefense.util.Cache;
+import mdefense.util.Constants;
+import mdefense.util.LatticeUtil;
+import mdefense.util.MapInfo;
+import mdefense.util.Pathfinder;
+import mdefense.util.UnitCommunication;
+import mdefense.util.Util;
+import mdefense.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
 
 import java.util.Comparator;
 import java.util.function.Consumer;
@@ -79,8 +79,8 @@ public strictfp class Politician implements RunnableBot {
         }
         preTurn();
         System.out.println("HI 1");
-        if (currentConviction_10 <= 0) { // useless; best thing to do is chase enemy big ps to absorb damage
-            if (chaseBigPs()) {
+        if (currentConviction_10 <= 0) { // useless; best thing to do is try to block an enemy ec
+            if (campEnemyEC()) {
                 return;
             }
             Util.smartExplore();
@@ -90,10 +90,12 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
+        System.out.println("HI 2");
         if (currentConviction >= 50 && tryClaimEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
+        System.out.println("HI 3");
         if (currentConviction >= 50 && tryHealEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
             return;
@@ -293,6 +295,34 @@ public strictfp class Politician implements RunnableBot {
         return false;
     }
 
+    // Lower defense score better
+    public static int getDefenseScore(MapLocation loc) {
+        if (loc.x % 3 != 0 || loc.y % 3 != 0) {
+            return Integer.MAX_VALUE;
+        }
+        if (nearestAllyEC == null) {
+            return Integer.MAX_VALUE;
+        }
+        int dist = nearestAllyEC.distanceSquaredTo(loc);
+        if (dist <= 16)
+            return Integer.MAX_VALUE;
+        // TODO: Unroll loop?
+        for (Direction d : Constants.ORDINAL_DIRECTIONS) {
+            MapLocation adj = loc.add(d);
+            if (rc.canSenseLocation(adj)) {
+                try {
+                    RobotInfo robot = rc.senseRobotAtLocation(adj);
+                    if (robot != null && UnitCommunication.isPotentialSlanderer(robot)) {
+                        return Integer.MAX_VALUE;
+                    }
+                } catch (GameActionException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            }
+        }
+        return nearestEnemyEC == null ? 5000 * dist : 5000 * dist + nearestEnemyEC.distanceSquaredTo(loc);
+    }
+
     // Does not handle empowering or chasing after muckrakers/other enemies
     public static boolean tryDefend() throws GameActionException {
         double x = Cache.MY_LOCATION.x;
@@ -318,19 +348,22 @@ public strictfp class Politician implements RunnableBot {
                 // (1 / d^2) * (vec / d) = (c * vec / d^3)
                 x -= 2.25 * (allyLocation.x - Cache.MY_LOCATION.x) / distanceCubed;
                 y -= 2.25 * (allyLocation.y - Cache.MY_LOCATION.y) / distanceCubed;
-            }
-            if (ally.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
+                /*double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(allyLocation);
                 double distance = Math.sqrt(distanceSquared);
-                double distanceCubed = distance * distanceSquared;
-                // repel force
-                // (1 / d^2) * (vec / d) = (c * vec / d^3)
-                x -= 2.25 * (allyLocation.x - Cache.MY_LOCATION.x) / distanceCubed;
-                y -= 2.25 * (allyLocation.y - Cache.MY_LOCATION.y) / distanceCubed;
+                // force based on distance
+                double forceLocationX = allyLocation.x + (Cache.MY_LOCATION.x - allyLocation.x) / distance * 3.0;
+                double forceLocationY = allyLocation.y + (Cache.MY_LOCATION.y - allyLocation.y) / distance * 3.0;
+                Util.setIndicatorLine(allyLocation, new MapLocation((int) Math.round(forceLocationX), (int) Math.round(forceLocationY)), 255, 255, 255);
+                double forceLocationDx = forceLocationX - Cache.MY_LOCATION.x;
+                double forceLocationDy = forceLocationY - Cache.MY_LOCATION.y;
+                double forceDistanceSquared = forceLocationDx * forceLocationDx + forceLocationDy * forceLocationDy;
+                double forceDistanceCubed = forceDistanceSquared * Math.sqrt(forceDistanceSquared);
+                x += 0.75 * forceLocationDx / forceDistanceCubed;
+                y += 0.75 * forceLocationDy / forceDistanceCubed;*/
             }
         }
         if (MapInfo.mapMinX != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(MapInfo.mapMinX-1, Cache.MY_LOCATION.y);
+            MapLocation loc = new MapLocation(MapInfo.mapMinX, Cache.MY_LOCATION.y);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -340,7 +373,7 @@ public strictfp class Politician implements RunnableBot {
             y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         if (MapInfo.mapMaxX != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(MapInfo.mapMaxX+1, Cache.MY_LOCATION.y);
+            MapLocation loc = new MapLocation(MapInfo.mapMaxX, Cache.MY_LOCATION.y);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -350,7 +383,7 @@ public strictfp class Politician implements RunnableBot {
             y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         if (MapInfo.mapMinY != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMinY-1);
+            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMinY);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -360,7 +393,7 @@ public strictfp class Politician implements RunnableBot {
             y -= 2.25 * (loc.y - Cache.MY_LOCATION.y) / distanceCubed;
         }
         if (MapInfo.mapMaxY != MapInfo.MAP_UNKNOWN_EDGE) {
-            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMaxY+1);
+            MapLocation loc = new MapLocation(Cache.MY_LOCATION.x, MapInfo.mapMaxY);
             double distanceSquared = Cache.MY_LOCATION.distanceSquaredTo(loc);
             double distance = Math.sqrt(distanceSquared);
             double distanceCubed = distance * distanceSquared;
@@ -495,7 +528,7 @@ public strictfp class Politician implements RunnableBot {
             }
         }
         int numKills = ecKills + mKills + pKills;
-        int score = ecKills * 100000 * 100000 + numKills * 100000 + mConviction + ecConviction;
+        int score = /*ecKills * 100000 * 100000 +*/ numKills * 100000 + mConviction + ecConviction;
         if (shouldEmpower(ecKills, mKills, pKills, mConviction, ecConviction, pConviction, distPtoEC, distMtoS)) {
             return score;
         } else {
@@ -524,16 +557,16 @@ public strictfp class Politician implements RunnableBot {
 
         // Convert remaining units if we're losing on votes
         if (rc.getRoundNum() >= 1490 && mecConviction + pConviction > 0 &&
-                rc.getRobotCount() >= 10*(1500-rc.getRoundNum()) && rc.getTeamVotes() < 751) {
+                rc.getRobotCount() >= 250 && rc.getTeamVotes() < 751) {
             //System.out.println("a");
             return true;
         }
         if (mecConviction + pConviction > currentConviction) return true;
         if (ecKills + mKills + pKills >= 8) return true;
-        if (ecKills >= 1) {
+        /*if (ecKills >= 1) {
             //System.out.println("b");
             return true;
-        }
+        }*/
         int numKills = mKills + pKills;
         if (currentConviction < 50) {
             if (distMtoS <= 100 && mKills >= 1) {
@@ -637,29 +670,5 @@ public strictfp class Politician implements RunnableBot {
         }
         MapLocation desired = new MapLocation(totx / tot, toty / tot);
         return Util.tryMove(desired);
-    }
-
-    private static boolean chaseBigPs() throws GameActionException {
-        MapLocation bestDest = null;
-        int bestConvictionAbsorbed = 0;
-        for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
-            if(robot.getType() == RobotType.POLITICIAN && robot.getConviction() > 10) {
-                int numNearbyPoliticians = 0;
-                MapLocation loc = robot.location;
-                RobotInfo[] nearbyAllies = rc.senseNearbyRobots(loc, 5, Constants.ALLY_TEAM);
-                for (RobotInfo robot2 : nearbyAllies) {
-                    if (robot2.getType() == RobotType.POLITICIAN && robot2.getConviction() <= 10)
-                        numNearbyPoliticians++;
-                }
-                int convictionAbsorbed = (robot.getConviction() - 10) / (numNearbyPoliticians + 2);
-                if(convictionAbsorbed > bestConvictionAbsorbed) {
-                    bestConvictionAbsorbed = convictionAbsorbed;
-                    bestDest = loc;
-                }
-            }
-        }
-        if(bestDest == null) return false;
-        if(bestDest.distanceSquaredTo(Cache.MY_LOCATION) <= 1) return true;
-        return Util.tryMove(bestDest);
     }
 }

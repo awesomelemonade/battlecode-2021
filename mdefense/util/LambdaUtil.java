@@ -1,6 +1,5 @@
-package spiral.util;
+package mdefense.util;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -51,6 +50,23 @@ public class LambdaUtil {
         return Optional.ofNullable(best);
     }
     // Replacement for Arrays.stream(array).filter(predicate).min(comparator)
+    public static <T> Optional<T> arraysStreamMin(T[] array, T[] array2, Predicate<T> predicate, Comparator<T> comparator) {
+        T best = null;
+        for (int i = array.length; --i >= 0;) {
+            T item = array[i];
+            if (predicate.test(item) && (best == null || comparator.compare(item, best) < 0)) {
+                best = item;
+            }
+        }
+        for (int i = array2.length; --i >= 0;) {
+            T item = array2[i];
+            if (predicate.test(item) && (best == null || comparator.compare(item, best) < 0)) {
+                best = item;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+    // Replacement for Arrays.stream(array).filter(predicate).min(comparator)
     public static <T> Optional<T> arraysStreamMin(T[] array, T[] array2, Comparator<T> comparator) {
         T best = null;
         for (int i = array.length; --i >= 0;) {
@@ -77,6 +93,18 @@ public class LambdaUtil {
             }
         }
         return min == Integer.MAX_VALUE ? Optional.empty() : Optional.of(min);
+    }
+    // Replacement for Arrays.stream(array).filter(predicate).map(mapper).min()
+    //                      .map(x -> Math.min(x, upperBound)).orElse(upperBound);
+    public static <T> int arraysStreamMin(T[] array, Predicate<T> predicate, ToIntFunction<T> mapper, int upperBound) {
+        int min = upperBound;
+        for (int i = array.length; --i >= 0;) {
+            T item = array[i];
+            if (predicate.test(item)) {
+                min = Math.min(min, mapper.applyAsInt(item));
+            }
+        }
+        return min;
     }
     // Replacement for Arrays.stream(array).filter(predicate).mapToInt(mapper).sum()
     public static <T> int arraysStreamSum(T[] array, Predicate<T> predicate, ToIntFunction<T> mapper) {

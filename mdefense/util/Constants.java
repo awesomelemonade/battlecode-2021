@@ -1,6 +1,10 @@
-package spiral.util;
+package mdefense.util;
 
-import battlecode.common.*;
+import battlecode.common.Direction;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotType;
+import battlecode.common.Team;
 
 public class Constants {
     public static Team ALLY_TEAM;
@@ -14,13 +18,13 @@ public class Constants {
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = true;
     public static final boolean DEBUG_RESIGN = false;
-    public static final boolean DEBUG_PRINT = false;
+    public static final boolean DEBUG_PRINT = true;
 
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
         ENEMY_TEAM = ALLY_TEAM.opponent();
         SPAWN = rc.getLocation();
-        switch(rc.getType()) {
+        switch (rc.getType()) {
             case ENLIGHTENMENT_CENTER:
                 SENSE_BOX_RADIUS = 6;
                 break;
@@ -51,12 +55,7 @@ public class Constants {
             Direction.NORTHWEST,
     };
     public static final int[] ORDINAL_OFFSET_X = {0, 1, 1, 1, 0, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2, -1};
-    public static final int[] ORDINAL_OFFSET_Y = {-1, -1, 0, 1, 1, 1, 0, -1, 2, 1, -1, -2, -2, -1, 1, 2};
-    /*public static final RobotType[] SPAWNABLE_ROBOTS = {
-            RobotType.POLITICIAN,
-            RobotType.SLANDERER,
-            RobotType.MUCKRAKER,
-    };*/
+    public static final int[] ORDINAL_OFFSET_Y = {1, 1, 0, -1, -1, -1, 0, 1, 2, 1, -1, -2, -2, -1, 1, 2};
     private static final Direction[][] ATTEMPT_ORDER = new Direction[][] {
             // NORTH
             {Direction.NORTH, Direction.NORTHWEST, Direction.NORTHEAST, Direction.WEST, Direction.EAST, Direction.SOUTHWEST, Direction.SOUTHEAST, Direction.SOUTH},
@@ -78,11 +77,39 @@ public class Constants {
     public static Direction[] getAttemptOrder(Direction direction) {
         return ATTEMPT_ORDER[direction.ordinal()];
     }
+    private static final Direction[][] CARDINAL_ATTEMPT_ORDER = new Direction[][] {
+            // NORTH
+            {Direction.NORTH, Direction.WEST, Direction.EAST, Direction.SOUTH},
+            // NORTHEAST
+            {Direction.NORTH, Direction.EAST, Direction.WEST, Direction.SOUTH},
+            // EAST
+            {Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.WEST},
+            // SOUTHEAST
+            {Direction.EAST, Direction.SOUTH, Direction.NORTH, Direction.WEST},
+            // SOUTH
+            {Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.NORTH},
+            // SOUTHWEST
+            {Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.NORTH},
+            // WEST
+            {Direction.WEST, Direction.SOUTH, Direction.NORTH, Direction.EAST},
+            // NORTHWEST
+            {Direction.WEST, Direction.NORTH, Direction.SOUTH, Direction.EAST},
+    };
+    public static Direction[] getCardinalAttemptOrder(Direction direction) { return CARDINAL_ATTEMPT_ORDER[direction.ordinal()]; }
+    /*
     // dx, dy for radius squared = 20, 69 coordinates
     public static final int[] FLOOD_OFFSET_X_20 = {
             0, 0, 1, 0, -1, -1, 0, 1, 2, 1, 0, -1, -2, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -3, -2, -1, 0, 1, 2, 3, 4, 3, 2, 1, 0, -1, -2, -3, -4, -4, -3, -2, -1, 1, 2, 3, 4, 4, 3, 2, 1, -1, -2, -3, -4, -4, -3, -2, 2, 3, 4, 4, 3, 2, -2, -3, -4
     };
     public static final int[] FLOOD_OFFSET_Y_20 = {
             0, -1, 0, 1, 0, -1, -2, -1, 0, 1, 2, 1, 0, -1, -2, -3, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -4, -3, -2, -1, 0, 1, 2, 3, 4, 3, 2, 1, 0, -1, -2, -3, -4, -4, -3, -2, -1, 1, 2, 3, 4, 4, 3, 2, 1, -2, -3, -4, -4, -3, -2, 2, 3, 4, 4, 3, 2
+    };
+    */
+    // dx, dy for radius squared = 9
+    public static final int[] FLOOD_OFFSET_X_9 = {
+            -1, 0, 1, 0, -1, 1, 1, -1, -2, 0, 2, 0, -2, -1, 1, 2, 2, 1, -1, -2, -2, 2, 2, -2, -3, 0, 3, 0
+    };
+    public static final int[] FLOOD_OFFSET_Y_9 = {
+            0, 1, 0, -1, 1, 1, -1, -1, 0, 2, 0, -2, 1, 2, 2, 1, -1, -2, -2, -1, 2, 2, -2, -2, 0, 3, 0, -3
     };
 }

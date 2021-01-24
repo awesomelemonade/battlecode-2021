@@ -1,4 +1,4 @@
-package spiral;
+package mdefense;
 
 import battlecode.common.GameActionException;
 

@@ -1,6 +1,9 @@
-package spiral.util;
+package mdefense.util;
 
-import battlecode.common.*;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class Pathfinder {
     private static RobotController rc;
@@ -43,7 +46,7 @@ public class Pathfinder {
         if (nextLoc.equals(prevLoc)) {
           continue;
         }
-        
+
         switch (Constants.ORDINAL_DIRECTIONS[i]) {
           case NORTH:
             tempHeuristic = Math.max(Math.max(getMoveHeuristic(nextLoc.add(Direction.NORTH), target, nextLoc), getMoveHeuristic(nextLoc.add(Direction.NORTHEAST), target, nextLoc)), getMoveHeuristic(nextLoc.add(Direction.NORTHWEST), target, nextLoc));

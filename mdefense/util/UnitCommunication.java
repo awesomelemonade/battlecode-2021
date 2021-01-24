@@ -1,4 +1,4 @@
-package spiral.util;
+package mdefense.util;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -22,8 +22,14 @@ public class UnitCommunication {
                 case ENLIGHTENMENT_CENTER:
                     if (r.getTeam() == Constants.ALLY_TEAM) {
                         return distanceSquared;
-                    } else {
+                    } else if (r.getTeam() == Constants.ENEMY_TEAM) {
                         return distanceSquared - 40000;
+                    } else {
+                        if (MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).contains(r.getLocation())) {
+                            return distanceSquared;
+                        } else {
+                            return distanceSquared - 40000;
+                        }
                     }
                 case POLITICIAN:
                     return distanceSquared - 10000;
@@ -53,15 +59,24 @@ public class UnitCommunication {
     private static int currentFlag = DO_NOTHING_FLAG;
     public static MapLocation closestCommunicatedEnemyToKite; // Currently used to by slanderers
     public static int closestCommunicatedEnemyDistanceSquared;
+    public static int closestCommunicatedEnemyConviction;
 
-    // Currently we should only call this if rc.getType() is a slanderer
-    // closestCommunicatedEnemyToKite is only used by Slanderer
-    private static void checkCloseEnemy(MapLocation enemy) {
-        if (rc.getType() == RobotType.SLANDERER && enemy != null) {
+    private static void checkCloseEnemySlanderer(MapLocation enemy) {
+        int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
+        if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
+            closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
+            closestCommunicatedEnemyToKite = enemy;
+        }
+    }
+
+    private static void checkCloseEnemyPolitician(MapLocation enemy, int conviction) {
+        int currentDamage = rc.getConviction() - 10;
+        if (currentDamage > conviction && conviction * 10 > 3 * currentDamage) {
             int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
             if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
                 closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
                 closestCommunicatedEnemyToKite = enemy;
+                closestCommunicatedEnemyConviction = conviction;
             }
         }
     }
@@ -70,7 +85,7 @@ public class UnitCommunication {
 
     public static boolean isPotentialSlanderer(RobotInfo robot) {
         try {
-            return ((rc.getFlag(robot.getID())
+            return robot.getType() == RobotType.POLITICIAN && ((rc.getFlag(robot.getID())
                     ^ DO_NOTHING_FLAG) >> CURRENT_DIRECTION_SHIFT) == CURRENT_DIRECTION_CENTER_SLANDERER;
         } catch (GameActionException ex) {
             throw new IllegalStateException(ex);
@@ -117,6 +132,7 @@ public class UnitCommunication {
 
         closestCommunicatedEnemyToKite = null;
         closestCommunicatedEnemyDistanceSquared = Integer.MAX_VALUE;
+        closestCommunicatedEnemyConviction = Integer.MAX_VALUE;
         for (int i = Cache.ALLY_ROBOTS.length; --i >= 0;) {
             RobotInfo ally = Cache.ALLY_ROBOTS[i];
             RobotType type = ally.getType();
@@ -198,7 +214,7 @@ public class UnitCommunication {
     /**
      * if this is a slanderer and we see a muckraker, run away! if this is a
      * politician and we see a muckraker, run towards it!
-     * 
+     *
      * @param robot
      * @return a location of a muckraker retrieved from flag, otherwise null
      * @throws GameActionException
@@ -223,17 +239,25 @@ public class UnitCommunication {
                 int conviction = (flag & CURRENT_EC_CONVICTION_MASK) * 2;
                 Team team = Team.values()[teamOrdinal];
                 if (team == Constants.ENEMY_TEAM) {
-                    checkCloseEnemy(specifiedLocation);
+                    if (rc.getType() == RobotType.SLANDERER) {
+                        checkCloseEnemySlanderer(specifiedLocation);
+                    }
                 }
                 if (rc.getType() != RobotType.SLANDERER) {
                     // Conserve bytecodes for slanderers
                     MapInfo.addKnownEnlightenmentCenter(team, specifiedLocation, conviction);
                 }
             } else {
+                int conviction = flag & CURRENT_UNIT_INFO_MASK;
                 // we see type at specifiedLocation
                 if (type == RobotType.MUCKRAKER) {
                     // we see enemy!!
-                    checkCloseEnemy(specifiedLocation);
+                    if (rc.getType() == RobotType.SLANDERER) {
+                        checkCloseEnemySlanderer(specifiedLocation);
+                    }
+                    if (rc.getType() == RobotType.POLITICIAN) {
+                        checkCloseEnemyPolitician(specifiedLocation, conviction);
+                    }
                 }
             }
         }
@@ -247,19 +271,10 @@ public class UnitCommunication {
             if (rc.canGetFlag(id)) {
                 int flag = rc.getFlag(id) ^ CentralCommunication.DO_NOTHING_FLAG;
                 MapLocation ecLocation = current.location;
-                int dx = ((flag >> CentralCommunication.NEAREST_ENEMY_X_SHIFT)
-                        & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
-                int dy = (flag & CentralCommunication.NEAREST_ENEMY_MASK) - CentralCommunication.NEAREST_ENEMY_OFFSET;
-                if (dx == 0 && dy == 0) {
-                    current.nearestEnemy = null;
-                } else {
-                    MapLocation nearestEnemy = ecLocation.translate(dx, dy);
-                    current.nearestEnemy = nearestEnemy;
-                    checkCloseEnemy(nearestEnemy);
-                }
                 int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
                 int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK)
                         - CentralCommunication.ROTATION_OFFSET;
+                int rotationInfo = flag & CentralCommunication.ROTATION_INFO_MASK;
                 if (rotationDx == 0 && rotationDy == 0) {
                     current.lastHeartbeatTurn = rc.getRoundNum();
                 }
@@ -268,24 +283,24 @@ public class UnitCommunication {
                     switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
                         case 0: // heartbeat
                             Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
-                            MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, -1);
+                            MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
                             break;
                         case 1: // [ally ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, -1);
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
                             }
                             break;
                         case 2: // [enemy ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, -1);
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, rotationInfo);
                             }
                             break;
                         case 3: // [neutral ec]
                             if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                     && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, -1);
+                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, rotationInfo);
                             }
                             break;
                         case 4: // [enemy slanderers]

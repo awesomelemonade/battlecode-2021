@@ -1,4 +1,4 @@
-package combobot3.util;
+package mdefense.util;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
@@ -16,9 +16,9 @@ public class Constants {
     public static final int POLITICIAN_ACTION_RADIUS_SQUARED = RobotType.POLITICIAN.actionRadiusSquared;
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
-    public static final boolean DEBUG_DRAW = false;
+    public static final boolean DEBUG_DRAW = true;
     public static final boolean DEBUG_RESIGN = false;
-    public static final boolean DEBUG_PRINT = false;
+    public static final boolean DEBUG_PRINT = true;
 
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
@@ -77,6 +77,25 @@ public class Constants {
     public static Direction[] getAttemptOrder(Direction direction) {
         return ATTEMPT_ORDER[direction.ordinal()];
     }
+    private static final Direction[][] CARDINAL_ATTEMPT_ORDER = new Direction[][] {
+            // NORTH
+            {Direction.NORTH, Direction.WEST, Direction.EAST, Direction.SOUTH},
+            // NORTHEAST
+            {Direction.NORTH, Direction.EAST, Direction.WEST, Direction.SOUTH},
+            // EAST
+            {Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.WEST},
+            // SOUTHEAST
+            {Direction.EAST, Direction.SOUTH, Direction.NORTH, Direction.WEST},
+            // SOUTH
+            {Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.NORTH},
+            // SOUTHWEST
+            {Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.NORTH},
+            // WEST
+            {Direction.WEST, Direction.SOUTH, Direction.NORTH, Direction.EAST},
+            // NORTHWEST
+            {Direction.WEST, Direction.NORTH, Direction.SOUTH, Direction.EAST},
+    };
+    public static Direction[] getCardinalAttemptOrder(Direction direction) { return CARDINAL_ATTEMPT_ORDER[direction.ordinal()]; }
     /*
     // dx, dy for radius squared = 20, 69 coordinates
     public static final int[] FLOOD_OFFSET_X_20 = {

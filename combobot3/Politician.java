@@ -103,6 +103,9 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 0); // green
             return;
         }
+        if (defendCommunicatedEnemy()) {
+            return;
+        }
         if (currentConviction >= 50 && goToECs()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
@@ -114,6 +117,16 @@ public strictfp class Politician implements RunnableBot {
         if (Util.smartExplore()) {
             return;
         }
+    }
+
+    public static boolean defendCommunicatedEnemy() {
+        MapLocation enemy = UnitCommunication.closestCommunicatedEnemyToKite;
+        if (enemy != null) {
+            // go towards muckraker
+            Pathfinder.execute(enemy);
+            return true;
+        }
+        return false;
     }
 
     public static boolean kiteBigPNearNeutral() {

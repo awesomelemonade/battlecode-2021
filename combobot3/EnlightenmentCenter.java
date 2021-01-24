@@ -242,7 +242,6 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     public static boolean buildSlanderer(int influence) {
         // check if slanderer will provide negligible eco
         if (rc.getConviction() >= 50000 || rc.getConviction() >= 300 * (1500 - rc.getRoundNum())) return false;
-        influence = Math.min(influence, 463);
         Direction buildDirection = getBuildDirectionAwayFromEnemy();
         int cost = SlandererBuild.getBuildInfluence(influence);
         if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, buildDirection, cost)) {

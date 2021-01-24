@@ -294,6 +294,11 @@ public class Pathfinder {
             }
 	        }
         } else {
+          if (Cache.MY_LOCATION.distanceSquaredTo(target) <= 8) {
+            bugpathBlocked = false;
+            bugpathTurnCount = 0;
+            return executeOrig(target);
+          }
         	if (!bugpathBlocked) {
 	        	bugpathBlocked = true;
 	        	bugpathDir = next;

@@ -78,7 +78,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         preTurn();
-        System.out.println("HI 1");
+        // System.out.println("HI 1");
         if (currentConviction_10 <= 0) { // useless; best thing to do is try to block an enemy ec
             if (campEnemyEC()) {
                 return;
@@ -90,12 +90,12 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
-        System.out.println("HI 2");
+        // System.out.println("HI 2");
         if (currentConviction >= 50 && tryClaimEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 0, 0, 255); // blue
             return;
         }
-        System.out.println("HI 3");
+        // System.out.println("HI 3");
         if (currentConviction >= 50 && tryHealEC()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
             return;

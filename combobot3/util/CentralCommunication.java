@@ -145,7 +145,7 @@ public class CentralCommunication {
             count++;
         }
         int end = Clock.getBytecodeNum();
-        System.out.println("Handled " + count + " robots (" + (end - start) + " bytecodes)");
+        // System.out.println("Handled " + count + " robots (" + (end - start) + " bytecodes)");
         // register any new ally robots (either though vision or building)
         start = Clock.getBytecodeNum();
         if (unitListSize < UNIT_LIST_MAX_SIZE) {
@@ -166,7 +166,7 @@ public class CentralCommunication {
             }
         }
         end = Clock.getBytecodeNum();
-        System.out.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
+        // System.out.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
     }
     public static void postLoop() throws GameActionException {
         // set flag

@@ -549,6 +549,7 @@ public strictfp class Politician implements RunnableBot {
             return true;
         }
         int numKills = mKills + pKills;
+        if(numKills == 0 && mecConviction + pConviction < Math.min(3, currentConviction_10)) return false;
         if (currentConviction < 50) {
             if (distMtoS <= 100 && mKills >= 1) {
                 //System.out.println("c");

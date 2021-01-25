@@ -1,4 +1,4 @@
-package combobot3.util;
+package nerfed2.util;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;

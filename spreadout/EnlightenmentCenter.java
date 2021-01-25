@@ -1,17 +1,17 @@
-package combobot3;
+package spreadout;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import combobot3.util.Cache;
-import combobot3.util.CentralUnitTracker;
-import combobot3.util.Constants;
-import combobot3.util.LambdaUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.SlandererBuild;
-import combobot3.util.Util;
+import spreadout.util.Cache;
+import spreadout.util.CentralUnitTracker;
+import spreadout.util.Constants;
+import spreadout.util.LambdaUtil;
+import spreadout.util.MapInfo;
+import spreadout.util.SlandererBuild;
+import spreadout.util.Util;
 
 import java.util.Comparator;
 

@@ -150,7 +150,7 @@ public strictfp class Muckraker implements RunnableBot {
         // System.out.println("Dense: " + guessX + " " + guessY);
         MapLocation target = Cache.MY_LOCATION.translate(moveX, moveY);
         try {
-            if (rc.canDetectLocation(target) && !rc.onTheMap(target)) {
+            if (rc.canSenseLocation(target) && !rc.onTheMap(target)) {
                 MapInfo.enemySlandererLocations.ignoreFirst = true;
                 return false;
             }

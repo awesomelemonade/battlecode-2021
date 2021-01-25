@@ -1,12 +1,12 @@
-package nerfed2;
+package bigms;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import nerfed2.util.Cache;
-import nerfed2.util.Constants;
-import nerfed2.util.Util;
+import bigms.util.Cache;
+import bigms.util.Constants;
+import bigms.util.Util;
 
 public strictfp class RobotPlayer {
     public static int currentTurn;

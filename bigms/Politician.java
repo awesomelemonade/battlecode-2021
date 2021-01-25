@@ -1,14 +1,14 @@
-package combobot3;
+package bigms;
 
 import battlecode.common.*;
-import combobot3.util.Cache;
-import combobot3.util.Constants;
-import combobot3.util.LambdaUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.Pathfinder;
-import combobot3.util.UnitCommunication;
-import combobot3.util.Util;
-import combobot3.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
+import bigms.util.Cache;
+import bigms.util.Constants;
+import bigms.util.LambdaUtil;
+import bigms.util.MapInfo;
+import bigms.util.Pathfinder;
+import bigms.util.UnitCommunication;
+import bigms.util.Util;
+import bigms.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
 
 import java.util.Comparator;
 
@@ -33,8 +33,6 @@ public strictfp class Politician implements RunnableBot {
 
     private static MapLocation targetLoc;
     private static Team targetTeam;
-
-    private static final int[] EMPOWER_RADII = {1,2,4,5,8,9};
 
     public Politician(RobotController rc) {
         Politician.rc = rc;
@@ -68,7 +66,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        if (rc.getRoundNum() % 25 == 0) attacking = true;
+        if (rc.getRoundNum() % 50 == 0) attacking = true;
         allyECCentroid = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getCentroid();
         computeTarget();
     }
@@ -112,7 +110,7 @@ public strictfp class Politician implements RunnableBot {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
-        if ((defender && currentConviction < 50) && tryDefend()) {
+        if ((defender && currentConviction < 50 || !shouldAttackTargetEC()) && tryDefend()) {
             Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }
@@ -148,8 +146,7 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public static boolean shouldAttackTargetEC() {
-        return attacking || targetTeam == Team.NEUTRAL || rc.getRoundNum() <= 300 ||
-                !targetLoc.isWithinDistanceSquared(Cache.MY_LOCATION, 121);
+        return attacking || targetTeam == Team.NEUTRAL || rc.getRoundNum() <= 200;
     }
 
     public static boolean tryEmpowerAtEC(MapLocation loc, Team team) throws GameActionException {
@@ -599,7 +596,7 @@ public strictfp class Politician implements RunnableBot {
         // if can kill something, maximize the number
         int bestRadius = -1;
         int bestScore = 0;
-        for (int r : EMPOWER_RADII) {
+        for (int r = 1; r <= Constants.POLITICIAN_ACTION_RADIUS_SQUARED; r++) {
             int score = getScore(r);
             if (score > bestScore) {
                 bestScore = score;

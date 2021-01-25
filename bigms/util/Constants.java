@@ -1,4 +1,4 @@
-package nerfed2.util;
+package bigms.util;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;

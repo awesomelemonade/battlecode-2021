@@ -68,7 +68,7 @@ public strictfp class Politician implements RunnableBot {
                 }
             }
         }
-        if (rc.getRoundNum() % 25 == 0) attacking = true;
+        if (rc.getRoundNum() % 25 == 0 || currentEmpowerFactor >= 1.1) attacking = true;
         allyECCentroid = MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getCentroid();
         computeTarget();
     }

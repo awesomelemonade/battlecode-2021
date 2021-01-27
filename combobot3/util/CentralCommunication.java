@@ -49,10 +49,15 @@ public class CentralCommunication {
     public static final int ROTATION_SHIFT_Y = 10;
     public static final int ROTATION_MASK = 0b0111_1111;
     public static final int ROTATION_OFFSET = 64;
-    public static final int ROTATION_INFO_MASK = 0b0011_1111_1111; // 10 bits
+    public static final int ROTATION_INFO_MASK = 0b0001_1111_1111; // 9 bits
+    public static final int ROTATION_INFO_SHIFT = 1;
 
     // Communicate an enemy that has no units for some distance squared
-    // 14 bits for position, 6 bits for distance^2
+    // 1 bit differentiate, 14 bits for position, 6 bits for distance^2, 3 bits conviction?
+    public static final int ENEMY_SHIFT_X = 17;
+    public static final int ENEMY_SHIFT_Y = 10;
+    public static final int ENEMY_MASK = 0b0111_1111;
+    public static final int ENEMY_OFFSET = 64;
 
 
     public static void loop() throws GameActionException {
@@ -91,7 +96,7 @@ public class CentralCommunication {
                     } else {
                         int conviction = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
                         // Handle Enemy Unit
-                        CentralUnitTracker.handleEnemyUnit(specifiedLocation, type, conviction);
+                        CentralUnitTracker.handleEnemyUnit(specifiedLocation, type, conviction, current.type);
                         // Enemy Prediction
                         if (receivedInfoCount < 1 && EnlightenmentCenter.initialEC) {
                             int tempDx = specifiedLocation.x - current.location.x;
@@ -145,7 +150,7 @@ public class CentralCommunication {
             count++;
         }
         int end = Clock.getBytecodeNum();
-        // System.out.println("Handled " + count + " robots (" + (end - start) + " bytecodes)");
+        Util.println("Handled " + count + " robots (" + (end - start) + " bytecodes)");
         // register any new ally robots (either though vision or building)
         start = Clock.getBytecodeNum();
         if (unitListSize < UNIT_LIST_MAX_SIZE) {
@@ -166,25 +171,48 @@ public class CentralCommunication {
             }
         }
         end = Clock.getBytecodeNum();
-        // System.out.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
+        Util.println("Registered Robots (" + (end - start) + " bytecodes, " + Cache.ALLY_ROBOTS.length + " robots)");
     }
+    static CentralUnitTracker.EnemyInfo enemy;
     public static void postLoop() throws GameActionException {
+        int start = Clock.getBytecodeNum();
+        CentralUnitTracker.EnemyInfo enemy = CentralUnitTracker.calculateBroadcastedEnemy();
+        int end = Clock.getBytecodeNum();
+        if (enemy != null) {
+            System.out.println("Found Enemy (" + (end - start) + " bytecodes) at " + enemy.location + " [r^2 = " + enemy.closestAllyDistanceSquared + "]");
+            Util.setIndicatorLine(Cache.MY_LOCATION, enemy.location, 0, 255, 0);
+        }
+
+        setRotationFlag();
+    }
+    public static void setEnemyFlag() throws GameActionException {
+        int flag = 1;
+
+        int enemyDx = enemy.location.x - Cache.MY_LOCATION.x + ENEMY_OFFSET;
+        int enemyDy = enemy.location.y - Cache.MY_LOCATION.y + ENEMY_OFFSET;
+        flag = flag | (enemyDx << ENEMY_SHIFT_X) | (enemyDy << ENEMY_SHIFT_Y);
+
+
+        rc.setFlag(flag ^ DO_NOTHING_FLAG);
+    }
+    public static void setRotationFlag() throws GameActionException {
         // set flag
         int flag = 0;
         // 7 bits each on relative x location and relative y location,
-        // 10 bits for info (ex: conviction)
+        // 9 bits for info (ex: conviction)
         MapLocation rotationLocation = null;
+        int info = 0;
         switch (Cache.TURN_COUNT % 5) {
             case 0: // heartbeat
                 rotationLocation = Cache.MY_LOCATION;
-                flag = Math.min(ROTATION_INFO_MASK, rc.getConviction());
+                info = Math.min(ROTATION_INFO_MASK, rc.getConviction());
                 break;
             case 1: // [ally ec]
                 EnlightenmentCenterList.EnlightenmentCenterListNode allyEC =
                         MapInfo.getKnownEnlightenmentCenterList(Constants.ALLY_TEAM).getNext().orElse(null);
                 if (allyEC != null) {
                     rotationLocation = allyEC.location;
-                    flag = Math.min(ROTATION_INFO_MASK, allyEC.lastKnownConviction);
+                    info = Math.min(ROTATION_INFO_MASK, allyEC.lastKnownConviction);
                 }
                 break;
             case 2: // [enemy ec]
@@ -192,7 +220,7 @@ public class CentralCommunication {
                         MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getNext().orElse(null);
                 if (enemyEC != null) {
                     rotationLocation = enemyEC.location;
-                    flag = Math.min(ROTATION_INFO_MASK, enemyEC.lastKnownConviction);
+                    info = Math.min(ROTATION_INFO_MASK, enemyEC.lastKnownConviction);
                 }
                 break;
             case 3: // [neutral ec]
@@ -200,13 +228,14 @@ public class CentralCommunication {
                         MapInfo.getKnownEnlightenmentCenterList(Team.NEUTRAL).getNext().orElse(null);
                 if (neutralEC != null) {
                     rotationLocation = neutralEC.location;
-                    flag = Math.min(ROTATION_INFO_MASK, neutralEC.lastKnownConviction);
+                    info = Math.min(ROTATION_INFO_MASK, neutralEC.lastKnownConviction);
                 }
                 break;
             case 4: // [enemy slanderers]
                 rotationLocation = MapInfo.enemySlandererLocations.getRandomLocation().orElse(null);
                 break;
         }
+        flag |= (info << ROTATION_INFO_SHIFT);
         if (rotationLocation != null) {
             int rotationDx = rotationLocation.x - Cache.MY_LOCATION.x + ROTATION_OFFSET;
             int rotationDy = rotationLocation.y - Cache.MY_LOCATION.y + ROTATION_OFFSET;

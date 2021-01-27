@@ -7,6 +7,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
+import combobot3.Politician;
 
 import java.util.Comparator;
 
@@ -61,7 +62,7 @@ public class UnitCommunication {
     public static int closestCommunicatedEnemyDistanceSquared;
     public static int closestCommunicatedEnemyConviction;
 
-    private static void checkCloseEnemySlanderer(MapLocation enemy) {
+    private static void checkCloseEnemyAsSlanderer(MapLocation enemy) {
         int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
         if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
             closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
@@ -69,9 +70,8 @@ public class UnitCommunication {
         }
     }
 
-    private static void checkCloseEnemyPolitician(MapLocation enemy, int conviction) {
-        int currentDamage = rc.getConviction() - 10;
-        if (currentDamage > conviction && conviction * 10 > 3 * currentDamage) {
+    private static void checkCloseEnemyMuckrakerAsPolitician(MapLocation enemy, int conviction) {
+        if (Politician.shouldChaseMuckraker(conviction, enemy)) {
             int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
             if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
                 closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
@@ -240,7 +240,7 @@ public class UnitCommunication {
                 Team team = Team.values()[teamOrdinal];
                 if (team == Constants.ENEMY_TEAM) {
                     if (rc.getType() == RobotType.SLANDERER) {
-                        checkCloseEnemySlanderer(specifiedLocation);
+                        checkCloseEnemyAsSlanderer(specifiedLocation);
                     }
                 }
                 if (rc.getType() != RobotType.SLANDERER) {
@@ -253,10 +253,10 @@ public class UnitCommunication {
                 if (type == RobotType.MUCKRAKER) {
                     // we see enemy!!
                     if (rc.getType() == RobotType.SLANDERER) {
-                        checkCloseEnemySlanderer(specifiedLocation);
+                        checkCloseEnemyAsSlanderer(specifiedLocation);
                     }
                     if (rc.getType() == RobotType.POLITICIAN) {
-                        checkCloseEnemyPolitician(specifiedLocation, conviction);
+                        checkCloseEnemyMuckrakerAsPolitician(specifiedLocation, conviction);
                     }
                 }
             }
@@ -274,7 +274,7 @@ public class UnitCommunication {
                 int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
                 int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK)
                         - CentralCommunication.ROTATION_OFFSET;
-                int rotationInfo = flag & CentralCommunication.ROTATION_INFO_MASK;
+                int rotationInfo = (flag >> CentralCommunication.ROTATION_INFO_SHIFT) & CentralCommunication.ROTATION_INFO_MASK;
                 if (rotationDx == 0 && rotationDy == 0) {
                     current.lastHeartbeatTurn = rc.getRoundNum();
                 }

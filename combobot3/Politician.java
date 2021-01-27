@@ -90,7 +90,6 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (tryEmpower()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
         if (currentConviction >= 50 && tryClaimEC()) {
@@ -98,7 +97,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (currentConviction >= 50 && tryHealEC()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
         if (chaseWorthwhileEnemy()) {
@@ -106,14 +105,15 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (defendCommunicatedEnemy()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 128, 0, 0); // maroon
             return;
         }
         if (currentConviction >= 50 && goToECs()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
         if ((defender && currentConviction < 50) && tryDefend()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
+            Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
             return;
         }
         if (Util.smartExplore()) {
@@ -613,18 +613,13 @@ public strictfp class Politician implements RunnableBot {
         return true;
     }
 
-    private static boolean shouldChase(RobotInfo robot) {
-        if (robot.getType() == RobotType.POLITICIAN)
-            return false;
-        int robotConviction = robot.getConviction();
-        if (currentConviction * 2 + 20 >= robotConviction
-                && robotConviction * 2 + 20 >= currentConviction)
+    public static boolean shouldChaseMuckraker(int conviction, MapLocation location) {
+        if (currentConviction * 2 + 20 >= conviction
+                && conviction * 2 + 20 >= currentConviction)
             return true;
-        MapLocation robotLocation = robot.getLocation();
-        if (robot.getType() == RobotType.MUCKRAKER
-                && ((nearestS != null && robotLocation.isWithinDistanceSquared(nearestS, 81))
-                || (nearestAllyEC != null && robotLocation.isWithinDistanceSquared(nearestAllyEC, 81)))
-                && robotConviction * 10 + 30 >= currentConviction)
+        if (((nearestS != null && location.isWithinDistanceSquared(nearestS, 81))
+                || (nearestAllyEC != null && location.isWithinDistanceSquared(nearestAllyEC, 81)))
+                && conviction * 10 + 30 >= currentConviction)
             return true;
         return false;
     }
@@ -634,7 +629,8 @@ public strictfp class Politician implements RunnableBot {
         int toty = 0;
         int tot = 0;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
-            if (shouldChase(robot)) {
+            if (robot.getType() == RobotType.MUCKRAKER &&
+                    shouldChaseMuckraker(robot.getConviction(), robot.getLocation())) {
                 int numNearbyPoliticians = 0;
                 MapLocation loc = robot.location;
                 RobotInfo[] nearbyAllies = rc.senseNearbyRobots(loc, 5, Constants.ALLY_TEAM);

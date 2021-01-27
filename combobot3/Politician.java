@@ -614,32 +614,30 @@ public strictfp class Politician implements RunnableBot {
     }
 
     public static boolean shouldChaseMuckraker(int conviction, MapLocation location) {
-        if (currentConviction * 2 + 20 >= conviction
-                && conviction * 2 + 20 >= currentConviction)
-            return true;
-        if (((nearestS != null && location.isWithinDistanceSquared(nearestS, 81))
-                || (nearestAllyEC != null && location.isWithinDistanceSquared(nearestAllyEC, 81)))
-                && conviction * 10 + 30 >= currentConviction)
-            return true;
+        if ((currentConviction * 2 + 20 >= conviction && conviction * 2 + 20 >= currentConviction) ||
+                (((nearestS != null && location.isWithinDistanceSquared(nearestS, 81))
+                        || (nearestAllyEC != null && location.isWithinDistanceSquared(nearestAllyEC, 81)))
+                        && conviction * 10 + 30 >= currentConviction)) {
+            int numNearbyPoliticians = 0;
+            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(location, 5, Constants.ALLY_TEAM);
+            for (int i = nearbyAllies.length; --i >= 0;) {
+                if (nearbyAllies[i].getType() == RobotType.POLITICIAN) {
+                    numNearbyPoliticians++;
+                }
+            }
+            return numNearbyPoliticians <= 1;
+        }
         return false;
     }
 
-    private static boolean chaseWorthwhileEnemy() throws GameActionException {
+    private static boolean chaseWorthwhileEnemy() {
         int totx = 0;
         int toty = 0;
         int tot = 0;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
             if (robot.getType() == RobotType.MUCKRAKER &&
                     shouldChaseMuckraker(robot.getConviction(), robot.getLocation())) {
-                int numNearbyPoliticians = 0;
                 MapLocation loc = robot.location;
-                RobotInfo[] nearbyAllies = rc.senseNearbyRobots(loc, 5, Constants.ALLY_TEAM);
-                for (RobotInfo robot2 : nearbyAllies) {
-                    if (robot2.getType() == RobotType.POLITICIAN)
-                        numNearbyPoliticians++;
-                }
-                if (numNearbyPoliticians >= 2)
-                    continue;
                 totx += loc.x;
                 toty += loc.y;
                 tot++;

@@ -53,11 +53,13 @@ public class CentralCommunication {
     public static final int ROTATION_INFO_SHIFT = 1;
 
     // Communicate an enemy that has no units for some distance squared
-    // 1 bit differentiate, 14 bits for position, 6 bits for distance^2, 3 bits conviction?
+    // 1 bit differentiate, 14 bits for position, 6 bits for distance, 3 bits conviction?
     public static final int ENEMY_SHIFT_X = 17;
     public static final int ENEMY_SHIFT_Y = 10;
     public static final int ENEMY_MASK = 0b0111_1111;
     public static final int ENEMY_OFFSET = 64;
+    public static final int ENEMY_DISTANCE_MASK = 0b0011_1111;
+    public static final int ENEMY_DISTANCE_SHIFT = 1;
 
 
     public static void loop() throws GameActionException {
@@ -176,14 +178,17 @@ public class CentralCommunication {
     static CentralUnitTracker.EnemyInfo enemy;
     public static void postLoop() throws GameActionException {
         int start = Clock.getBytecodeNum();
-        CentralUnitTracker.EnemyInfo enemy = CentralUnitTracker.calculateBroadcastedEnemy();
+        enemy = CentralUnitTracker.calculateBroadcastedEnemy();
         int end = Clock.getBytecodeNum();
         if (enemy != null) {
             System.out.println("Found Enemy (" + (end - start) + " bytecodes) at " + enemy.location + " [r^2 = " + enemy.closestAllyDistanceSquared + "]");
             Util.setIndicatorLine(Cache.MY_LOCATION, enemy.location, 0, 255, 0);
         }
-
-        setRotationFlag();
+        if (enemy == null) {
+            setRotationFlag();
+        } else {
+            setEnemyFlag();
+        }
     }
     public static void setEnemyFlag() throws GameActionException {
         int flag = 1;
@@ -192,6 +197,7 @@ public class CentralCommunication {
         int enemyDy = enemy.location.y - Cache.MY_LOCATION.y + ENEMY_OFFSET;
         flag = flag | (enemyDx << ENEMY_SHIFT_X) | (enemyDy << ENEMY_SHIFT_Y);
 
+        flag |= Math.min(ENEMY_DISTANCE_MASK, (int) Math.sqrt(enemy.closestAllyDistanceSquared)) << ENEMY_DISTANCE_SHIFT;
 
         rc.setFlag(flag ^ DO_NOTHING_FLAG);
     }

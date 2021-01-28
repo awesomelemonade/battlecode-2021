@@ -181,7 +181,7 @@ public class CentralCommunication {
         enemy = CentralUnitTracker.calculateBroadcastedEnemy();
         int end = Clock.getBytecodeNum();
         if (enemy != null) {
-            System.out.println("Found Enemy (" + (end - start) + " bytecodes) at " + enemy.location + " [r^2 = " + enemy.closestAllyDistanceSquared + "]");
+            Util.println("Found Enemy (" + (end - start) + " bytecodes) at " + enemy.location + " [r^2 = " + enemy.closestAllyDistanceSquared + "]");
             Util.setIndicatorLine(Cache.MY_LOCATION, enemy.location, 0, 255, 0);
         }
         if (enemy == null || (rc.getRoundNum() < 800 && Cache.TURN_COUNT % 5 == 3) || Cache.TURN_COUNT % 10 == 0) {

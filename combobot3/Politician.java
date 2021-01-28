@@ -217,17 +217,17 @@ public strictfp class Politician implements RunnableBot {
                                 return true;
                             }
                         }
-                        // Stay
-                        return true;
-                    } else {
+                    }
+                    if (distanceSquared > 1) {
                         // Pathfind to nearest cardinal-adjacent square
                         if (closestCardinalAdjacentSquare == null) {
                             Pathfinder.execute(loc);
                         } else {
                             Pathfinder.execute(closestCardinalAdjacentSquare);
                         }
-                        return true;
                     }
+                    // Stay
+                    return true;
                 }
             } else {
                 if (distanceSquared <= 16) {

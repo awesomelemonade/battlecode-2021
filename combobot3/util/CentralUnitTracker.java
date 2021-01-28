@@ -15,7 +15,7 @@ public class CentralUnitTracker {
     public static int numSmallDefenders = 0;
     public static int numNearbySmallEnemyMuckrakers = 0;
     public static int numNearbyAllySlanderers = 0;
-    public static int maxMuckrakerConviction = 0;
+    public static int maxMuckrakerConviction = 1;
 
     public static final int TRACKER_SIZE = 50;
     public static MapLocation[] allyDefenderLocations = new MapLocation[TRACKER_SIZE]; // Only small politicians
@@ -35,7 +35,7 @@ public class CentralUnitTracker {
         numNearbyAllySlanderers = 0;
         allyDefenderLocationsSize = 0;
         enemyMuckrakerLocationsSize = 0;
-        maxMuckrakerConviction = 0;
+        maxMuckrakerConviction = 1;
         // Increment registry counter
         registryCounter++;
         // Handle enemies in vision range

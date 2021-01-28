@@ -33,6 +33,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int nearestEnemyConviction;
 
     private static int lastNearbyMuckrakerTurn = 0;
+    private static int lastSlandererBuiltTurn = 0;
 
     public EnlightenmentCenter(RobotController rc) {
         EnlightenmentCenter.rc = rc;
@@ -93,8 +94,11 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return;
                 }
             }
+            boolean canBuildSlanderer = !LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
+                    r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER); // !seesEnemyMuckrakerOrEC
+            boolean shouldBuildSlanderer = canBuildSlanderer && (rc.getRoundNum() > lastSlandererBuiltTurn + 15 || slandererCount == 0);
             // big p / big m
-            if (rc.getRoundNum() >= 50 && influence >= 150 && Math.random() < 0.2) {
+            if (rc.getRoundNum() >= 30 && influence >= 150 && Math.random() < 0.2 && (!shouldBuildSlanderer)) {
                 // build politician w/ minimum 150
                 if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
                     if (buildMuckraker(Math.max(influence - 50, 150))) {
@@ -112,23 +116,21 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 Util.println("React Defense");
                 return;
             }
-            boolean seesEnemyMuckrakerOrEC = LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
-                    r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER);
             int unitsBuilt = slandererCount + politicianCount + muckrakerCount;
             if (initialEC && unitsBuilt < 30) {
                 switch (unitsBuilt % 4) {
                     case 0:
-                        if (seesEnemyMuckrakerOrEC) {
-                            buildCheapMuckraker();
-                        } else {
+                        if (canBuildSlanderer) {
                             buildSlanderer(influence);
+                        } else {
+                            buildCheapMuckraker();
                         }
                         break;
                     case 1:
                         if (influence >= 300) {
                             buildPolitician(influence - 100);
                         } else {
-                            if(earlyCheapPMCounter % 4 == 1 || (politicianCount < 3)) {
+                            if (earlyCheapPMCounter % 4 == 1 || (politicianCount < 3)) {
                                 buildCheapPolitician(influence);
                             } else {
                                 buildMuckraker(Math.min(influence, 16));
@@ -144,7 +146,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 return;
             }
             // no danger? build slanderers
-            if ((!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || Math.random() < 0.7)) {
+            if (shouldBuildSlanderer || (canBuildSlanderer && Math.random() < 0.7)) {
                 if (buildSlanderer(influence)) {
                     Util.println("Slanderer");
                     return;
@@ -190,8 +192,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         int numDefendersWanted = roundNum > lastNearbyMuckrakerTurn + 500 ?
                 CentralUnitTracker.numNearbyAllySlanderers / 3 :
                 (roundNum > lastNearbyMuckrakerTurn + 200 ?
-                        CentralUnitTracker.numNearbyAllySlanderers / 2 :
-                        CentralUnitTracker.numNearbyAllySlanderers * 2 / 3);
+                        CentralUnitTracker.numNearbyAllySlanderers * 2 / 5 :
+                        CentralUnitTracker.numNearbyAllySlanderers * 3 / 5);
         boolean needToDefendAgainstMuckraker =
                 CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numSmallDefenders ||
                         (CentralUnitTracker.numSmallDefenders < numDefendersWanted);
@@ -202,9 +204,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         if ((slandererCount > 0 && needToDefendAgainstMuckraker) || needToDefendAgainstPolitician) {
             if (nearestEnemy == null) {
                 int cost = 5 * CentralUnitTracker.maxMuckrakerConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
-                cost = Math.min(cost, 3 * CentralUnitTracker.maxMuckrakerConviction + 20);
-                cost = Math.min(cost, 2 * CentralUnitTracker.maxMuckrakerConviction + 30);
-                cost = Math.min(cost, CentralUnitTracker.maxMuckrakerConviction + 50);
+                cost = Math.min(cost, 2 * CentralUnitTracker.maxMuckrakerConviction + 15);
+                cost = Math.min(cost, CentralUnitTracker.maxMuckrakerConviction + 20);
                 cost += (int) (Math.random() * 4);
                 if (influence >= cost) {
                     if (buildPolitician(cost)) {
@@ -213,9 +214,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
             } else {
                 int cost = 5 * nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
-                cost = Math.min(cost, 3 * nearestEnemyConviction + 20);
-                cost = Math.min(cost, 2 * nearestEnemyConviction + 30);
-                cost = Math.min(cost, nearestEnemyConviction + 50);
+                cost = Math.min(cost, 2 * nearestEnemyConviction + 15);
+                cost = Math.min(cost, nearestEnemyConviction + 20);
                 cost += (int) (Math.random() * 4);
                 if (influence >= cost) {
                     if (buildPolitician(cost)) {
@@ -259,6 +259,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
         int cost = SlandererBuild.getBuildInfluence(influence);
         if (cost > 0 && Util.tryBuildRobotTowards(RobotType.SLANDERER, buildDirection, cost)) {
             slandererCount++;
+            lastSlandererBuiltTurn = rc.getRoundNum();
             return true;
         } else {
             return false;

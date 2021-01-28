@@ -1,4 +1,4 @@
-package combobot3.util;
+package combobot3_8a5c445.util;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
@@ -17,7 +17,7 @@ public class Constants {
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
     public static final boolean DEBUG_DRAW = false;
-    public static final boolean DEBUG_RESIGN = false;
+    public static final boolean DEBUG_RESIGN = true;
     public static final boolean DEBUG_PRINT = false;
 
     public static void init(RobotController rc) {

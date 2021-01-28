@@ -1,4 +1,4 @@
-package combobot3.util;
+package combobot3_8a5c445.util;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -7,7 +7,6 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import combobot3.Politician;
 
 import java.util.Comparator;
 
@@ -62,7 +61,7 @@ public class UnitCommunication {
     public static int closestCommunicatedEnemyDistanceSquared;
     public static int closestCommunicatedEnemyConviction;
 
-    private static void checkCloseEnemyAsSlanderer(MapLocation enemy) {
+    private static void checkCloseEnemySlanderer(MapLocation enemy) {
         int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
         if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
             closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
@@ -70,8 +69,9 @@ public class UnitCommunication {
         }
     }
 
-    private static void checkCloseEnemyMuckrakerAsPolitician(MapLocation enemy, int conviction) {
-        if (Politician.shouldChaseMuckraker(conviction, enemy)) {
+    private static void checkCloseEnemyPolitician(MapLocation enemy, int conviction) {
+        int currentDamage = rc.getConviction() - 10;
+        if (currentDamage > conviction && conviction * 10 > 3 * currentDamage) {
             int enemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(enemy);
             if (enemyDistanceSquared < closestCommunicatedEnemyDistanceSquared) {
                 closestCommunicatedEnemyDistanceSquared = enemyDistanceSquared;
@@ -240,7 +240,7 @@ public class UnitCommunication {
                 Team team = Team.values()[teamOrdinal];
                 if (team == Constants.ENEMY_TEAM) {
                     if (rc.getType() == RobotType.SLANDERER) {
-                        checkCloseEnemyAsSlanderer(specifiedLocation);
+                        checkCloseEnemySlanderer(specifiedLocation);
                     }
                 }
                 if (rc.getType() != RobotType.SLANDERER) {
@@ -253,10 +253,10 @@ public class UnitCommunication {
                 if (type == RobotType.MUCKRAKER) {
                     // we see enemy!!
                     if (rc.getType() == RobotType.SLANDERER) {
-                        checkCloseEnemyAsSlanderer(specifiedLocation);
+                        checkCloseEnemySlanderer(specifiedLocation);
                     }
                     if (rc.getType() == RobotType.POLITICIAN) {
-                        checkCloseEnemyMuckrakerAsPolitician(specifiedLocation, conviction);
+                        checkCloseEnemyPolitician(specifiedLocation, conviction);
                     }
                 }
             }
@@ -271,77 +271,49 @@ public class UnitCommunication {
             if (rc.canGetFlag(id)) {
                 int flag = rc.getFlag(id) ^ CentralCommunication.DO_NOTHING_FLAG;
                 MapLocation ecLocation = current.location;
-                if ((flag & 0b1) == 0) {
-                    // rotation
-                    int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
-                    int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK)
-                            - CentralCommunication.ROTATION_OFFSET;
-                    int rotationInfo = (flag >> CentralCommunication.ROTATION_INFO_SHIFT) & CentralCommunication.ROTATION_INFO_MASK;
-                    if (rotationDx == 0 && rotationDy == 0) {
-                        current.lastHeartbeatTurn = rc.getRoundNum();
-                    }
-                    if (current.lastHeartbeatTurn != -1) {
-                        MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
-                        switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
-                            case 0: // heartbeat
-                                Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
+                int rotationDx = (flag >> CentralCommunication.ROTATION_SHIFT_X) - CentralCommunication.ROTATION_OFFSET;
+                int rotationDy = ((flag >> CentralCommunication.ROTATION_SHIFT_Y) & CentralCommunication.ROTATION_MASK)
+                        - CentralCommunication.ROTATION_OFFSET;
+                int rotationInfo = flag & CentralCommunication.ROTATION_INFO_MASK;
+                if (rotationDx == 0 && rotationDy == 0) {
+                    current.lastHeartbeatTurn = rc.getRoundNum();
+                }
+                if (current.lastHeartbeatTurn != -1) {
+                    MapLocation rotationLocation = ecLocation.translate(rotationDx, rotationDy);
+                    switch ((rc.getRoundNum() - current.lastHeartbeatTurn) % 5) {
+                        case 0: // heartbeat
+                            Util.setIndicatorDot(rotationLocation, 255, 0, 255); // magenta
+                            MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
+                            break;
+                        case 1: // [ally ec]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET
+                                    && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
                                 MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
-                                break;
-                            case 1: // [ally ec]
+                            }
+                            break;
+                        case 2: // [enemy ec]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET
+                                    && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, rotationInfo);
+                            }
+                            break;
+                        case 3: // [neutral ec]
+                            if (rotationDx != -CentralCommunication.ROTATION_OFFSET
+                                    && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
+                                MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, rotationInfo);
+                            }
+                            break;
+                        case 4: // [enemy slanderers]
+                            if (rc.getType() == RobotType.MUCKRAKER) {
+                                // Only muckrakers need this
                                 if (rotationDx != -CentralCommunication.ROTATION_OFFSET
                                         && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                    MapInfo.addKnownEnlightenmentCenter(Constants.ALLY_TEAM, rotationLocation, rotationInfo);
-                                }
-                                break;
-                            case 2: // [enemy ec]
-                                if (rotationDx != -CentralCommunication.ROTATION_OFFSET
-                                        && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                    MapInfo.addKnownEnlightenmentCenter(Constants.ENEMY_TEAM, rotationLocation, rotationInfo);
-                                }
-                                break;
-                            case 3: // [neutral ec]
-                                if (rotationDx != -CentralCommunication.ROTATION_OFFSET
-                                        && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                    MapInfo.addKnownEnlightenmentCenter(Team.NEUTRAL, rotationLocation, rotationInfo);
-                                }
-                                break;
-                            case 4: // [enemy slanderers]
-                                if (rc.getType() == RobotType.MUCKRAKER) {
-                                    // Only muckrakers need this
-                                    if (rotationDx != -CentralCommunication.ROTATION_OFFSET
-                                            && rotationDy != -CentralCommunication.ROTATION_OFFSET) {
-                                        if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
-                                            MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT);
-                                        }
+                                    if (!MapInfo.enemySlandererLocations.contains(rotationLocation)) {
+                                        MapInfo.enemySlandererLocations.add(rotationLocation, Cache.TURN_COUNT);
                                     }
                                 }
-                                break;
-                        }
-                    }
-                } else {
-                    // enemy
-                    if (rc.getType() == RobotType.POLITICIAN) {
-                        int enemyDx = (flag >> CentralCommunication.ENEMY_SHIFT_X) - CentralCommunication.ENEMY_OFFSET;
-                        int enemyDy = ((flag >> CentralCommunication.ENEMY_SHIFT_Y) & CentralCommunication.ENEMY_MASK)
-                                - CentralCommunication.ENEMY_OFFSET;
-                        MapLocation enemyLocation = ecLocation.translate(enemyDx, enemyDy);
-                        int distance = (flag >> CentralCommunication.ENEMY_DISTANCE_SHIFT) & CentralCommunication.ENEMY_DISTANCE_MASK;
-                        int distanceSquared = distance + 1;
-                        distanceSquared = distanceSquared * distanceSquared;
-                        if (Cache.MY_LOCATION.isWithinDistanceSquared(enemyLocation, distanceSquared)) {
-                            checkCloseEnemyMuckrakerAsPolitician(enemyLocation, rc.getConviction());
-                        }
-                    } else if (rc.getType() == RobotType.SLANDERER) {
-                        int enemyDx = (flag >> CentralCommunication.ENEMY_SHIFT_X) - CentralCommunication.ENEMY_OFFSET;
-                        int enemyDy = ((flag >> CentralCommunication.ENEMY_SHIFT_Y) & CentralCommunication.ENEMY_MASK)
-                                - CentralCommunication.ENEMY_OFFSET;
-                        MapLocation enemyLocation = ecLocation.translate(enemyDx, enemyDy);
-                        int distance = (flag >> CentralCommunication.ENEMY_DISTANCE_SHIFT) & CentralCommunication.ENEMY_DISTANCE_MASK;
-                        int distanceSquared = distance + 3;
-                        distanceSquared = distanceSquared * distanceSquared;
-                        if (Cache.MY_LOCATION.isWithinDistanceSquared(enemyLocation, distanceSquared)) {
-                            checkCloseEnemyAsSlanderer(enemyLocation);
-                        }
+                            }
+                            break;
                     }
                 }
                 prev = current;

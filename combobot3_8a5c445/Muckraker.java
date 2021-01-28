@@ -1,4 +1,4 @@
-package combobot3;
+package combobot3_8a5c445;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -7,12 +7,12 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import combobot3.util.Cache;
-import combobot3.util.Constants;
-import combobot3.util.LambdaUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.Pathfinder;
-import combobot3.util.Util;
+import combobot3_8a5c445.util.Cache;
+import combobot3_8a5c445.util.Constants;
+import combobot3_8a5c445.util.LambdaUtil;
+import combobot3_8a5c445.util.MapInfo;
+import combobot3_8a5c445.util.Pathfinder;
+import combobot3_8a5c445.util.Util;
 
 import java.util.Comparator;
 
@@ -134,7 +134,7 @@ public strictfp class Muckraker implements RunnableBot {
                 // TODO: remove slanderer from queue
             }
         }
-        if (!MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty()) {
+        if (MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).orElse(null) != null) {
             return false;
         }
 

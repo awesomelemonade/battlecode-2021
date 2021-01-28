@@ -1,14 +1,20 @@
-package combobot3;
+package combobot3_8a5c445;
 
-import battlecode.common.*;
-import combobot3.util.Cache;
-import combobot3.util.Constants;
-import combobot3.util.LambdaUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.Pathfinder;
-import combobot3.util.UnitCommunication;
-import combobot3.util.Util;
-import combobot3.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import battlecode.common.Team;
+import combobot3_8a5c445.util.EnlightenmentCenterList.EnlightenmentCenterListNode;
+import combobot3_8a5c445.util.Cache;
+import combobot3_8a5c445.util.Constants;
+import combobot3_8a5c445.util.LambdaUtil;
+import combobot3_8a5c445.util.MapInfo;
+import combobot3_8a5c445.util.Pathfinder;
+import combobot3_8a5c445.util.UnitCommunication;
+import combobot3_8a5c445.util.Util;
 
 import java.util.Comparator;
 
@@ -90,6 +96,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (tryEmpower()) {
+            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
             return;
         }
         if (currentConviction >= 50 && tryClaimEC()) {
@@ -97,7 +104,7 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (currentConviction >= 50 && tryHealEC()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
+            Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
             return;
         }
         if (chaseWorthwhileEnemy()) {
@@ -105,15 +112,14 @@ public strictfp class Politician implements RunnableBot {
             return;
         }
         if (defendCommunicatedEnemy()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 128, 0, 0); // maroon
             return;
         }
         if (currentConviction >= 50 && goToECs()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 0, 255, 255); // cyan
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 255, 0); // yellow
             return;
         }
         if ((defender && currentConviction < 50) && tryDefend()) {
-            Util.setIndicatorDot(Cache.MY_LOCATION, 102, 51, 0); // brown
+            Util.setIndicatorDot(Cache.MY_LOCATION, 255, 0, 255); // pink
             return;
         }
         if (Util.smartExplore()) {
@@ -481,7 +487,7 @@ public strictfp class Politician implements RunnableBot {
             if (enemy.getType() == RobotType.POLITICIAN) {
                 pConviction += Math.max(0, Math.min(damage, enemy.getConviction() - 10)) +
                         Math.max(0, Math.min(damage - enemy.getConviction(), enemy.getInfluence()) - 10);
-                if (damage > enemy.getConviction()) { // could be either a slanderer or politician
+                if (damage > enemy.getConviction() - 10) {
                     pKills++;
                 }
                 if (nearestAllyEC != null)
@@ -613,31 +619,37 @@ public strictfp class Politician implements RunnableBot {
         return true;
     }
 
-    public static boolean shouldChaseMuckraker(int conviction, MapLocation location) {
-        if ((currentConviction * 2 + 20 >= conviction && conviction * 2 + 20 >= currentConviction) ||
-                (((nearestS != null && location.isWithinDistanceSquared(nearestS, 81))
-                        || (nearestAllyEC != null && location.isWithinDistanceSquared(nearestAllyEC, 81)))
-                        && conviction * 10 + 30 >= currentConviction)) {
-            int numNearbyPoliticians = 0;
-            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(location, 5, Constants.ALLY_TEAM);
-            for (int i = nearbyAllies.length; --i >= 0;) {
-                if (nearbyAllies[i].getType() == RobotType.POLITICIAN) {
-                    numNearbyPoliticians++;
-                }
-            }
-            return numNearbyPoliticians <= 1;
-        }
+    private static boolean shouldChase(RobotInfo robot) {
+        if (robot.getType() == RobotType.POLITICIAN)
+            return false;
+        int robotConviction = robot.getConviction();
+        if (currentConviction * 2 + 20 >= robotConviction
+                && robotConviction * 2 + 20 >= currentConviction)
+            return true;
+        MapLocation robotLocation = robot.getLocation();
+        if (robot.getType() == RobotType.MUCKRAKER
+                && ((nearestS != null && robotLocation.isWithinDistanceSquared(nearestS, 81))
+                || (nearestAllyEC != null && robotLocation.isWithinDistanceSquared(nearestAllyEC, 81)))
+                && robotConviction * 10 + 30 >= currentConviction)
+            return true;
         return false;
     }
 
-    private static boolean chaseWorthwhileEnemy() {
+    private static boolean chaseWorthwhileEnemy() throws GameActionException {
         int totx = 0;
         int toty = 0;
         int tot = 0;
         for (RobotInfo robot : Cache.ENEMY_ROBOTS) {
-            if (robot.getType() == RobotType.MUCKRAKER &&
-                    shouldChaseMuckraker(robot.getConviction(), robot.getLocation())) {
+            if (shouldChase(robot)) {
+                int numNearbyPoliticians = 0;
                 MapLocation loc = robot.location;
+                RobotInfo[] nearbyAllies = rc.senseNearbyRobots(loc, 5, Constants.ALLY_TEAM);
+                for (RobotInfo robot2 : nearbyAllies) {
+                    if (robot2.getType() == RobotType.POLITICIAN)
+                        numNearbyPoliticians++;
+                }
+                if (numNearbyPoliticians >= 2)
+                    continue;
                 totx += loc.x;
                 toty += loc.y;
                 tot++;

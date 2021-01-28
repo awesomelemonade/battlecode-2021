@@ -1,17 +1,17 @@
-package combobot3;
+package combobot3_8a5c445;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
-import combobot3.util.Cache;
-import combobot3.util.CentralUnitTracker;
-import combobot3.util.Constants;
-import combobot3.util.LambdaUtil;
-import combobot3.util.MapInfo;
-import combobot3.util.SlandererBuild;
-import combobot3.util.Util;
+import combobot3_8a5c445.util.Cache;
+import combobot3_8a5c445.util.CentralUnitTracker;
+import combobot3_8a5c445.util.Constants;
+import combobot3_8a5c445.util.LambdaUtil;
+import combobot3_8a5c445.util.MapInfo;
+import combobot3_8a5c445.util.SlandererBuild;
+import combobot3_8a5c445.util.Util;
 
 import java.util.Comparator;
 
@@ -140,7 +140,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             // no danger? build slanderers
             boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
-            if ((!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || Math.random() < 0.7)) {
+            if ((!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || Math.random() < 0.6)) {
                 if (buildSlanderer(influence)) {
                     Util.println("Slanderer");
                     return;
@@ -196,11 +196,11 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 nearestEnemyDistanceSquared <= 25 && nearestEnemyConviction > 10;
         // do we have slanderers? is there danger (muckrakers)? build defender politicians
         if ((slandererCount > 0 && needToDefendAgainstMuckraker) || needToDefendAgainstPolitician) {
-            //if (nearestEnemy == null) {
+            if (nearestEnemy == null) {
                 if (buildCheapPolitician(influence)) {
                     return true;
                 }
-            /*} else {
+            } else {
                 int cost = 5 * nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
                 cost = Math.min(cost, 3 * nearestEnemyConviction + 20);
                 cost = Math.min(cost, 2 * nearestEnemyConviction + 30);
@@ -210,7 +210,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                         return true;
                     }
                 }
-            }*/
+            }
             // save for politician - build cheap muckraker
             buildCheapMuckraker();
             return true;
@@ -254,7 +254,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public static boolean buildCheapPolitician(int influence) {
-        int cap = Math.max(Util.randBetween(16, 20), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
+        int cap = Math.max(Util.randBetween(14, 20), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
         return buildPolitician(Math.min(influence, cap));
     }
 

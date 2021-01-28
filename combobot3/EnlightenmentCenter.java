@@ -96,7 +96,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             }
             boolean canBuildSlanderer = !LambdaUtil.arraysAnyMatch(Cache.ENEMY_ROBOTS,
                     r -> r.getType() == RobotType.MUCKRAKER || r.getType() == RobotType.ENLIGHTENMENT_CENTER); // !seesEnemyMuckrakerOrEC
-            boolean shouldBuildSlanderer = canBuildSlanderer && (rc.getRoundNum() > lastSlandererBuiltTurn + 15 || slandererCount == 0);
+            boolean shouldBuildSlanderer = canBuildSlanderer && (rc.getRoundNum() > lastSlandererBuiltTurn + 10 || slandererCount == 0);
             // big p / big m
             if (rc.getRoundNum() >= 30 && influence >= 150 && Math.random() < 0.2 && (!shouldBuildSlanderer)) {
                 // build politician w/ minimum 150
@@ -112,7 +112,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     }
                 }
             }
-            if (reactDefense(influence)) {
+            if ((!shouldBuildSlanderer) && reactDefense(influence)) {
                 Util.println("React Defense");
                 return;
             }

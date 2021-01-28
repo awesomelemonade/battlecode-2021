@@ -98,7 +98,7 @@ public class CentralCommunication {
                     } else {
                         int conviction = flag & UnitCommunication.CURRENT_UNIT_INFO_MASK;
                         // Handle Enemy Unit
-                        CentralUnitTracker.handleEnemyUnit(specifiedLocation, type, conviction, current.type);
+                        CentralUnitTracker.handleEnemyUnit(specifiedLocation, type, conviction, current.type, current.lastKnownConviction);
                         // Enemy Prediction
                         if (receivedInfoCount < 1 && EnlightenmentCenter.initialEC) {
                             int tempDx = specifiedLocation.x - current.location.x;
@@ -184,7 +184,7 @@ public class CentralCommunication {
             System.out.println("Found Enemy (" + (end - start) + " bytecodes) at " + enemy.location + " [r^2 = " + enemy.closestAllyDistanceSquared + "]");
             Util.setIndicatorLine(Cache.MY_LOCATION, enemy.location, 0, 255, 0);
         }
-        if (enemy == null) {
+        if (enemy == null || (rc.getRoundNum() < 800 && Cache.TURN_COUNT % 5 == 3) || Cache.TURN_COUNT % 10 == 0) {
             setRotationFlag();
         } else {
             setEnemyFlag();

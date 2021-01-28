@@ -39,7 +39,7 @@ public class CentralUnitTracker {
         // Handle enemies in vision range
         for (int i = Cache.ENEMY_ROBOTS.length; --i >= 0;) {
             RobotInfo enemy = Cache.ENEMY_ROBOTS[i];
-            handleEnemyUnit(enemy.location, enemy.type, enemy.conviction, RobotType.ENLIGHTENMENT_CENTER);
+            handleEnemyUnit(enemy.location, enemy.type, enemy.conviction, RobotType.ENLIGHTENMENT_CENTER, -1);
         }
     }
     public static EnemyInfo calculateBroadcastedEnemy() {
@@ -104,7 +104,8 @@ public class CentralUnitTracker {
                 break;
         }
     }
-    public static void handleEnemyUnit(MapLocation location, RobotType type, int conviction, RobotType fromRobotType) {
+    public static void handleEnemyUnit(MapLocation location, RobotType type, int conviction,
+                                       RobotType fromRobotType, int fromConviction) {
         int indexX = location.x - originX;
         int indexY = location.y - originY;
         if (indexX < 0 || indexY < 0 || indexX >= SIZE || indexY >= SIZE) {
@@ -116,7 +117,7 @@ public class CentralUnitTracker {
             return;
         }
         registry[indexX][indexY] = registryCounter;
-        if (type == RobotType.MUCKRAKER && fromRobotType != RobotType.POLITICIAN) {
+        if (type == RobotType.MUCKRAKER && (!(fromRobotType == RobotType.POLITICIAN && fromConviction < 50))) {
             // append location to enemyMuckrakerLocations
             if (enemyMuckrakerLocationsSize < TRACKER_SIZE) {
                 enemyMuckrakerLocations[enemyMuckrakerLocationsSize++] = location;

@@ -134,7 +134,7 @@ public strictfp class Muckraker implements RunnableBot {
                 // TODO: remove slanderer from queue
             }
         }
-        if (MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).getClosestLocation(Cache.MY_LOCATION).orElse(null) != null) {
+        if (!MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty()) {
             return false;
         }
 

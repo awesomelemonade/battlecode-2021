@@ -94,7 +94,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 }
             }
             // big p / big m
-            if (rc.getRoundNum() > 30 && influence >= 150 && Math.random() < 0.2) {
+            if (rc.getRoundNum() >= 50 && influence >= 150 && Math.random() < 0.2) {
                 // build politician w/ minimum 150
                 if (rc.getRoundNum() > 250 && Math.random() < 0.5) {
                     if (buildMuckraker(Math.max(influence - 50, 150))) {
@@ -144,16 +144,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 return;
             }
             // no danger? build slanderers
-            boolean foundEnemyEC = !MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty();
             if ((!seesEnemyMuckrakerOrEC) && (slandererCount == 0 || Math.random() < 0.7)) {
                 if (buildSlanderer(influence)) {
                     Util.println("Slanderer");
-                    return;
-                }
-            }
-            if (politicianCount == 0 || Math.random() < 0.1) {
-                if (buildCheapPolitician(influence)) {
-                    Util.println("Cheap Politician");
                     return;
                 }
             }
@@ -207,21 +200,29 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                 nearestEnemyDistanceSquared <= 25 && nearestEnemyConviction > 10;
         // do we have slanderers? is there danger (muckrakers)? build defender politicians
         if ((slandererCount > 0 && needToDefendAgainstMuckraker) || needToDefendAgainstPolitician) {
-            //if (nearestEnemy == null) {
-                if (buildCheapPolitician(influence)) {
-                    return true;
-                }
-            /*} else {
-                int cost = 5 * nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
-                cost = Math.min(cost, 3 * nearestEnemyConviction + 20);
-                cost = Math.min(cost, 2 * nearestEnemyConviction + 30);
-                cost = Math.min(cost, nearestEnemyConviction + 50);
+            if (nearestEnemy == null) {
+                int cost = 5 * CentralUnitTracker.maxMuckrakerConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
+                cost = Math.min(cost, 3 * CentralUnitTracker.maxMuckrakerConviction + 20);
+                cost = Math.min(cost, 2 * CentralUnitTracker.maxMuckrakerConviction + 30);
+                cost = Math.min(cost, CentralUnitTracker.maxMuckrakerConviction + 50);
+                cost += (int) (Math.random() * 4);
                 if (influence >= cost) {
                     if (buildPolitician(cost)) {
                         return true;
                     }
                 }
-            }*/
+            } else {
+                int cost = 5 * nearestEnemyConviction + Constants.POLITICIAN_EMPOWER_PENALTY;
+                cost = Math.min(cost, 3 * nearestEnemyConviction + 20);
+                cost = Math.min(cost, 2 * nearestEnemyConviction + 30);
+                cost = Math.min(cost, nearestEnemyConviction + 50);
+                cost += (int) (Math.random() * 4);
+                if (influence >= cost) {
+                    if (buildPolitician(cost)) {
+                        return true;
+                    }
+                }
+            }
             // save for politician - build cheap muckraker
             buildCheapMuckraker();
             return true;

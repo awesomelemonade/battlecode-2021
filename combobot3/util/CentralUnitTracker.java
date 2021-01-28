@@ -11,10 +11,11 @@ public class CentralUnitTracker {
     private static long[][] registry;
     private static int registryCounter = 0;
 
-    public static final int NEARBY_DISTANCE_SQUARED = 225;
+    public static final int NEARBY_DISTANCE_SQUARED = 144;
     public static int numSmallDefenders = 0;
     public static int numNearbySmallEnemyMuckrakers = 0;
     public static int numNearbyAllySlanderers = 0;
+    public static int maxMuckrakerConviction = 0;
 
     public static final int TRACKER_SIZE = 50;
     public static MapLocation[] allyDefenderLocations = new MapLocation[TRACKER_SIZE]; // Only small politicians
@@ -34,6 +35,7 @@ public class CentralUnitTracker {
         numNearbyAllySlanderers = 0;
         allyDefenderLocationsSize = 0;
         enemyMuckrakerLocationsSize = 0;
+        maxMuckrakerConviction = 0;
         // Increment registry counter
         registryCounter++;
         // Handle enemies in vision range
@@ -117,6 +119,9 @@ public class CentralUnitTracker {
             return;
         }
         registry[indexX][indexY] = registryCounter;
+        if (type == RobotType.MUCKRAKER && Cache.MY_LOCATION.isWithinDistanceSquared(location, 400)) {
+            maxMuckrakerConviction = Math.max(maxMuckrakerConviction, conviction);
+        }
         if (type == RobotType.MUCKRAKER && (!(fromRobotType == RobotType.POLITICIAN && fromConviction < 50))) {
             // append location to enemyMuckrakerLocations
             if (enemyMuckrakerLocationsSize < TRACKER_SIZE) {

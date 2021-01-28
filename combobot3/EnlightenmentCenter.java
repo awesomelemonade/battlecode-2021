@@ -32,6 +32,8 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     private static int nearestEnemyDistanceSquared;
     private static int nearestEnemyConviction;
 
+    private static int lastNearbyMuckrakerTurn = 0;
+
     public EnlightenmentCenter(RobotController rc) {
         EnlightenmentCenter.rc = rc;
     }
@@ -57,6 +59,9 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
             nearestEnemyDistanceSquared = Cache.MY_LOCATION.distanceSquaredTo(nearestEnemy);
             nearestEnemyConviction = r.getConviction();
         });
+        if (CentralUnitTracker.numNearbySmallEnemyMuckrakers > 0) {
+            lastNearbyMuckrakerTurn = rc.getRoundNum();
+        }
     }
 
     public void postTurn() {
@@ -146,7 +151,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
                     return;
                 }
             }
-            if (politicianCount == 0 || Math.random() < (foundEnemyEC ? 0.3 : 0.35)) {
+            if (politicianCount == 0 || Math.random() < 0.1) {
                 if (buildCheapPolitician(influence)) {
                     Util.println("Cheap Politician");
                     return;
@@ -188,9 +193,15 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public static boolean reactDefense(int influence) {
+        int roundNum = rc.getRoundNum();
+        int numDefendersWanted = roundNum > lastNearbyMuckrakerTurn + 500 ?
+                CentralUnitTracker.numNearbyAllySlanderers / 3 :
+                (roundNum > lastNearbyMuckrakerTurn + 200 ?
+                        CentralUnitTracker.numNearbyAllySlanderers / 2 :
+                        CentralUnitTracker.numNearbyAllySlanderers * 2 / 3);
         boolean needToDefendAgainstMuckraker =
                 CentralUnitTracker.numNearbySmallEnemyMuckrakers > CentralUnitTracker.numSmallDefenders ||
-                        (CentralUnitTracker.numSmallDefenders < CentralUnitTracker.numNearbyAllySlanderers / 2);
+                        (CentralUnitTracker.numSmallDefenders < numDefendersWanted);
         // ignore small politicians's unless they're really close
         boolean needToDefendAgainstPolitician = nearestEnemy != null && nearestEnemyType == RobotType.POLITICIAN &&
                 nearestEnemyDistanceSquared <= 25 && nearestEnemyConviction > 10;
@@ -254,7 +265,7 @@ public strictfp class EnlightenmentCenter implements RunnableBot {
     }
 
     public static boolean buildCheapPolitician(int influence) {
-        int cap = Math.max(Util.randBetween(16, 20), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
+        int cap = Math.max(Util.randBetween(14, 20), (int) (0.1 * rc.getInfluence() / (1500 - rc.getRoundNum())));
         return buildPolitician(Math.min(influence, cap));
     }
 

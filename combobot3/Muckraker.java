@@ -22,6 +22,7 @@ public strictfp class Muckraker implements RunnableBot {
     private static boolean targeted;
     private static MapLocation target;
     private static boolean directAttacker;
+    private static int foundEnemyECTurn = -1;
 
     public Muckraker(RobotController rc) {
         Muckraker.rc = rc;
@@ -36,6 +37,11 @@ public strictfp class Muckraker implements RunnableBot {
 
     @Override
     public void turn() throws GameActionException {
+        if (foundEnemyECTurn == -1) {
+            if (!MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty()) {
+                foundEnemyECTurn = rc.getRoundNum();
+            }
+        }
         if (rc.isReady()) {
             if (tryExpose()) {
                 return;
@@ -134,7 +140,7 @@ public strictfp class Muckraker implements RunnableBot {
                 // TODO: remove slanderer from queue
             }
         }
-        if (!MapInfo.getKnownEnlightenmentCenterList(Constants.ENEMY_TEAM).isEmpty()) {
+        if (foundEnemyECTurn != -1/* && foundEnemyECTurn + 20 < rc.getRoundNum()*/) {
             return false;
         }
 

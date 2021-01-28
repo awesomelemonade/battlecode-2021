@@ -5,13 +5,13 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class CentralUnitTracker {
-    private static final int SIZE = 33; // odd so EC can be at center location
+    private static final int SIZE = 37; // odd so EC can be at center location
     private static int originX;
     private static int originY;
     private static long[][] registry;
     private static int registryCounter = 0;
 
-    public static final int NEARBY_DISTANCE_SQUARED = 100;
+    public static final int NEARBY_DISTANCE_SQUARED = 225;
     public static int numSmallDefenders = 0;
     public static int numNearbySmallEnemyMuckrakers = 0;
     public static int numNearbyAllySlanderers = 0;

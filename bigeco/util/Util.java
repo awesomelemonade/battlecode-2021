@@ -1,4 +1,4 @@
-package combobot3.util;
+package bigeco.util;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -8,7 +8,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import combobot3.RobotPlayer;
+import bigeco.RobotPlayer;
 
 import java.util.function.Predicate;
 
@@ -294,7 +294,7 @@ public class Util {
             }
         }
         if (exploreDir == -1) return randomExplore();
-        return Pathfinder.execute(exploreLoc);
+        return Pathfinder.execute(borderCut(exploreLoc));
     }
 
     public static MapLocation borderCut(MapLocation target) {
@@ -335,10 +335,13 @@ public class Util {
         }
         MapLocation loc1 = Cache.MY_LOCATION.translate(tempX * 3, 0);
         MapLocation loc2 = Cache.MY_LOCATION.translate(0, tempY * 3);
-        if (!MapInfo.potentiallyInBounds(loc1) || !MapInfo.potentiallyInBounds(loc2)) {
-            return true;
+        if (tempX != 0 && rc.canSenseLocation(loc1) && rc.onTheMap(loc1)) {
+            return false;
         }
-        return false;
+        if (tempY != 0 && rc.canSenseLocation(loc2) && rc.onTheMap(loc2)) {
+            return false;
+        }
+        return true;
     }
 
     public static int randBetween(int l, int r) {

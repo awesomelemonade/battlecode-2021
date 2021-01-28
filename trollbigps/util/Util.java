@@ -1,4 +1,4 @@
-package combobot3.util;
+package trollbigps.util;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -8,7 +8,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import combobot3.RobotPlayer;
+import trollbigps.RobotPlayer;
 
 import java.util.function.Predicate;
 

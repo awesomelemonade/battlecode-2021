@@ -1,4 +1,4 @@
-package combobot3.util;
+package bigeco.util;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
@@ -16,9 +16,9 @@ public class Constants {
     public static final int POLITICIAN_ACTION_RADIUS_SQUARED = RobotType.POLITICIAN.actionRadiusSquared;
     public static int SENSE_BOX_RADIUS;
     public static MapLocation SPAWN;
-    public static final boolean DEBUG_DRAW = false;
-    public static final boolean DEBUG_RESIGN = true;
-    public static final boolean DEBUG_PRINT = false;
+    public static final boolean DEBUG_DRAW = true;
+    public static final boolean DEBUG_RESIGN = false;
+    public static final boolean DEBUG_PRINT = true;
 
     public static void init(RobotController rc) {
         ALLY_TEAM = rc.getTeam();
